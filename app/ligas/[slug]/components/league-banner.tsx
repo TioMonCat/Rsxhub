@@ -55,8 +55,8 @@ export function LeagueBanner({
       </div>
 
       <div className="space-y-4 p-4 md:p-5">
-        <div className="grid grid-cols-1 lg:grid-cols-3 items-center justify-between gap-4">
-          {/* Left: Simulator & Format Pills */}
+        {/* Top Bar: Simulator/Format Pills & Admin Actions */}
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/5 pb-3">
           <div className="flex flex-wrap items-center gap-2 text-[11px]">
             <span className="border border-rose-500/60 bg-rose-950/80 text-rose-300 font-black uppercase px-2.5 py-1 rounded-none tracking-wide shadow-sm">
               {simulatorLabel(league.simulator)}
@@ -66,62 +66,62 @@ export function LeagueBanner({
             </span>
           </div>
 
-          {/* Center: Team Registration Box */}
-          <div className="flex justify-center items-center">
+          {isAdmin && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onEditSettings}
+                className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Edit Settings
+              </button>
+              <button
+                onClick={onDeleteLeague}
+                className="border border-rose-500/40 hover:bg-rose-500/10 px-3 py-1.5 text-xs font-bold uppercase text-rose-400 rounded-none transition-colors flex items-center gap-1.5"
+              >
+                <Trash className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Title, Dates & Right-Side Centered Team Widget */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-1">
+          <div>
+            <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white md:text-4xl">
+              {league.title}
+            </h1>
+            {league.slogan && (
+              <p className="text-xs font-extrabold uppercase tracking-widest mt-0.5 italic" style={{ color: accentHex }}>
+                {league.slogan}
+              </p>
+            )}
+
+            {/* Static Date Bar */}
+            <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+              <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
+                <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-slate-400 uppercase text-[10px] font-bold">Start Date:</span>
+                <span className="text-white font-bold"><FormattedDate date={league.startsAt} mode="date" /></span>
+              </div>
+              <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
+                <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-slate-400 uppercase text-[10px] font-bold">End Date:</span>
+                <span className="text-white font-bold"><FormattedDate date={league.endsAt} mode="date" /></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Registered Team Card - Right Side Vertically Centered */}
+          <div className="flex items-center justify-end shrink-0">
             {registrationElement}
           </div>
-
-          {/* Right: Admin Action Buttons */}
-          <div className="flex items-center justify-end gap-2">
-            {isAdmin && (
-              <>
-                <button
-                  onClick={onEditSettings}
-                  className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
-                >
-                  <Settings className="h-3.5 w-3.5" />
-                  Edit Settings
-                </button>
-                <button
-                  onClick={onDeleteLeague}
-                  className="border border-rose-500/40 hover:bg-rose-500/10 px-3 py-1.5 text-xs font-bold uppercase text-rose-400 rounded-none transition-colors flex items-center gap-1.5"
-                >
-                  <Trash className="h-3.5 w-3.5" />
-                  Delete
-                </button>
-              </>
-            )}
-          </div>
         </div>
 
-        <div>
-          <h1 className="text-3xl font-black uppercase italic tracking-tighter text-white md:text-4xl">
-            {league.title}
-          </h1>
-          {league.slogan && (
-            <p className="text-xs font-extrabold uppercase tracking-widest mt-0.5 italic" style={{ color: accentHex }}>
-              {league.slogan}
-            </p>
-          )}
-
-          {/* Static Date Bar */}
-          <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
-            <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
-              <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
-              <span className="text-slate-400 uppercase text-[10px] font-bold">Start Date:</span>
-              <span className="text-white font-bold"><FormattedDate date={league.startsAt} mode="date" /></span>
-            </div>
-            <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
-              <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
-              <span className="text-slate-400 uppercase text-[10px] font-bold">End Date:</span>
-              <span className="text-white font-bold"><FormattedDate date={league.endsAt} mode="date" /></span>
-            </div>
-          </div>
-
-          <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-300">
-            {league.fullDescription}
-          </p>
-        </div>
+        <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-300">
+          {league.fullDescription}
+        </p>
       </div>
     </section>
   )
