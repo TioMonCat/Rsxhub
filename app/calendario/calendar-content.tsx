@@ -19,7 +19,7 @@ type LeagueEvent = {
   startsAt: string
   endsAt: string
   status: string
-  eventType?: 'race' | 'time_attack' | null
+  eventType?: 'race' | 'qualifying' | 'time_attack' | null
   countryCode?: string | null
 }
 
@@ -171,11 +171,11 @@ export default function CalendarContent({
   const [formEndsAtTime, setFormEndsAtTime] = useState('21:30')
   const [formImageUrl, setFormImageUrl] = useState('')
   const [formServerLink, setFormServerLink] = useState('')
-  const [formEventType, setFormEventType] = useState<'race' | 'time_attack'>('race')
+  const [formEventType, setFormEventType] = useState<'race' | 'qualifying' | 'time_attack'>('race')
   const [formCountryCode, setFormCountryCode] = useState('ESP')
 
   // Programme filter state
-  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'time_attack'>('all')
+  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'qualifying' | 'time_attack'>('all')
 
   function pad(value: number) {
     return String(value).padStart(2, '0')
@@ -219,12 +219,22 @@ export default function CalendarContent({
     return { code: 'ES', abbr: 'ESP' }
   }
 
-  function getEventType(event: LeagueEvent, league?: League): 'RACE' | 'TIME ATTACK' {
+  function getEventType(event: LeagueEvent, league?: League): 'RACE' | 'QUALIFYING' | 'TIME ATTACK' {
+    if (event.eventType === 'qualifying') return 'QUALIFYING'
     if (event.eventType === 'time_attack') return 'TIME ATTACK'
     if (event.eventType === 'race') return 'RACE'
 
     const title = String(event.title || '').toUpperCase()
     const circuit = String(event.circuitName || '').toUpperCase()
+
+    if (
+      title.includes('QUALIFYING') ||
+      title.includes('QUALY') ||
+      circuit.includes('QUALIFYING') ||
+      circuit.includes('QUALY')
+    ) {
+      return 'QUALIFYING'
+    }
 
     if (
       title.includes('TIME ATTACK') ||
@@ -476,8 +486,8 @@ export default function CalendarContent({
               </h2>
             </div>
 
-            {/* Event Format Filter Tabs: ALL, RACES, TIME ATTACK */}
-            <div className="flex items-center gap-1 bg-black/40 p-1 border border-white/10 self-start md:self-auto">
+            {/* Event Format Filter Tabs: ALL, RACES, QUALIFYING, TIME ATTACK */}
+            <div className="flex items-center gap-1 bg-black/40 p-1 border border-white/10 self-start md:self-auto flex-wrap">
               <button
                 type="button"
                 onClick={() => setProgrammeFilter('all')}
@@ -498,6 +508,15 @@ export default function CalendarContent({
               </button>
               <button
                 type="button"
+                onClick={() => setProgrammeFilter('qualifying')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
+                  programmeFilter === 'qualifying' ? 'bg-cyan-500 text-black font-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⚡ QUALIFYING ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) === 'QUALIFYING').length})
+              </button>
+              <button
+                type="button"
                 onClick={() => setProgrammeFilter('time_attack')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
                   programmeFilter === 'time_attack' ? 'bg-amber-500 text-black font-black' : 'text-slate-400 hover:text-white'
@@ -515,6 +534,7 @@ export default function CalendarContent({
                 .filter((event) => {
                   const type = getEventType(event, leagueById.get(event.leagueId))
                   if (programmeFilter === 'race') return type === 'RACE'
+                  if (programmeFilter === 'qualifying') return type === 'QUALIFYING'
                   if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
                   return true
                 })
@@ -523,7 +543,7 @@ export default function CalendarContent({
               if (filteredEvents.length === 0) {
                 return (
                   <div className="p-12 text-center text-slate-500 italic text-sm border border-dashed border-white/10">
-                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : 'time attack sessions'} in the programme.
+                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : programmeFilter === 'qualifying' ? 'qualifying sessions' : 'time attack sessions'} in the programme.
                   </div>
                 )
               }
@@ -555,10 +575,14 @@ export default function CalendarContent({
                     {/* Middle: Circuit, Event Type Badge, Date */}
                     <div className="flex-1 space-y-1 sm:px-4">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Event Format Badge: RACE vs TIME ATTACK */}
+                        {/* Event Format Badge: RACE vs QUALIFYING vs TIME ATTACK */}
                         {eventType === 'TIME ATTACK' ? (
                           <span className="border border-amber-500/40 bg-amber-500/15 text-amber-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none flex items-center gap-1 shadow-[0_0_8px_rgba(245,158,11,0.2)]">
                             ⏱️ TIME ATTACK
+                          </span>
+                        ) : eventType === 'QUALIFYING' ? (
+                          <span className="border border-cyan-500/40 bg-cyan-500/15 text-cyan-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none flex items-center gap-1 shadow-[0_0_8px_rgba(6,182,212,0.2)]">
+                            ⚡ QUALIFYING
                           </span>
                         ) : (
                           <span className="border border-red-500/40 bg-red-500/15 text-red-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none flex items-center gap-1 shadow-[0_0_8px_rgba(239,68,68,0.2)]">
@@ -918,15 +942,16 @@ export default function CalendarContent({
                   </select>
                 </div>
 
-                {/* Event Format: Race vs Time Attack */}
+                {/* Event Format: Race vs Qualifying vs Time Attack */}
                 <div>
                   <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Event Format</label>
                   <select
                     value={formEventType}
-                    onChange={(e) => setFormEventType(e.target.value as 'race' | 'time_attack')}
+                    onChange={(e) => setFormEventType(e.target.value as 'race' | 'qualifying' | 'time_attack')}
                     className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
                   >
                     <option value="race">🏁 Race (Carrera)</option>
+                    <option value="qualifying">⚡ Qualifying (Clasificación)</option>
                     <option value="time_attack">⏱️ Time Attack (Hotlap)</option>
                   </select>
                 </div>
