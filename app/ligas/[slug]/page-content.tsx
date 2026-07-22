@@ -373,6 +373,25 @@ export default function LeagueDetailPageContent({
     }, new Map<string, Registration>()).values()
   )
 
+  const groupedRegistrations = useMemo(() => {
+    const map = new Map<string, { teamId: string; teamName: string; cars: Array<{ id: string; classTag: string; assignedNumber: number | null }> }>()
+    
+    uniqueRegisteredCars.forEach((car) => {
+      if (!car.teamId) return
+      const teamName = myManagedTeams.find((t) => t.id === car.teamId)?.name || 'Team'
+      if (!map.has(car.teamId)) {
+        map.set(car.teamId, { teamId: car.teamId, teamName, cars: [] })
+      }
+      map.get(car.teamId)!.cars.push({
+        id: car.id,
+        classTag: car.classTag || 'GENERAL',
+        assignedNumber: car.assignedNumber
+      })
+    })
+
+    return Array.from(map.values())
+  }, [uniqueRegisteredCars, myManagedTeams])
+
   const handleRegisterSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     if (isNumberTaken) return
@@ -974,7 +993,16 @@ export default function LeagueDetailPageContent({
               : 'linear-gradient(135deg, rgba(14,20,30,0.95), rgba(38,55,84,0.85))',
           }}
         >
-          {/* Simulator Logo Badge */}
+          {/* Status Badge - Top Left (matching sim logo box size) */}
+          <div
+            className="absolute left-4 top-4 z-20 bg-[#1274de] border border-cyan-400/30 text-white font-black uppercase text-xs shadow-[0_4px_16px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center p-2 rounded-none"
+            style={{ width: '64px', height: '64px', borderRight: `3px solid ${accentHex}` }}
+          >
+            <span className="text-[9px] text-cyan-100 font-bold uppercase tracking-wider leading-none mb-1">STATUS</span>
+            <span className="text-xs font-black tracking-wider leading-none text-white">{league.status.toUpperCase()}</span>
+          </div>
+
+          {/* Simulator Logo Badge - Top Right */}
           <div className="absolute right-4 top-4 z-20 bg-white border-t border-r border-b border-black/10 shadow-[0_4px_16px_rgba(0,0,0,0.45)] flex items-center justify-center" style={{width:'64px',height:'64px', borderLeft: `3px solid ${accentHex}`}}>
             <img
               src={(league as any).logoUrl || (league.simulator === 'ac' ? '/branding/ACLogo.png' : '/branding/LMULogo.png')}
@@ -987,9 +1015,6 @@ export default function LeagueDetailPageContent({
         <div className="space-y-4 p-4 md:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2 text-[11px]">
-              <span className="border px-2 py-1 font-semibold uppercase rounded-none" style={{ borderColor: `${accentHex}66`, backgroundColor: `${accentHex}20`, color: accentHex }}>
-                {league.status.toUpperCase()}
-              </span>
               <span className="border border-shell-line bg-black/20 px-2 py-1 text-slate-200 rounded-none">
                 {simulatorLabel(league.simulator)}
               </span>
@@ -1030,24 +1055,28 @@ export default function LeagueDetailPageContent({
                 {league.slogan}
               </p>
             )}
-            <p className="mt-2 max-w-4xl text-sm leading-relaxed text-slate-300">
+
+            {/* Static Date & Specs Bar (Positions never move) */}
+            <div className="flex flex-wrap items-center gap-3 mt-3 text-xs">
+              <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
+                <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-slate-400 uppercase text-[10px] font-bold">Start Date:</span>
+                <span className="text-white font-bold"><FormattedDate date={league.startsAt} mode="date" /></span>
+              </div>
+              <div className="flex items-center gap-2 border border-shell-line bg-black/40 px-3 py-1.5 rounded-none font-semibold text-slate-200">
+                <Calendar className="h-4 w-4 text-cyan-400 shrink-0" />
+                <span className="text-slate-400 uppercase text-[10px] font-bold">End Date:</span>
+                <span className="text-white font-bold"><FormattedDate date={league.endsAt} mode="date" /></span>
+              </div>
+            </div>
+
+            <p className="mt-3 max-w-4xl text-sm leading-relaxed text-slate-300">
               {league.fullDescription}
             </p>
           </div>
 
-          {/* Start, End, Grid Details Box */}
-          <div className="grid gap-3 md:grid-cols-3">
-            <div className="border border-shell-line bg-black/20 p-3 rounded-none relative">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400">Start Date</p>
-              <p className="mt-1 text-white font-bold"><FormattedDate date={league.startsAt} mode="date" /></p>
-            </div>
-            <div className="border border-shell-line bg-black/20 p-3 rounded-none relative">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400">End Date</p>
-              <p className="mt-1 text-white font-bold"><FormattedDate date={league.endsAt} mode="date" /></p>
-            </div>
-
-            {/* Registration Box - Restricted to Team Leaders */}
-            <div className="border border-shell-line bg-black/20 p-3 rounded-none flex flex-col justify-center min-h-[70px]">
+          {/* Team Registration Box */}
+          <div className="border border-shell-line bg-black/20 p-3 rounded-none flex flex-col justify-center">
               <p className="text-[11px] uppercase tracking-wider text-slate-400 mb-1">Team Registration</p>
               
               {!session ? (
@@ -1059,23 +1088,31 @@ export default function LeagueDetailPageContent({
                 </p>
               ) : (
                 <div className="space-y-2 w-full">
-                  {uniqueRegisteredCars.map((car) => {
-                    const teamName = myManagedTeams.find((t) => t.id === car.teamId)?.name || 'Team'
-                    return (
-                      <div key={car.id} className="flex items-center justify-between gap-2 border border-slate-700 bg-black/40 p-1.5 text-xxs">
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span className="truncate text-slate-200">{teamName}</span>
-                          <ClassBadge classTag={car.classTag || ''} className="scale-90" />
-                        </div>
-                        <button
-                          onClick={() => handleWithdrawTeam(car.teamId || '', car.classTag || '')}
-                          className="text-rose-400 hover:text-rose-300 font-black uppercase text-[9px] border border-rose-500/20 px-1 py-0.5 hover:bg-rose-500/10"
-                        >
-                          Withdraw
-                        </button>
+                  {groupedRegistrations.map((group) => (
+                    <div key={group.teamId} className="border border-slate-700 bg-black/40 p-2 text-xxs space-y-1.5">
+                      <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-1">
+                        <span className="font-bold text-slate-100 text-xs truncate">{group.teamName}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">{group.cars.length} car{group.cars.length > 1 ? 's' : ''}</span>
                       </div>
-                    )
-                  })}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {group.cars.map((car) => (
+                          <div key={car.id} className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 border border-white/10">
+                            <ClassBadge classTag={car.classTag} className="scale-90" />
+                            {car.assignedNumber != null && (
+                              <span className="font-mono text-[10px] font-bold text-cyan-400">#{car.assignedNumber}</span>
+                            )}
+                            <button
+                              onClick={() => handleWithdrawTeam(group.teamId, car.classTag)}
+                              title="Withdraw vehicle"
+                              className="ml-1 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 py-0.2 rounded-none transition-colors"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
 
                   {league.registrationOpen && league.status === 'open' && (
                     <button
@@ -1090,8 +1127,7 @@ export default function LeagueDetailPageContent({
               )}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* 2. Main content area: Schedule & Teams */}
       <section className="grid gap-4 md:grid-cols-[1.6fr_1.4fr]">
