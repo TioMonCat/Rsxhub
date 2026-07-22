@@ -1387,10 +1387,10 @@ export default function LeagueDetailPageContent({
 
                 return (
                   <div key={tag} className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-shell-line/20 pb-1">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-300">Category:</span>
-                        <ClassBadge classTag={tag} className="text-[10px]" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-slate-300">CATEGORY:</span>
+                        <ClassBadge classTag={tag} className="text-xs px-3 py-1 font-black shadow-sm" />
                       </div>
 
                       <div className="flex items-center gap-1">
@@ -1425,43 +1425,49 @@ export default function LeagueDetailPageContent({
                           return (
                             <div
                               key={team.id}
-                              className="border border-shell-line bg-black/30 p-2 md:p-2.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-500 transition-colors"
+                              className="border border-shell-line bg-black/40 p-2 md:p-2.5 rounded-none flex items-center justify-between gap-2.5 hover:border-slate-500 transition-colors"
                             >
-                              {/* Left: Position + Logo + Team Info */}
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <span className={`w-5 text-center text-xs font-black shrink-0 ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
-                                  {originalIdx === 0 ? '🥇' : originalIdx === 1 ? '🥈' : originalIdx === 2 ? '🥉' : originalIdx + 1}
-                                </span>
-                                <img
-                                  src={team.logoUrl}
-                                  alt={team.name}
-                                  className="w-7 h-7 object-cover border border-slate-700 rounded-none shrink-0"
-                                />
-                                <div className="min-w-0">
-                                  <h4 className="text-xs font-bold uppercase text-white truncate leading-tight flex items-center gap-1.5">
-                                    <span className="truncate">{team.name}</span>
-                                    {team.assignedNumber != null && (
-                                      <span className="text-[10px] bg-cyan-950 text-cyan-400 font-extrabold px-1.5 py-0.5 border border-cyan-800/50 rounded-none font-mono shrink-0">
-                                        #{team.assignedNumber}
-                                      </span>
-                                    )}
-                                  </h4>
-                                </div>
+                              {/* 1. Pos */}
+                              <span className={`w-6 text-center text-xs font-black shrink-0 ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
+                                {originalIdx === 0 ? '🥇' : originalIdx === 1 ? '🥈' : originalIdx === 2 ? '🥉' : originalIdx + 1}
+                              </span>
+
+                              {/* 2. Logo equipo */}
+                              <img
+                                src={team.logoUrl}
+                                alt={team.name}
+                                className="w-7 h-7 object-cover border border-slate-700 rounded-none shrink-0"
+                              />
+
+                              {/* 3. Nombre Equipo */}
+                              <div className="min-w-0 flex-1">
+                                <h4 className="text-xs font-bold uppercase text-white truncate leading-tight">
+                                  {team.name}
+                                </h4>
                               </div>
 
-                              {/* Right: Lateral Vehicle Image + Points */}
-                              <div className="flex items-center gap-3 shrink-0">
-                                <div className="h-7 w-20 md:w-24 hidden sm:flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
-                                  <img
-                                    src={team.carImageUrl || '/branding/lateral-car.png'}
-                                    alt="Vehicle side profile"
-                                    className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-                                  />
-                                </div>
-                                <span className="text-xs font-extrabold text-slate-200 bg-black/60 px-2 py-1 border border-white/10 font-mono">
-                                  {team.points} pts
-                                </span>
+                              {/* 4. Foto del carro */}
+                              <div className="h-7 w-20 md:w-24 flex items-center justify-center shrink-0">
+                                <img
+                                  src={team.carImageUrl || '/branding/lateral-car.png'}
+                                  alt="Vehicle side profile"
+                                  className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                                />
                               </div>
+
+                              {/* 5. Dorsal */}
+                              {team.assignedNumber != null ? (
+                                <span className="text-[10px] bg-black/80 text-cyan-400 font-extrabold px-1.5 py-0.5 border border-cyan-500/40 rounded-none font-mono shrink-0">
+                                  #{team.assignedNumber}
+                                </span>
+                              ) : (
+                                <span className="w-8 shrink-0"></span>
+                              )}
+
+                              {/* 6. Puntos */}
+                              <span className="text-xs font-black text-white bg-black/80 px-2 py-0.5 border border-white/10 font-mono shrink-0 min-w-[50px] text-center">
+                                {team.points} pts
+                              </span>
                             </div>
                           )
                         })
