@@ -144,6 +144,53 @@ export function useLeagueState({
         }
       })
 
+      // Demo/Testing: Fill up to 5 teams if fewer than 5 exist in database
+      const mockDemoTeams: TeamStanding[] = [
+        {
+          id: 'mock_t_redbull',
+          name: 'Red Bull Sim Racing',
+          points: 45,
+          logoUrl: 'https://placehold.co/40x40/0a1220/ffffff?text=RBR',
+          drivers: '',
+          assignedNumber: 33,
+          carImageUrl: '/branding/lateral-car.png',
+        },
+        {
+          id: 'mock_t_ferrari',
+          name: 'Ferrari Esports',
+          points: 38,
+          logoUrl: 'https://placehold.co/40x40/0a1220/ffffff?text=FER',
+          drivers: '',
+          assignedNumber: 51,
+          carImageUrl: '/branding/lateral-car.png',
+        },
+        {
+          id: 'mock_t_porsche',
+          name: 'Porsche Coanda Esports',
+          points: 29,
+          logoUrl: 'https://placehold.co/40x40/0a1220/ffffff?text=POR',
+          drivers: '',
+          assignedNumber: 91,
+          carImageUrl: '/branding/lateral-car.png',
+        },
+        {
+          id: 'mock_t_bmw',
+          name: 'BMW M Team BS+COMPETITION',
+          points: 22,
+          logoUrl: 'https://placehold.co/40x40/0a1220/ffffff?text=BMW',
+          drivers: '',
+          assignedNumber: 46,
+          carImageUrl: '/branding/lateral-car.png',
+        },
+      ]
+
+      mockDemoTeams.forEach((demoItem) => {
+        if (!uniqueKeys.has(demoItem.id) && list.length < 5) {
+          uniqueKeys.add(demoItem.id)
+          list.push(demoItem)
+        }
+      })
+
       initialIndices[tag] = 0
       initialStandings[tag] = list
     })
