@@ -101,33 +101,33 @@ export function TeamCarsEditor({
   }> = {
     HYPERCAR: {
       text: 'text-rose-450',
-      border: 'border-rose-500/40',
+      border: 'border-rose-500/20',
       focus: 'focus:border-rose-400 focus:ring-1 focus:ring-rose-500/30',
       icon: 'text-rose-400',
       addBtn: 'border-rose-500/40 bg-rose-950/30 hover:bg-rose-500 hover:text-white hover:border-rose-400 text-rose-300 font-bold',
-      headerText: 'text-rose-400 font-black tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.1)]',
-      cardBorder: 'border-rose-500/30 focus-within:border-rose-400 bg-[#210c10]/40 hover:border-rose-500/50',
-      glow: 'shadow-[inset_0_1px_0_0_rgba(244,63,94,0.25),0_0_24px_rgba(244,63,94,0.08)] bg-[#19090c]/60 border-rose-500/45'
+      headerText: 'text-rose-400 font-black tracking-wider',
+      cardBorder: 'border-slate-800 bg-black/40 hover:border-slate-700',
+      glow: 'border-shell-line bg-black/20'
     },
     LMP2: {
       text: 'text-blue-450',
-      border: 'border-blue-500/40',
+      border: 'border-blue-500/20',
       focus: 'focus:border-blue-400 focus:ring-1 focus:ring-blue-500/30',
       icon: 'text-blue-400',
       addBtn: 'border-blue-500/40 bg-blue-950/30 hover:bg-blue-500 hover:text-white hover:border-blue-400 text-blue-300 font-bold',
-      headerText: 'text-blue-400 font-black tracking-wider shadow-[0_0_15px_rgba(59,130,246,0.1)]',
-      cardBorder: 'border-blue-500/30 focus-within:border-blue-400 bg-[#0a1226]/40 hover:border-blue-500/50',
-      glow: 'shadow-[inset_0_1px_0_0_rgba(59,130,246,0.25),0_0_24px_rgba(59,130,246,0.08)] bg-[#070b18]/60 border-blue-500/45'
+      headerText: 'text-blue-400 font-black tracking-wider',
+      cardBorder: 'border-slate-800 bg-black/40 hover:border-slate-700',
+      glow: 'border-shell-line bg-black/20'
     },
     GT3: {
       text: 'text-emerald-450',
-      border: 'border-emerald-500/40',
+      border: 'border-emerald-500/20',
       focus: 'focus:border-emerald-400 focus:ring-1 focus:ring-emerald-500/30',
       icon: 'text-emerald-400',
       addBtn: 'border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 text-emerald-300 font-bold',
-      headerText: 'text-emerald-400 font-black tracking-wider shadow-[0_0_15px_rgba(16,185,129,0.1)]',
-      cardBorder: 'border-emerald-500/30 focus-within:border-emerald-400 bg-[#09180f]/40 hover:border-emerald-500/50',
-      glow: 'shadow-[inset_0_1px_0_0_rgba(16,185,129,0.25),0_0_24px_rgba(16,185,129,0.08)] bg-[#06100a]/60 border-emerald-500/45'
+      headerText: 'text-emerald-400 font-black tracking-wider',
+      cardBorder: 'border-slate-800 bg-black/40 hover:border-slate-700',
+      glow: 'border-shell-line bg-black/20'
     }
   }
 
