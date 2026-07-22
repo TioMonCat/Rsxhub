@@ -5,6 +5,9 @@ import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
 import LeagueDetailPageContent from './page-content'
 
+export const revalidate = 0
+export const dynamic = 'force-dynamic'
+
 export default async function LigaDetailPage({
   params,
 }: {
