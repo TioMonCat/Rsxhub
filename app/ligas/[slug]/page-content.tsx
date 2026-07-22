@@ -1446,8 +1446,8 @@ export default function LeagueDetailPageContent({
                                 </h4>
                               </div>
 
-                              {/* 4. Foto del carro */}
-                              <div className="h-7 w-20 md:w-24 flex items-center justify-center shrink-0">
+                              {/* 4. Foto del carro (Placeholder Container) */}
+                              <div className="h-7 w-20 md:w-28 bg-black/60 border border-cyan-500/30 flex items-center justify-center shrink-0 overflow-hidden relative p-0.5">
                                 <img
                                   src={team.carImageUrl || '/branding/lateral-car.png'}
                                   alt="Vehicle side profile"
