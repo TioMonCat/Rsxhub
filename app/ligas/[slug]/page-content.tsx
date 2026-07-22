@@ -21,7 +21,8 @@ import {
   ChevronUp,
   ChevronDown,
   CheckCircle2,
-  Award
+  Award,
+  Upload
 } from 'lucide-react'
 import { updateLeagueDetailsAction, deleteLeagueAction, registerTeamAction, unregisterTeamAction, confirmAttendanceAction, cancelAttendanceAction } from '../actions'
 import { ClassBadge } from '@/components/class-badge'
@@ -200,6 +201,41 @@ export default function LeagueDetailPageContent({
     setStandings(initialStandings)
     setStandingsIndices(initialIndices)
   }, [initialRegistrations, league.classTags, myManagedTeams, teamInfo])
+
+  // Custom car images per team
+  const [customCarImages, setCustomCarImages] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('team_car_images')
+      if (saved) {
+        setCustomCarImages(JSON.parse(saved))
+      }
+    } catch (e) {}
+  }, [])
+
+  const handleCarImageUpload = async (teamId: string, file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'car')
+    try {
+      const res = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData,
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const newUrl = data.url
+        setCustomCarImages((prev) => {
+          const next = { ...prev, [teamId]: newUrl }
+          localStorage.setItem('team_car_images', JSON.stringify(next))
+          return next
+        })
+      }
+    } catch (err) {
+      console.error('Failed to upload car image:', err)
+    }
+  }
 
   // Modals visibility
   const [isEditLeagueOpen, setIsEditLeagueOpen] = useState(false)
@@ -1439,32 +1475,43 @@ export default function LeagueDetailPageContent({
                                 className="w-7 h-7 object-cover border border-slate-700 rounded-none shrink-0"
                               />
 
-                              {/* 3. Nombre Equipo */}
-                              <div className="min-w-0 flex-1">
+                              {/* 3. Nombre Equipo + Dorsal (sin recuadro azul) */}
+                              <div className="min-w-0 flex-1 flex items-center gap-1.5">
                                 <h4 className="text-xs font-bold uppercase text-white truncate leading-tight">
                                   {team.name}
                                 </h4>
+                                {team.assignedNumber != null && (
+                                  <span className="text-xs font-mono font-bold text-slate-300 shrink-0">
+                                    #{team.assignedNumber}
+                                  </span>
+                                )}
                               </div>
 
-                              {/* 4. Foto del carro (Placeholder Container) */}
-                              <div className="h-7 w-20 md:w-28 bg-black/60 border border-cyan-500/30 flex items-center justify-center shrink-0 overflow-hidden relative p-0.5">
+                              {/* 4. Foto del carro (con opción de subir/cambiar foto) */}
+                              <label
+                                title="Click to upload/change car photo"
+                                className="h-7 w-20 md:w-28 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-0.5 cursor-pointer group transition-colors"
+                              >
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleCarImageUpload(team.id, file)
+                                  }}
+                                />
                                 <img
-                                  src={team.carImageUrl || '/branding/lateral-car.png'}
+                                  src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
                                   alt="Vehicle side profile"
                                   className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
                                 />
-                              </div>
+                                <div className="absolute inset-0 bg-black/80 text-[8px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                  <Upload className="h-3 w-3" /> Change
+                                </div>
+                              </label>
 
-                              {/* 5. Dorsal */}
-                              {team.assignedNumber != null ? (
-                                <span className="text-[10px] bg-black/80 text-cyan-400 font-extrabold px-1.5 py-0.5 border border-cyan-500/40 rounded-none font-mono shrink-0">
-                                  #{team.assignedNumber}
-                                </span>
-                              ) : (
-                                <span className="w-8 shrink-0"></span>
-                              )}
-
-                              {/* 6. Puntos */}
+                              {/* 5. Puntos */}
                               <span className="text-xs font-black text-white bg-black/80 px-2 py-0.5 border border-white/10 font-mono shrink-0 min-w-[50px] text-center">
                                 {team.points} pts
                               </span>
