@@ -70,15 +70,15 @@ export default function CalendarContent({
     const slug = String(leagueSlug || '').toLowerCase()
     
     if (slug.includes('erc-ng') || slug.includes('nextgen') || title.includes('NEXT GEN') || title.includes('NG')) {
-      // Next Gen: Dark Navy to Vibrant Orange
-      return 'linear-gradient(135deg, rgba(3, 6, 16, 0.94) 0%, rgba(255, 85, 0, 0.5) 100%)'
+      // Next Gen: Vibrant Red-Orange Motorsport Gradient
+      return 'linear-gradient(135deg, rgba(220, 38, 38, 0.8) 0%, rgba(234, 88, 12, 0.7) 60%, rgba(120, 18, 18, 0.55) 100%)'
     }
     if (slug.includes('erc') || title.includes('ERC') || title.includes('ENDURANCE REAL')) {
-      // ERC: Dark Navy to Vibrant Blue
-      return 'linear-gradient(135deg, rgba(2, 6, 15, 0.94) 0%, rgba(0, 114, 240, 0.45) 100%)'
+      // ERC: Vibrant Motorsport Blue Gradient
+      return 'linear-gradient(135deg, rgba(14, 116, 222, 0.8) 0%, rgba(29, 78, 216, 0.7) 60%, rgba(15, 30, 80, 0.55) 100%)'
     }
-    // General fallback: Dark slate to soft cyan-blue
-    return 'linear-gradient(135deg, rgba(8, 12, 21, 0.94) 0%, rgba(18, 116, 222, 0.35) 100%)'
+    // General fallback: Rich Electric Cyan-Blue Gradient
+    return 'linear-gradient(135deg, rgba(6, 182, 212, 0.8) 0%, rgba(14, 116, 222, 0.7) 60%, rgba(15, 25, 70, 0.55) 100%)'
   }
 
   const [events, setEvents] = useState<LeagueEvent[]>(initialEvents)
@@ -486,7 +486,7 @@ export default function CalendarContent({
               </h2>
             </div>
 
-            {/* Event Format Filter Tabs: ALL, RACES, QUALIFYING, TIME ATTACK */}
+            {/* Event Format Filter Tabs: ALL (Races & Time Attack), RACES, TIME ATTACK */}
             <div className="flex items-center gap-1 bg-black/40 p-1 border border-white/10 self-start md:self-auto flex-wrap">
               <button
                 type="button"
@@ -495,7 +495,7 @@ export default function CalendarContent({
                   programmeFilter === 'all' ? 'bg-[#1274de] text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ALL ({events.length})
+                ALL ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) !== 'QUALIFYING').length})
               </button>
               <button
                 type="button"
@@ -505,15 +505,6 @@ export default function CalendarContent({
                 }`}
               >
                 🏁 RACES ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) === 'RACE').length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setProgrammeFilter('qualifying')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  programmeFilter === 'qualifying' ? 'bg-cyan-500 text-black font-black' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                ⚡ QUALIFYING ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) === 'QUALIFYING').length})
               </button>
               <button
                 type="button"
@@ -527,14 +518,14 @@ export default function CalendarContent({
             </div>
           </div>
 
-          {/* List of Race & Time Attack Events in Programme Format */}
+          {/* List of Race & Time Attack Events in Programme Format (Qualifying excluded) */}
           <div className="space-y-4 max-w-4xl mx-auto">
             {(() => {
               const filteredEvents = [...events]
                 .filter((event) => {
                   const type = getEventType(event, leagueById.get(event.leagueId))
+                  if (type === 'QUALIFYING') return false // Qualifying only appears in Month Grid
                   if (programmeFilter === 'race') return type === 'RACE'
-                  if (programmeFilter === 'qualifying') return type === 'QUALIFYING'
                   if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
                   return true
                 })
@@ -543,7 +534,7 @@ export default function CalendarContent({
               if (filteredEvents.length === 0) {
                 return (
                   <div className="p-12 text-center text-slate-500 italic text-sm border border-dashed border-white/10">
-                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : programmeFilter === 'qualifying' ? 'qualifying sessions' : 'time attack sessions'} in the programme.
+                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : 'time attack sessions'} in the programme.
                   </div>
                 )
               }
@@ -696,9 +687,8 @@ export default function CalendarContent({
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: event.circuitImageUrl
-                                        ? `${getLeagueGradient(league?.title, league?.slug)}, url(${event.circuitImageUrl})`
+                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${event.circuitImageUrl})`
                                         : getLeagueGradient(league?.title, league?.slug),
-                                      backgroundBlendMode: 'multiply'
                                     }}
                                   />
                                   {idx === 0 ? (
@@ -781,9 +771,8 @@ export default function CalendarContent({
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: primaryEvent.circuitImageUrl
-                                        ? `${getLeagueGradient(league?.title, league?.slug)}, url(${primaryEvent.circuitImageUrl})`
+                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${primaryEvent.circuitImageUrl})`
                                         : getLeagueGradient(league?.title, league?.slug),
-                                      backgroundBlendMode: 'multiply'
                                     }}
                                   />
                                   <p className="absolute left-2 top-2 text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
