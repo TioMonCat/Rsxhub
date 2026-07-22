@@ -212,9 +212,9 @@ export function useLeagueState({
       const current = prev[tag] || 0
       const total = (standings[tag] || []).length
       if (direction === 'up') {
-        return { ...prev, [tag]: Math.max(0, current - 3) }
+        return { ...prev, [tag]: Math.max(0, current - 5) }
       } else {
-        return { ...prev, [tag]: Math.min(Math.max(0, total - 3), current + 3) }
+        return { ...prev, [tag]: Math.min(Math.max(0, total - 5), current + 5) }
       }
     })
   }

@@ -38,7 +38,7 @@ export function LeagueStandings({
           {classTags.map((tag) => {
             const teamList = standings[tag] || []
             const startIndex = standingsIndices[tag] || 0
-            const visibleTeams = teamList.slice(startIndex, startIndex + 3)
+            const visibleTeams = teamList.slice(startIndex, startIndex + 5)
 
             return (
               <div key={tag} className="space-y-3">
@@ -58,11 +58,11 @@ export function LeagueStandings({
                       <ChevronUp className="h-3.5 w-3.5" />
                     </button>
                     <span className="text-[10px] text-slate-400 px-1 font-mono uppercase">
-                      {startIndex + 1}-{Math.min(startIndex + 3, teamList.length)} of {teamList.length}
+                      {startIndex + 1}-{Math.min(startIndex + 5, teamList.length)} of {teamList.length}
                     </span>
                     <button
                       onClick={() => onScrollStandings(tag, 'down')}
-                      disabled={startIndex >= teamList.length - 3}
+                      disabled={startIndex >= teamList.length - 5}
                       className="border border-slate-700 bg-black/30 hover:bg-slate-800 hover:text-cyan-400 p-1 rounded-none disabled:opacity-30 disabled:hover:bg-black/30 disabled:hover:text-white transition-colors"
                       title="Scroll Down"
                     >
