@@ -148,7 +148,13 @@ export async function updateLeagueDetailsAction(formData: FormData) {
     throw new Error('Forbidden: Only platform admins or league managers can customize league settings.')
   }
 
+  const title = String(formData.get('title') || '').trim()
   const slug = String(formData.get('slug') || '').trim()
+  const simulator = String(formData.get('simulator') || 'ac').trim()
+  const format = String(formData.get('format') || 'sprint').trim()
+  const status = String(formData.get('status') || 'open').trim()
+  const registrationMode = String(formData.get('registrationMode') || 'team').trim()
+  const classTagsRaw = String(formData.get('classTags') || '').trim()
   const startsAt = String(formData.get('startsAt') || '').trim()
   const endsAt = String(formData.get('endsAt') || '').trim()
   const maxDrivers = Number(formData.get('maxDrivers') || 30)
@@ -165,7 +171,11 @@ export async function updateLeagueDetailsAction(formData: FormData) {
     throw new Error('League ID, Start Date, and End Date are required.')
   }
 
-  const payload = {
+  const classTags = classTagsRaw
+    ? classTagsRaw.split(',').map((tag) => tag.trim().toUpperCase()).filter(Boolean)
+    : undefined
+
+  const payload: any = {
     starts_at: new Date(startsAt).toISOString(),
     ends_at: new Date(endsAt).toISOString(),
     max_drivers: maxDrivers,
@@ -178,6 +188,14 @@ export async function updateLeagueDetailsAction(formData: FormData) {
     youtube_url: youtubeUrl || null,
     rulebook_url: rulebookUrl || null,
   }
+
+  if (title) payload.title = title
+  if (slug) payload.slug = slug
+  if (simulator) payload.simulator = simulator
+  if (format) payload.format = format
+  if (status) payload.status = status
+  if (registrationMode) payload.registration_mode = registrationMode
+  if (classTags) payload.class_tags = classTags
 
   if (hasFirebase) {
     const db = getFirestoreDb()
@@ -202,6 +220,13 @@ export async function updateLeagueDetailsAction(formData: FormData) {
         if (lg.id === leagueId) {
           return {
             ...lg,
+            title: title || lg.title,
+            slug: slug || lg.slug,
+            simulator: simulator || lg.simulator,
+            format: format || lg.format,
+            status: status || lg.status,
+            registrationMode: registrationMode || lg.registrationMode,
+            classTags: classTags || lg.classTags,
             startsAt: payload.starts_at,
             endsAt: payload.ends_at,
             maxDrivers,

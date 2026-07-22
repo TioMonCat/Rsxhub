@@ -72,12 +72,21 @@ export default function LeagueDetailPageContent({
   const [finishingEvent, setFinishingEvent] = useState<LeagueEvent | null>(null)
 
   // Edit League Form States
+  const [formTitle, setFormTitle] = useState(league.title)
+  const [formSlug, setFormSlug] = useState(league.slug)
+  const [formSimulator, setFormSimulator] = useState(league.simulator || 'ac')
+  const [formFormat, setFormFormat] = useState(league.format || 'sprint')
+  const [formStatus, setFormStatus] = useState(league.status || 'open')
+  const [formRegistrationMode, setFormRegistrationMode] = useState((league as any).registrationMode || 'team')
+  const [formClassTags, setFormClassTags] = useState((league.classTags || []).join(', '))
   const [formStartsAt, setFormStartsAt] = useState(league.startsAt.split('T')[0])
   const [formEndsAt, setFormEndsAt] = useState(league.endsAt.split('T')[0])
   const [formClassLimits, setFormClassLimits] = useState<Record<string, number>>((league as any).classLimits || {})
   const [formRegistrationOpen, setFormRegistrationOpen] = useState(league.registrationOpen)
   const [formSlogan, setFormSlogan] = useState(league.slogan || '')
   const [formAccentColor, setFormAccentColor] = useState(accentHex)
+  const [formBannerUrl, setFormBannerUrl] = useState(league.bannerUrl || '')
+  const [formLogoUrl, setFormLogoUrl] = useState((league as any).logoUrl || '')
   const [isLeagueSubmitting, setIsLeagueSubmitting] = useState(false)
 
   // Event Form States
@@ -127,12 +136,21 @@ export default function LeagueDetailPageContent({
     try {
       const formData = new FormData(e.currentTarget)
       formData.set('leagueId', league.id)
+      formData.set('title', formTitle)
+      formData.set('slug', formSlug)
+      formData.set('simulator', formSimulator)
+      formData.set('format', formFormat)
+      formData.set('status', formStatus)
+      formData.set('registrationMode', formRegistrationMode)
+      formData.set('classTags', formClassTags)
       formData.set('startsAt', formStartsAt)
       formData.set('endsAt', formEndsAt)
       formData.set('classLimitsJson', JSON.stringify(formClassLimits))
       formData.set('registrationOpen', formRegistrationOpen ? 'true' : 'false')
       formData.set('slogan', formSlogan)
       formData.set('accentColor', formAccentColor)
+      formData.set('bannerUrl', formBannerUrl)
+      formData.set('logoUrl', formLogoUrl)
 
       await updateLeagueDetailsAction(formData)
       setIsEditLeagueOpen(false)
@@ -333,47 +351,251 @@ export default function LeagueDetailPageContent({
 
       {/* MODALS */}
       {isAdmin && isEditLeagueOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.8)] relative">
-            <button onClick={() => setIsEditLeagueOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-              <X className="h-4 w-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsEditLeagueOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Edit League Details</h2>
+
+            <div className="mb-4 pb-3 border-b border-shell-line/40">
+              <h2 className="text-xl font-black uppercase tracking-tight text-white flex items-center gap-2">
+                ⚙️ Edit League Settings & Details
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Modifica cualquier parámetro de la liga: título, fechas, simulador, formato, categorías, inscripciones y branding.
+              </p>
+            </div>
+
             <form onSubmit={handleLeagueUpdate} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
+              {/* SECTION 1: General Info */}
+              <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                  1. Información Principal & Títulos
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Start Date</label>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Nombre de la Liga (Title)</label>
+                    <input
+                      type="text"
+                      value={formTitle}
+                      onChange={(e) => setFormTitle(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">URL Identificativa (Slug)</label>
+                    <input
+                      type="text"
+                      value={formSlug}
+                      onChange={(e) => setFormSlug(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-cyan-300 outline-none rounded-none focus:border-cyan-400 font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Eslogan de Cabecera (Slogan)</label>
+                  <input
+                    type="text"
+                    value={formSlogan}
+                    onChange={(e) => setFormSlogan(e.target.value)}
+                    placeholder="e.g. Campeonato de Resistencia Multiclase 2026"
+                    className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                  />
+                </div>
+              </div>
+
+              {/* SECTION 2: Rules, Simulator & Format */}
+              <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                  2. Simulador, Formato & Estado de Inscripción
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Simulador</label>
+                    <select
+                      value={formSimulator}
+                      onChange={(e) => setFormSimulator(e.target.value)}
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                    >
+                      <option value="ac">🏎️ Assetto Corsa</option>
+                      <option value="lmu">🏁 Le Mans Ultimate</option>
+                      <option value="iracing">🏎️ iRacing</option>
+                      <option value="acc">🏆 Assetto Corsa Competizione</option>
+                      <option value="ams2">🎮 Automobilista 2</option>
+                      <option value="rf2">🏁 rFactor 2</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Formato</label>
+                    <select
+                      value={formFormat}
+                      onChange={(e) => setFormFormat(e.target.value)}
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                    >
+                      <option value="endurance">⏳ Endurance (Resistencia)</option>
+                      <option value="sprint">⚡ Sprint</option>
+                      <option value="championship">🏆 Championship (Campeonato)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Estado de la Liga</label>
+                    <select
+                      value={formStatus}
+                      onChange={(e) => setFormStatus(e.target.value)}
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                    >
+                      <option value="open">🟢 Inscripciones Abiertas (Open)</option>
+                      <option value="ongoing">🟡 Campeonato En Curso (Ongoing)</option>
+                      <option value="draft">⚪ Borrador / Próximamente (Draft)</option>
+                      <option value="completed">🔴 Finalizada (Completed)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Modo de Inscripción</label>
+                    <select
+                      value={formRegistrationMode}
+                      onChange={(e) => setFormRegistrationMode(e.target.value)}
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                    >
+                      <option value="team">👥 Por Escudería / Equipo (Team Registration)</option>
+                      <option value="individual">👤 Por Piloto Individual (Individual Entry)</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center justify-between border border-shell-line bg-black/40 px-4 py-2 mt-auto">
+                    <div>
+                      <span className="block text-xs font-bold text-white uppercase">Inscripciones Abiertas</span>
+                      <span className="text-[10px] text-slate-400">Permite que nuevos equipos se registren</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={formRegistrationOpen}
+                      onChange={(e) => setFormRegistrationOpen(e.target.checked)}
+                      className="h-4 w-4 accent-cyan-400 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: Categories & Dates */}
+              <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                  3. Categorías, Fechas & Color Visual
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Categorías de la Liga (Separadas por Comas)</label>
+                    <input
+                      type="text"
+                      value={formClassTags}
+                      onChange={(e) => setFormClassTags(e.target.value)}
+                      placeholder="e.g. GT3, LMP2, HYPERCAR"
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-cyan-300 font-mono outline-none rounded-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Color Visual de la Liga (HEX)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={formAccentColor}
+                        onChange={(e) => setFormAccentColor(e.target.value)}
+                        className="h-8 w-10 bg-transparent border border-shell-line cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={formAccentColor}
+                        onChange={(e) => setFormAccentColor(e.target.value)}
+                        className="w-full border border-shell-line bg-black/60 px-3 py-1.5 text-xs text-white font-mono outline-none rounded-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Fecha de Inicio</label>
                     <input
                       type="date"
                       value={formStartsAt}
                       onChange={(e) => setFormStartsAt(e.target.value)}
                       required
-                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">End Date</label>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Fecha de Finalización</label>
                     <input
                       type="date"
                       value={formEndsAt}
                       onChange={(e) => setFormEndsAt(e.target.value)}
                       required
-                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
                     />
                   </div>
                 </div>
-                <div className="space-y-4">
-                  <ImagePicker name="bannerUrl" defaultValue={league.bannerUrl || ''} label="League Banner Image" />
+              </div>
+
+              {/* SECTION 4: Media & Banner */}
+              <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                  4. Branding & Imágenes de Portada
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <ImagePicker
+                      name="bannerUrl"
+                      defaultValue={formBannerUrl}
+                      label="Imagen de Banner de la Liga (Cabecera)"
+                    />
+                  </div>
+                  <div>
+                    <ImagePicker
+                      name="logoUrl"
+                      defaultValue={formLogoUrl}
+                      label="Logo de la Liga (Badge / Escudo)"
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-2 pt-4 border-t border-shell-line/50">
-                <button type="button" onClick={() => setIsEditLeagueOpen(false)} className="border border-shell-line px-4 py-2 text-xs font-bold uppercase">
-                  Cancel
+
+              {/* DANGER ZONE & ACTIONS */}
+              <div className="flex items-center justify-between pt-4 border-t border-shell-line/50">
+                <button
+                  type="button"
+                  onClick={handleLeagueDelete}
+                  className="border border-rose-800/60 bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 px-4 py-2 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5"
+                >
+                  ⚠️ Eliminar Liga
                 </button>
-                <button type="submit" disabled={isLeagueSubmitting} className="bg-shell-accent px-5 py-2 text-xs font-bold uppercase text-white">
-                  {isLeagueSubmitting ? 'Saving...' : 'Save Settings'}
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditLeagueOpen(false)}
+                    className="border border-shell-line px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 hover:bg-white/5 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isLeagueSubmitting}
+                    className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-6 py-2 text-xs uppercase tracking-wider transition-colors disabled:opacity-50"
+                  >
+                    {isLeagueSubmitting ? 'Guardando Ajustes...' : 'Guardar Cambios de la Liga'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
