@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { useRouter } from 'next/navigation'
 
 export type League = {
   id: string
@@ -96,6 +97,7 @@ export function useLeagueState({
   teamInfo?: Record<string, { name: string; primaryColor: string | null; logoUrl: string | null }>
   initialConfirmations?: EventConfirmation[]
 }) {
+  const router = useRouter()
   const [events, setEvents] = useState<LeagueEvent[]>(initialEvents)
   const [confirmations, setConfirmations] = useState<EventConfirmation[]>(initialConfirmations)
 
@@ -106,6 +108,14 @@ export function useLeagueState({
   useEffect(() => {
     setEvents(initialEvents)
   }, [initialEvents])
+
+  // Periodic background auto-refresh to synchronize multi-browser / multi-user attendance & standings live
+  useEffect(() => {
+    const timer = setInterval(() => {
+      router.refresh()
+    }, 5000)
+    return () => clearInterval(timer)
+  }, [router])
 
   const classTags = useMemo(
     () => (league.classTags && league.classTags.length > 0 ? league.classTags : ['GT3']),
