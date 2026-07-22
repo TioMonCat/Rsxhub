@@ -36,6 +36,8 @@ export interface LeagueEvent {
   startsAt: string
   endsAt: string
   status: 'scheduled' | 'completed' | 'cancelled'
+  eventType?: 'race' | 'time_attack'
+  countryCode?: string | null
 }
 
 export interface League {

@@ -19,6 +19,8 @@ type LeagueEvent = {
   startsAt: string
   endsAt: string
   status: string
+  eventType?: 'race' | 'time_attack' | null
+  countryCode?: string | null
 }
 
 type League = {
@@ -169,6 +171,11 @@ export default function CalendarContent({
   const [formEndsAtTime, setFormEndsAtTime] = useState('21:30')
   const [formImageUrl, setFormImageUrl] = useState('')
   const [formServerLink, setFormServerLink] = useState('')
+  const [formEventType, setFormEventType] = useState<'race' | 'time_attack'>('race')
+  const [formCountryCode, setFormCountryCode] = useState('ESP')
+
+  // Programme filter state
+  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'time_attack'>('all')
 
   function pad(value: number) {
     return String(value).padStart(2, '0')
@@ -191,8 +198,12 @@ export default function CalendarContent({
     return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`
   }
 
-  function getCircuitCountry(circuitName: string) {
-    const name = String(circuitName || '').toLowerCase()
+  function getCircuitCountry(event: LeagueEvent) {
+    if (event.countryCode) {
+      const abbr = event.countryCode.toUpperCase()
+      return { code: abbr.slice(0, 2), abbr }
+    }
+    const name = String(event.circuitName || '').toLowerCase()
     if (name.includes('imola') || name.includes('monza') || name.includes('misano') || name.includes('mugello')) return { code: 'IT', abbr: 'ITA' }
     if (name.includes('spa') || name.includes('francorchamps') || name.includes('zolder')) return { code: 'BE', abbr: 'BEL' }
     if (name.includes('sao paulo') || name.includes('interlagos') || name.includes('brazil')) return { code: 'BR', abbr: 'BRA' }
@@ -206,6 +217,27 @@ export default function CalendarContent({
     if (name.includes('portimao') || name.includes('estoril')) return { code: 'PT', abbr: 'POR' }
     if (name.includes('bahrain') || name.includes('sakhir')) return { code: 'BH', abbr: 'BHR' }
     return { code: 'ES', abbr: 'ESP' }
+  }
+
+  function getEventType(event: LeagueEvent, league?: League): 'RACE' | 'TIME ATTACK' {
+    if (event.eventType === 'time_attack') return 'TIME ATTACK'
+    if (event.eventType === 'race') return 'RACE'
+
+    const title = String(event.title || '').toUpperCase()
+    const circuit = String(event.circuitName || '').toUpperCase()
+
+    if (
+      title.includes('TIME ATTACK') ||
+      title.includes('HOTLAP') ||
+      title.includes('TIME TRIAL') ||
+      title.includes('TA ') ||
+      title.includes('TA-') ||
+      circuit.includes('TIME ATTACK') ||
+      circuit.includes('HOTLAP')
+    ) {
+      return 'TIME ATTACK'
+    }
+    return 'RACE'
   }
 
   function buildCalendarUrl(view: 'month' | 'programme', date: Date) {
@@ -242,6 +274,8 @@ export default function CalendarContent({
     setFormEndsAtTime('21:30')
     setFormImageUrl('')
     setFormServerLink('')
+    setFormEventType('race')
+    setFormCountryCode('ESP')
   }
 
   const handleEditClick = (event: LeagueEvent) => {
@@ -249,6 +283,8 @@ export default function CalendarContent({
     setFormLeagueId(event.leagueId)
     setFormTitle(event.title || '')
     setFormCircuit(event.circuitName)
+    setFormEventType(event.eventType || 'race')
+    setFormCountryCode(event.countryCode || 'ESP')
     
     // Parse time in local timezone
     const startsDate = new Date(event.startsAt)
@@ -269,6 +305,8 @@ export default function CalendarContent({
     setFormEndsAtTime('21:30')
     setFormImageUrl('')
     setFormServerLink('')
+    setFormEventType('race')
+    setFormCountryCode('ESP')
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -313,6 +351,8 @@ export default function CalendarContent({
     formData.set('endsAt', endsIso)
     formData.set('circuitImageUrl', uploadedImageUrl)
     formData.set('serverLink', serverLinkUrl)
+    formData.set('eventType', formEventType)
+    formData.set('countryCode', formCountryCode)
 
     try {
       const res = await saveCalendarEvent(formData)
@@ -427,82 +467,143 @@ export default function CalendarContent({
       {/* 2. Official Programme View or Month Grid View */}
       {viewMode === 'programme' ? (
         <section className="shell-panel p-6 md:p-10 rounded-none bg-gradient-to-b from-[#0a0f1d] via-[#090d18] to-[#04060b] border border-white/10 space-y-8">
-          {/* Official Programme Title Banner */}
-          <div className="text-center space-y-1">
-            <p className="text-xs font-black uppercase tracking-[0.35em] text-[#1274de] italic">OFFICIAL</p>
-            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tight text-white drop-shadow-md">
-              PROGRAMME
-            </h2>
-            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">2026 FIA WEC & RSX RACING SEASON</p>
+          {/* Official Programme Title Banner & Filters */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/10 pb-6">
+            <div className="space-y-1">
+              <p className="text-xs font-black uppercase tracking-[0.35em] text-[#1274de] italic">OFFICIAL</p>
+              <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tight text-white drop-shadow-md">
+                PROGRAMME
+              </h2>
+            </div>
+
+            {/* Event Format Filter Tabs: ALL, RACES, TIME ATTACK */}
+            <div className="flex items-center gap-1 bg-black/40 p-1 border border-white/10 self-start md:self-auto">
+              <button
+                type="button"
+                onClick={() => setProgrammeFilter('all')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none ${
+                  programmeFilter === 'all' ? 'bg-[#1274de] text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ALL ({events.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProgrammeFilter('race')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
+                  programmeFilter === 'race' ? 'bg-red-600 text-white' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                🏁 RACES ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) === 'RACE').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProgrammeFilter('time_attack')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
+                  programmeFilter === 'time_attack' ? 'bg-amber-500 text-black font-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⏱️ TIME ATTACK ({events.filter(e => getEventType(e, leagueById.get(e.leagueId)) === 'TIME ATTACK').length})
+              </button>
+            </div>
           </div>
 
-          {/* List of Race Events in Programme Format */}
+          {/* List of Race & Time Attack Events in Programme Format */}
           <div className="space-y-4 max-w-4xl mx-auto">
-            {events.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 italic text-sm">No scheduled events in the programme.</div>
-            ) : (
-              [...events]
+            {(() => {
+              const filteredEvents = [...events]
+                .filter((event) => {
+                  const type = getEventType(event, leagueById.get(event.leagueId))
+                  if (programmeFilter === 'race') return type === 'RACE'
+                  if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
+                  return true
+                })
                 .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
-                .map((event) => {
-                  const country = getCircuitCountry(event.circuitName)
-                  const flag = getCountryFlag(country.code)
-                  const league = leagueById.get(event.leagueId)
-                  const eventDate = new Date(event.startsAt)
-                  const monthName = eventDate.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase()
-                  const dayNumber = eventDate.getUTCDate()
 
-                  return (
-                    <div
-                      key={event.id}
-                      className="border border-white/10 bg-gradient-to-r from-[#121929]/95 via-[#18233a]/90 to-[#121929]/95 p-4 md:p-5 rounded-none hover:border-[#1274de]/60 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg group"
-                    >
-                      {/* Left: Flag + Abbreviation */}
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-3xl filter drop-shadow">{flag || '🏎️'}</span>
-                        <span className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white font-mono">
-                          {country.abbr}
-                        </span>
-                      </div>
+              if (filteredEvents.length === 0) {
+                return (
+                  <div className="p-12 text-center text-slate-500 italic text-sm border border-dashed border-white/10">
+                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : 'time attack sessions'} in the programme.
+                  </div>
+                )
+              }
 
-                      {/* Middle: Event Details */}
-                      <div className="flex-1 space-y-0.5 sm:px-4">
+              return filteredEvents.map((event) => {
+                const country = getCircuitCountry(event)
+                const flag = getCountryFlag(country.code)
+                const league = leagueById.get(event.leagueId)
+                const eventType = getEventType(event, league)
+                const eventDate = new Date(event.startsAt)
+                const monthName = eventDate.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' }).toUpperCase()
+                const dayNumber = eventDate.getUTCDate()
+
+                return (
+                  <div
+                    key={event.id}
+                    className="border border-white/10 bg-gradient-to-r from-[#121929]/95 via-[#18233a]/90 to-[#121929]/95 p-4 md:p-5 rounded-none hover:border-[#1274de]/60 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg group"
+                  >
+                    {/* Left: Flag + Country Abbreviation */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {flag ? (
+                        <span className="text-3xl filter drop-shadow">{flag}</span>
+                      ) : null}
+                      <span className="text-3xl md:text-4xl font-black uppercase italic tracking-tighter text-white font-mono">
+                        {country.abbr}
+                      </span>
+                    </div>
+
+                    {/* Middle: Circuit, Event Type Badge, Date */}
+                    <div className="flex-1 space-y-1 sm:px-4">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {/* Event Format Badge: RACE vs TIME ATTACK */}
+                        {eventType === 'TIME ATTACK' ? (
+                          <span className="border border-amber-500/40 bg-amber-500/15 text-amber-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none flex items-center gap-1 shadow-[0_0_8px_rgba(245,158,11,0.2)]">
+                            ⏱️ TIME ATTACK
+                          </span>
+                        ) : (
+                          <span className="border border-red-500/40 bg-red-500/15 text-red-300 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-none flex items-center gap-1 shadow-[0_0_8px_rgba(239,68,68,0.2)]">
+                            🏁 RACE
+                          </span>
+                        )}
                         <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
                           {event.circuitName} {league ? `· ${league.title}` : ''}
                         </p>
-                        <h3 className="text-lg md:text-2xl font-black uppercase italic tracking-tight text-white group-hover:text-cyan-300 transition-colors">
-                          {monthName} <span className="text-slate-300 font-bold text-base md:text-xl">{dayNumber}</span>
-                        </h3>
-                        <p className="text-xxs text-slate-400 font-mono font-semibold flex items-center gap-1">
-                          <Clock className="h-3 w-3 text-cyan-400" />
-                          {formatTime(event.startsAt)} GMT-4
-                        </p>
                       </div>
 
-                      {/* Right: Action Button */}
-                      <div className="shrink-0 flex items-center gap-2">
-                        {event.serverLink ? (
-                          <a
-                            href={event.serverLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bg-[#09152b] border border-[#1274de] hover:bg-[#1274de] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-all shadow-[0_0_12px_rgba(18,116,222,0.3)] rounded-none inline-flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Play className="h-3 w-3 fill-current" />
-                            AVAILABLE
-                          </a>
-                        ) : (
-                          <Link
-                            href={league ? `/ligas/${league.slug}` : '/ligas'}
-                            className="bg-[#080d16] border border-white/20 hover:border-white/40 hover:bg-white/10 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-colors rounded-none inline-flex items-center gap-1.5"
-                          >
-                            {league?.registrationOpen ? 'AVAILABLE' : 'NOTIFY ME'}
-                          </Link>
-                        )}
-                      </div>
+                      <h3 className="text-lg md:text-2xl font-black uppercase italic tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+                        {monthName} <span className="text-slate-300 font-bold text-base md:text-xl">{dayNumber}</span>
+                      </h3>
+                      <p className="text-xxs text-slate-400 font-mono font-semibold flex items-center gap-1">
+                        <Clock className="h-3 w-3 text-cyan-400" />
+                        {formatTime(event.startsAt)} GMT-4
+                      </p>
                     </div>
-                  )
-                })
-            )}
+
+                    {/* Right: Action Button */}
+                    <div className="shrink-0 flex items-center gap-2">
+                      {event.serverLink ? (
+                        <a
+                          href={event.serverLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-[#09152b] border border-[#1274de] hover:bg-[#1274de] px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-all shadow-[0_0_12px_rgba(18,116,222,0.3)] rounded-none inline-flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Play className="h-3 w-3 fill-current" />
+                          AVAILABLE
+                        </a>
+                      ) : (
+                        <Link
+                          href={league ? `/ligas/${league.slug}` : '/ligas'}
+                          className="bg-[#080d16] border border-white/20 hover:border-white/40 hover:bg-white/10 px-6 py-2.5 text-xs font-black uppercase tracking-wider text-white transition-colors rounded-none inline-flex items-center gap-1.5"
+                        >
+                          {league?.registrationOpen ? 'AVAILABLE' : 'NOTIFY ME'}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                )
+              })
+            })()}
           </div>
         </section>
       ) : (
@@ -772,23 +873,61 @@ export default function CalendarContent({
                   />
                 </div>
 
-                {/* Session Type (circuitName database field) */}
+                {/* Circuit Name Text Input */}
                 <div>
-                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Session Type</label>
-                  <select
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Circuit Name (Nombre del Circuito)</label>
+                  <input
+                    type="text"
                     value={formCircuit}
                     onChange={(e) => setFormCircuit(e.target.value)}
+                    placeholder="e.g. Spa-Francorchamps, Monza, Imola, Nürburgring..."
                     required
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
+                  />
+                </div>
+
+                {/* Country Flag Selection */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Country Flag (País / Bandera)</label>
+                  <select
+                    value={formCountryCode}
+                    onChange={(e) => setFormCountryCode(e.target.value)}
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                  >
+                    <option value="ESP">🇪🇸 España (ESP)</option>
+                    <option value="ITA">🇮🇹 Italia (ITA)</option>
+                    <option value="FRA">🇫🇷 Francia (FRA)</option>
+                    <option value="GER">🇩🇪 Alemania (GER)</option>
+                    <option value="GBR">🇬🇧 Reino Unido (GBR)</option>
+                    <option value="BEL">🇧🇪 Bélgica (BEL)</option>
+                    <option value="USA">🇺🇸 Estados Unidos (USA)</option>
+                    <option value="JPN">🇯🇵 Japón (JPN)</option>
+                    <option value="BRA">🇧🇷 Brasil (BRA)</option>
+                    <option value="QAT">🇶🇦 Qatar (QAT)</option>
+                    <option value="POR">🇵🇹 Portugal (POR)</option>
+                    <option value="ARG">🇦🇷 Argentina (ARG)</option>
+                    <option value="MEX">🇲🇽 México (MEX)</option>
+                    <option value="CHI">🇨🇱 Chile (CHI)</option>
+                    <option value="COL">🇨🇴 Colombia (COL)</option>
+                    <option value="AUS">🇦🇺 Australia (AUS)</option>
+                    <option value="NED">🇳🇱 Países Bajos (NED)</option>
+                    <option value="CAN">🇨🇦 Canadá (CAN)</option>
+                    <option value="AUT">🇦🇹 Austria (AUT)</option>
+                    <option value="SGP">🇸🇬 Singapur (SGP)</option>
+                    <option value="ARE">🇦🇪 Emiratos Árabes (ARE)</option>
+                  </select>
+                </div>
+
+                {/* Event Format: Race vs Time Attack */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Event Format</label>
+                  <select
+                    value={formEventType}
+                    onChange={(e) => setFormEventType(e.target.value as 'race' | 'time_attack')}
                     className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
                   >
-                    <option value="" disabled>-- Select Session Type --</option>
-                    <option value="Practice">Practice</option>
-                    <option value="Qualifying">Qualifying</option>
-                    <option value="Race">Race</option>
-                    <option value="Time attack">Time attack</option>
-                    {formCircuit && !['Practice', 'Qualifying', 'Race', 'Time attack'].includes(formCircuit) && (
-                      <option value={formCircuit}>{formCircuit}</option>
-                    )}
+                    <option value="race">🏁 Race (Carrera)</option>
+                    <option value="time_attack">⏱️ Time Attack (Hotlap)</option>
                   </select>
                 </div>
 

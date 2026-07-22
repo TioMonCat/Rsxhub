@@ -179,6 +179,8 @@ export const getLeagueEvents = cache(async (leagueId?: string): Promise<LeagueEv
             startsAt: formatFirestoreValue(data.starts_at) || '',
             endsAt: formatFirestoreValue(data.ends_at) || '',
             status: data.status || 'scheduled',
+            eventType: data.event_type || data.eventType || undefined,
+            countryCode: data.country_code || data.countryCode || null,
           }
         })
         return events.sort((a: any, b: any) => a.startsAt.localeCompare(b.startsAt))

@@ -20,6 +20,8 @@ export async function saveCalendarEvent(formData: FormData) {
     const endsAtTime = String(formData.get('endsAtTime') || '21:30').trim() // e.g. HH:MM
     const circuitImageUrl = String(formData.get('circuitImageUrl') || '').trim()
     const serverLink = String(formData.get('serverLink') || '').trim()
+    const eventType = String(formData.get('eventType') || 'race').trim()
+    const countryCode = String(formData.get('countryCode') || '').trim()
 
     if (!leagueId || !circuitName || !dateStr) {
       return { success: false, error: 'League, Circuit and Date are required.' }
@@ -51,6 +53,8 @@ export async function saveCalendarEvent(formData: FormData) {
       circuit_name: circuitName,
       circuit_image_url: circuitImageUrl || null,
       server_link: serverLink || null,
+      event_type: eventType,
+      country_code: countryCode || null,
       starts_at: startsAt,
       ends_at: endsAt,
       status: 'scheduled',
@@ -106,6 +110,8 @@ export async function saveCalendarEvent(formData: FormData) {
               circuitName,
               circuitImageUrl: circuitImageUrl || null,
               serverLink: serverLink || null,
+              eventType,
+              countryCode: countryCode || null,
               startsAt,
               endsAt,
             }
@@ -121,6 +127,8 @@ export async function saveCalendarEvent(formData: FormData) {
           circuitName,
           circuitImageUrl: circuitImageUrl || null,
           serverLink: serverLink || null,
+          eventType,
+          countryCode: countryCode || null,
           startsAt,
           endsAt,
           status: 'scheduled',

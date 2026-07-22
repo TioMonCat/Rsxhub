@@ -52,8 +52,33 @@ export function getCountryName(code: string): string {
 
 export function getCountryFlag(code: string): string {
   const cleanCode = (code || '').trim().toUpperCase()
-  if (cleanCode.length !== 2) return ''
-  const codePoints = cleanCode
+  if (!cleanCode) return ''
+  const twoLetter =
+    cleanCode === 'ESP' ? 'ES' :
+    cleanCode === 'ITA' ? 'IT' :
+    cleanCode === 'FRA' ? 'FR' :
+    cleanCode === 'GER' ? 'DE' :
+    cleanCode === 'GBR' ? 'GB' :
+    cleanCode === 'BEL' ? 'BE' :
+    cleanCode === 'USA' ? 'US' :
+    cleanCode === 'JPN' ? 'JP' :
+    cleanCode === 'BRA' ? 'BR' :
+    cleanCode === 'QAT' ? 'QA' :
+    cleanCode === 'POR' ? 'PT' :
+    cleanCode === 'ARG' ? 'AR' :
+    cleanCode === 'MEX' ? 'MX' :
+    cleanCode === 'CHI' ? 'CL' :
+    cleanCode === 'COL' ? 'CO' :
+    cleanCode === 'AUS' ? 'AU' :
+    cleanCode === 'NED' ? 'NL' :
+    cleanCode === 'CAN' ? 'CA' :
+    cleanCode === 'AUT' ? 'AT' :
+    cleanCode === 'SGP' ? 'SG' :
+    cleanCode === 'ARE' ? 'AE' :
+    cleanCode.slice(0, 2)
+
+  if (twoLetter.length !== 2) return ''
+  const codePoints = twoLetter
     .split('')
     .map((char) => 127397 + char.charCodeAt(0))
   try {
