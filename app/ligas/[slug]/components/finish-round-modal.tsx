@@ -76,10 +76,16 @@ export function FinishRoundModal({
           item.driver?.name ||
           item.name ||
           `Piloto ${idx + 1}`
-        const teamName = item.TeamName || item.teamName || item.Driver?.Team || driverName
+
+        let rawTeamName = item.TeamName || item.teamName || item.Driver?.Team || driverName
+        let cleanTeamName = rawTeamName.split('|')[0].trim() || rawTeamName.trim()
+
         const steamId =
           item.DriverGuid || item.driverGuid || item.Driver?.Guid || item.guid || `76561198000000${idx + 1}`
         const userId = item.userId || item.user_id
+
+        const rawDorsal = item.carNumber ?? item.CarNumber ?? item.Driver?.CarNumber ?? item.ballast
+        const dorsalNum = rawDorsal != null && !isNaN(Number(rawDorsal)) ? Number(rawDorsal) : (idx % 90) + 1
 
         // Determine category tag
         let classTag = item.classTag || item.ClassTag || item.CarModel || item.carModel || ''
@@ -102,11 +108,11 @@ export function FinishRoundModal({
           overallPos,
           pos: catPos,
           driverName,
-          teamName,
+          teamName: cleanTeamName,
           steamId,
           userId,
           classTag,
-          dorsal: item.ballast ? Number(item.ballast) : Math.floor(Math.random() * 80) + 1,
+          dorsal: dorsalNum,
           points,
         }
       })
@@ -388,7 +394,7 @@ export function FinishRoundModal({
                         <thead>
                           <tr className="border-b border-shell-line bg-white/5 text-slate-400 uppercase font-mono text-[10px]">
                             <th className="p-2.5 text-center w-16">Pos Cat.</th>
-                            <th className="p-2.5">Equipo / Piloto</th>
+                            <th className="p-2.5">Equipo</th>
                             <th className="p-2.5 text-center w-24">Pos General</th>
                             <th className="p-2.5 text-right w-32">Puntos Ronda</th>
                           </tr>
@@ -408,12 +414,18 @@ export function FinishRoundModal({
                                 />
                               </td>
 
-                              {/* 2. Driver/Team Details */}
+                              {/* 2. Team Name with Dorsal on right */}
                               <td className="p-2.5">
-                                <p className="font-extrabold text-white leading-tight">{row.teamName}</p>
-                                <p className="text-[10px] text-slate-400 font-mono">
-                                  {row.driverName} ({row.steamId})
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-extrabold text-white uppercase text-xs tracking-wide">
+                                    {row.teamName}
+                                  </span>
+                                  {row.dorsal != null && (
+                                    <span className="text-xs font-mono font-black text-cyan-300">
+                                      #{row.dorsal}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
 
                               {/* 3. Overall Position */}
