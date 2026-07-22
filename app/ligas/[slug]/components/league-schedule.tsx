@@ -1,6 +1,6 @@
 'use client'
 
-import { Calendar, Clock, Plus, Edit2, Trash2, Users } from 'lucide-react'
+import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2 } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { FormattedDate } from '@/components/formatted-date'
 import { formatDateTime } from '@/lib/utils'
@@ -18,6 +18,7 @@ interface LeagueScheduleProps {
   myManagedTeams: ManagedTeam[]
   onOpenEventModal: (event?: LeagueEvent) => void
   onDeleteEvent: (eventId: string) => void
+  onFinishRound?: (event: LeagueEvent) => void
 }
 
 export function LeagueSchedule({
@@ -30,6 +31,7 @@ export function LeagueSchedule({
   myManagedTeams,
   onOpenEventModal,
   onDeleteEvent,
+  onFinishRound,
 }: LeagueScheduleProps) {
   const router = useRouter()
 
@@ -43,10 +45,9 @@ export function LeagueSchedule({
         {isAdmin && (
           <button
             onClick={() => onOpenEventModal()}
-            className="bg-cyan-500 hover:bg-cyan-400 text-black px-3 py-1.5 text-xs font-bold uppercase rounded-none transition-colors flex items-center gap-1"
+            className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
           >
-            <Plus className="h-3.5 w-3.5" />
-            Add Round
+            <Plus className="h-3.5 w-3.5" /> Add Round
           </button>
         )}
       </div>
@@ -79,6 +80,11 @@ export function LeagueSchedule({
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                         {ev.circuitName}
                       </span>
+                      {isCompleted && (
+                        <span className="bg-emerald-950 text-emerald-400 border border-emerald-800/50 px-2 py-0.5 text-[10px] font-mono font-bold uppercase">
+                          COMPLETED
+                        </span>
+                      )}
                     </div>
 
                     <h3 className="text-base font-bold text-white uppercase italic tracking-tight">
@@ -95,23 +101,35 @@ export function LeagueSchedule({
 
                   <div className="flex items-center gap-2">
                     {isAdmin && (
-                      <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
-                        <button
-                          type="button"
-                          onClick={() => onOpenEventModal(ev)}
-                          title="Edit Round"
-                          className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onDeleteEvent(ev.id)}
-                          title="Delete Round"
-                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
+                      <div className="flex items-center gap-2">
+                        {onFinishRound && !isCompleted && (
+                          <button
+                            type="button"
+                            onClick={() => onFinishRound(ev)}
+                            className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
+                            Finalizar Ronda
+                          </button>
+                        )}
+                        <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
+                          <button
+                            type="button"
+                            onClick={() => onOpenEventModal(ev)}
+                            title="Edit Round"
+                            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteEvent(ev.id)}
+                            title="Delete Round"
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>

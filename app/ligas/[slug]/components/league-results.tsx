@@ -65,16 +65,6 @@ export function LeagueResults({
             {roundSubtitle}
           </p>
         </div>
-
-        {isAdmin && (
-          <button
-            onClick={onOpenResultsModal}
-            className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
-          >
-            <FileText className="h-3.5 w-3.5" />
-            Import AC JSON Results
-          </button>
-        )}
       </div>
 
       <div className={`grid gap-4 grid-cols-1 ${tagsToDisplay.length > 1 ? 'md:grid-cols-2' : ''}`}>

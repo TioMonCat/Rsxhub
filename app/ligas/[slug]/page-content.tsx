@@ -9,6 +9,7 @@ import { LeagueRegistration } from './components/league-registration'
 import { LeagueSchedule } from './components/league-schedule'
 import { LeagueStandings } from './components/league-standings'
 import { LeagueResults } from './components/league-results'
+import { FinishRoundModal } from './components/finish-round-modal'
 import { updateLeagueDetailsAction, deleteLeagueAction, registerTeamAction, unregisterTeamAction } from '@/app/ligas/actions'
 import { saveCalendarEvent, deleteCalendarEvent } from '@/app/calendario/actions'
 import { ClassBadge } from '@/components/class-badge'
@@ -68,6 +69,7 @@ export default function LeagueDetailPageContent({
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isResultsOpen, setIsResultsOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
+  const [finishingEvent, setFinishingEvent] = useState<LeagueEvent | null>(null)
 
   // Edit League Form States
   const [formStartsAt, setFormStartsAt] = useState(league.startsAt.split('T')[0])
@@ -285,6 +287,7 @@ export default function LeagueDetailPageContent({
           myManagedTeams={myManagedTeams}
           onOpenEventModal={handleOpenEventModal}
           onDeleteEvent={handleEventDelete}
+          onFinishRound={(ev) => setFinishingEvent(ev)}
         />
 
         <LeagueStandings
@@ -305,6 +308,20 @@ export default function LeagueDetailPageContent({
         events={events}
         onOpenResultsModal={() => setIsResultsOpen(true)}
       />
+
+      {/* Finish Round Modal */}
+      {finishingEvent && (
+        <FinishRoundModal
+          event={finishingEvent}
+          leagueId={league.id}
+          classTags={classTags}
+          onClose={() => setFinishingEvent(null)}
+          onSuccess={() => {
+            setFinishingEvent(null)
+            router.refresh()
+          }}
+        />
+      )}
 
       {/* MODALS */}
       {isAdmin && isEditLeagueOpen && (
