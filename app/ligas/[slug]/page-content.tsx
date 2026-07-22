@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { X, AlertCircle } from 'lucide-react'
+import { X, AlertCircle, Play, Clock } from 'lucide-react'
 import { useLeagueState, League, LeagueEvent, Registration, ManagedTeam, LeagueCar, EventConfirmation } from './hooks/use-league-state'
 import { LeagueBanner } from './components/league-banner'
 import { LeagueRegistration } from './components/league-registration'
@@ -84,6 +84,8 @@ export default function LeagueDetailPageContent({
   const [editingEvent, setEditingEvent] = useState<LeagueEvent | null>(null)
   const [formEventTitle, setFormEventTitle] = useState('')
   const [formEventCircuit, setFormEventCircuit] = useState('')
+  const [formEventCountryCode, setFormEventCountryCode] = useState('ESP')
+  const [formEventType, setFormEventType] = useState<'race' | 'qualifying' | 'time_attack'>('race')
   const [formEventDate, setFormEventDate] = useState('')
   const [formEventStartsTime, setFormEventStartsTime] = useState('20:00')
   const [formEventEndsTime, setFormEventEndsTime] = useState('21:30')
@@ -147,6 +149,8 @@ export default function LeagueDetailPageContent({
       setEditingEvent(event)
       setFormEventTitle(event.title || '')
       setFormEventCircuit(event.circuitName || '')
+      setFormEventCountryCode((event as any).countryCode || 'FRA')
+      setFormEventType((event as any).eventType || 'race')
       setFormEventDate(event.startsAt.split('T')[0])
       setFormEventStartsTime(event.startsAt.split('T')[1]?.substring(0, 5) || '20:00')
       setFormEventEndsTime(event.endsAt.split('T')[1]?.substring(0, 5) || '21:30')
@@ -155,7 +159,9 @@ export default function LeagueDetailPageContent({
     } else {
       setEditingEvent(null)
       setFormEventTitle('')
-      setFormEventCircuit('Race')
+      setFormEventCircuit('Circuit de la Sarthe, Le Mans')
+      setFormEventCountryCode('FRA')
+      setFormEventType('race')
       setFormEventDate(new Date().toISOString().split('T')[0])
       setFormEventStartsTime('20:00')
       setFormEventEndsTime('21:30')
@@ -177,8 +183,10 @@ export default function LeagueDetailPageContent({
 
       const formData = new FormData(e.currentTarget)
       formData.set('leagueId', league.id)
-      formData.set('circuitName', formEventCircuit || 'Race')
+      formData.set('circuitName', formEventCircuit || 'Circuit')
       formData.set('title', formEventTitle)
+      formData.set('countryCode', formEventCountryCode)
+      formData.set('eventType', formEventType)
       formData.set('startsAt', startsAtFull)
       formData.set('endsAt', endsAtFull)
 
@@ -373,42 +381,220 @@ export default function LeagueDetailPageContent({
       )}
 
       {isAdmin && isEventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_50px_rgba(0,0,0,0.8)] relative">
-            <button onClick={() => setIsEventModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-              <X className="h-4 w-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative grid md:grid-cols-[1.1fr_0.9fr] gap-6 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setIsEventModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold uppercase text-white mb-2">{editingEvent ? 'Edit Event' : 'Add Event'}</h2>
-            <form onSubmit={handleEventSubmit} className="space-y-4">
+
+            {/* Left side: Form for Add / Edit */}
+            <div>
+              <h2 className="text-xl font-bold uppercase tracking-tight text-white mb-1">
+                {editingEvent ? 'Edit Event' : 'Add Event'}
+              </h2>
+              <p className="text-xs text-slate-400 mb-4">
+                Configura los detalles completos de la ronda, circuito, horarios y enlace al servidor.
+              </p>
+
+              <form onSubmit={handleEventSubmit} className="space-y-4">
+                {eventErrorMessage && (
+                  <div className="border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-300 rounded-none">
+                    {eventErrorMessage}
+                  </div>
+                )}
+
+                {/* Event Title */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Event Title / Session</label>
+                  <input
+                    type="text"
+                    value={formEventTitle}
+                    onChange={(e) => setFormEventTitle(e.target.value)}
+                    placeholder="e.g. Round 1: 6 Hours of Le Mans (Optional)"
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                  />
+                </div>
+
+                {/* Circuit Name Text Input */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Circuit Name (Nombre del Circuito)</label>
+                  <input
+                    type="text"
+                    value={formEventCircuit}
+                    onChange={(e) => setFormEventCircuit(e.target.value)}
+                    placeholder="e.g. Circuit de la Sarthe, Le Mans"
+                    required
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
+                  />
+                </div>
+
+                {/* Country Flag Selection */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Country Flag (País / Bandera)</label>
+                  <select
+                    value={formEventCountryCode}
+                    onChange={(e) => setFormEventCountryCode(e.target.value)}
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                  >
+                    <option value="FRA">🇫🇷 Francia (FRA)</option>
+                    <option value="ESP">🇪🇸 España (ESP)</option>
+                    <option value="ITA">🇮🇹 Italia (ITA)</option>
+                    <option value="GER">🇩🇪 Alemania (GER)</option>
+                    <option value="GBR">🇬🇧 Reino Unido (GBR)</option>
+                    <option value="BEL">🇧🇪 Bélgica (BEL)</option>
+                    <option value="USA">🇺🇸 Estados Unidos (USA)</option>
+                    <option value="JPN">🇯🇵 Japón (JPN)</option>
+                    <option value="BRA">🇧🇷 Brasil (BRA)</option>
+                    <option value="ARG">🇦🇷 Argentina (ARG)</option>
+                    <option value="MEX">🇲🇽 México (MEX)</option>
+                  </select>
+                </div>
+
+                {/* Event Format */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Event Format</label>
+                  <select
+                    value={formEventType}
+                    onChange={(e) => setFormEventType(e.target.value as 'race' | 'qualifying' | 'time_attack')}
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                  >
+                    <option value="race">🏁 Race (Carrera)</option>
+                    <option value="qualifying">⚡ Qualifying (Clasificación)</option>
+                    <option value="time_attack">⏱️ Time Attack (Hotlap)</option>
+                  </select>
+                </div>
+
+                {/* Date & Time range */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Date (Fecha)</label>
+                    <input
+                      type="date"
+                      value={formEventDate}
+                      onChange={(e) => setFormEventDate(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Starts At</label>
+                    <input
+                      type="time"
+                      value={formEventStartsTime}
+                      onChange={(e) => setFormEventStartsTime(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Ends At</label>
+                    <input
+                      type="time"
+                      value={formEventEndsTime}
+                      onChange={(e) => setFormEventEndsTime(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* Circuit Image Upload */}
+                <div>
+                  <ImagePicker
+                    name="circuitImageUrl"
+                    defaultValue={formEventImageUrl}
+                    label="Circuit Banner Image (PNG/JPG/WebP)"
+                  />
+                </div>
+
+                {/* Server Entry Link */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Server Entry Link (Direct Connection)</label>
+                  <input
+                    type="text"
+                    name="serverLink"
+                    value={formEventServerLink}
+                    onChange={(e) => setFormEventServerLink(e.target.value)}
+                    placeholder="e.g. steam://connect/12.34.56.78:27015 or direct web link"
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
+                  />
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex gap-2 pt-2 border-t border-shell-line/50">
+                  <button
+                    type="button"
+                    onClick={() => setIsEventModalOpen(false)}
+                    className="border border-shell-line bg-black/40 hover:bg-slate-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-300 rounded-none transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isEventSubmitting}
+                    className="flex-1 bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold disabled:opacity-50 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors"
+                  >
+                    {isEventSubmitting ? 'Saving...' : editingEvent ? 'Save Event Updates' : 'Add Event Round'}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Right side: Event Card Live Preview */}
+            <div className="flex flex-col border-l border-shell-line/50 pl-6 h-full justify-between hidden md:flex">
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Event Title / Session</label>
-                <input
-                  type="text"
-                  value={formEventTitle}
-                  onChange={(e) => setFormEventTitle(e.target.value)}
-                  placeholder="e.g. Round 1"
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
-                />
+                <h3 className="text-xs font-black uppercase tracking-wider text-cyan-400 mb-3 pb-1.5 border-b border-shell-line/40">
+                  LIVE CARD PREVIEW
+                </h3>
+
+                <div className="border border-shell-line bg-black/50 overflow-hidden relative group">
+                  <div className="h-44 w-full relative bg-slate-900 overflow-hidden">
+                    {formEventImageUrl ? (
+                      <img src={formEventImageUrl} alt={formEventCircuit} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/80 text-slate-500 text-xs font-bold">
+                        <span>No circuit banner selected</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                    
+                    <div className="absolute bottom-3 left-3 right-3 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-0.5 text-[10px] font-mono font-bold uppercase">
+                          {formEventType.toUpperCase()}
+                        </span>
+                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                          {formEventCircuit || 'Circuit Name'}
+                        </span>
+                      </div>
+
+                      <h4 className="text-base font-extrabold text-white uppercase italic tracking-tight drop-shadow-md">
+                        {formEventTitle || formEventCircuit || 'Round Session Title'}
+                      </h4>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-300 font-mono pt-1">
+                        <Clock className="h-3.5 w-3.5 text-cyan-400" />
+                        <span>{formEventDate} @ {formEventStartsTime}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {formEventServerLink && (
+                    <div className="p-3 bg-black/80 border-t border-shell-line/40 flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold flex items-center gap-1">
+                        <Play className="h-3 w-3 fill-current" /> Direct Server Link Ready
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400 truncate max-w-[150px]">
+                        {formEventServerLink}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Date</label>
-                <input
-                  type="date"
-                  value={formEventDate}
-                  onChange={(e) => setFormEventDate(e.target.value)}
-                  required
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-shell-line/50">
-                <button type="button" onClick={() => setIsEventModalOpen(false)} className="border border-shell-line px-4 py-2 text-xs font-bold uppercase">
-                  Cancel
-                </button>
-                <button type="submit" disabled={isEventSubmitting} className="bg-shell-accent px-5 py-2 text-xs font-bold uppercase text-white">
-                  {isEventSubmitting ? 'Saving...' : 'Save Round'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
