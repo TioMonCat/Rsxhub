@@ -55,8 +55,9 @@ export function LeagueBanner({
       </div>
 
       <div className="space-y-4 p-4 md:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap gap-2 text-[11px]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 items-center justify-between gap-4">
+          {/* Left: Simulator & Format Pills */}
+          <div className="flex flex-wrap items-center gap-2 text-[11px]">
             <span className="border border-rose-500/60 bg-rose-950/80 text-rose-300 font-black uppercase px-2.5 py-1 rounded-none tracking-wide shadow-sm">
               {simulatorLabel(league.simulator)}
             </span>
@@ -65,11 +66,15 @@ export function LeagueBanner({
             </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          {/* Center: Team Registration Box */}
+          <div className="flex justify-center items-center">
             {registrationElement}
+          </div>
 
+          {/* Right: Admin Action Buttons */}
+          <div className="flex items-center justify-end gap-2">
             {isAdmin && (
-              <div className="flex items-center gap-2">
+              <>
                 <button
                   onClick={onEditSettings}
                   className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
@@ -84,7 +89,7 @@ export function LeagueBanner({
                   <Trash className="h-3.5 w-3.5" />
                   Delete
                 </button>
-              </div>
+              </>
             )}
           </div>
         </div>
