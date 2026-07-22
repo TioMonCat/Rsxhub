@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2 } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { FormattedDate } from '@/components/formatted-date'
@@ -34,6 +35,11 @@ export function LeagueSchedule({
   onFinishRound,
 }: LeagueScheduleProps) {
   const router = useRouter()
+  const [localConfirmations, setLocalConfirmations] = useState<EventConfirmation[]>(confirmations)
+
+  useEffect(() => {
+    setLocalConfirmations(confirmations)
+  }, [confirmations])
 
   return (
     <div className="shell-panel p-4 md:p-5 rounded-none space-y-4">
@@ -139,7 +145,7 @@ export function LeagueSchedule({
                 <div className="flex flex-wrap gap-4 pt-2 z-10 w-full">
                   {classTags.map((tag) => {
                     const limit = (league as any).classLimits?.[tag] ?? 30
-                    const confirmedCount = confirmations.filter(
+                    const confirmedCount = localConfirmations.filter(
                       (c) => c.eventId === ev.id && c.classTag === tag && c.status === 'confirmed'
                     ).length
                     const pct = Math.min(100, (confirmedCount / limit) * 100)
@@ -190,7 +196,7 @@ export function LeagueSchedule({
                             const tag = car.classTag!
                             const num = car.assignedNumber!
                             const limit = (league as any).classLimits?.[tag] ?? 30
-                            const isConfirmed = confirmations.some(
+                            const isConfirmed = localConfirmations.some(
                               (c) =>
                                 c.eventId === ev.id &&
                                 c.teamId === team.id &&
@@ -198,7 +204,7 @@ export function LeagueSchedule({
                                 c.carNumber === num &&
                                 c.status === 'confirmed'
                             )
-                            const confirmedCount = confirmations.filter(
+                            const confirmedCount = localConfirmations.filter(
                               (c) => c.eventId === ev.id && c.classTag === tag && c.status === 'confirmed'
                             ).length
                             const isGridFull = !isConfirmed && confirmedCount >= limit
@@ -216,6 +222,35 @@ export function LeagueSchedule({
                                 <button
                                   type="button"
                                   onClick={async () => {
+                                    const wasConfirmed = isConfirmed
+                                    if (wasConfirmed) {
+                                      setLocalConfirmations((prev) =>
+                                        prev.filter(
+                                          (c) =>
+                                            !(
+                                              c.eventId === ev.id &&
+                                              c.teamId === team.id &&
+                                              c.classTag === tag &&
+                                              c.carNumber === num
+                                            )
+                                        )
+                                      )
+                                    } else {
+                                      setLocalConfirmations((prev) => [
+                                        ...prev,
+                                        {
+                                          id: `${ev.id}_${team.id}_${tag}_${num}`,
+                                          eventId: ev.id,
+                                          leagueId: league.id,
+                                          teamId: team.id,
+                                          classTag: tag,
+                                          carNumber: num,
+                                          carModel: '',
+                                          status: 'confirmed',
+                                        },
+                                      ])
+                                    }
+
                                     try {
                                       const fd = new FormData()
                                       fd.set('eventId', ev.id)
@@ -226,13 +261,14 @@ export function LeagueSchedule({
                                       fd.set('carModel', '')
                                       fd.set('slug', league.slug)
 
-                                      if (isConfirmed) {
+                                      if (wasConfirmed) {
                                         await cancelAttendanceAction(fd)
                                       } else {
                                         await confirmAttendanceAction(fd)
                                       }
                                       router.refresh()
                                     } catch (err: any) {
+                                      setLocalConfirmations(confirmations)
                                       alert(err.message || 'Error updating attendance.')
                                     }
                                   }}

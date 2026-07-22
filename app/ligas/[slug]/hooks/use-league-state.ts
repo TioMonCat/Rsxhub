@@ -99,6 +99,14 @@ export function useLeagueState({
   const [events, setEvents] = useState<LeagueEvent[]>(initialEvents)
   const [confirmations, setConfirmations] = useState<EventConfirmation[]>(initialConfirmations)
 
+  useEffect(() => {
+    setConfirmations(initialConfirmations)
+  }, [initialConfirmations])
+
+  useEffect(() => {
+    setEvents(initialEvents)
+  }, [initialEvents])
+
   const classTags = useMemo(
     () => (league.classTags && league.classTags.length > 0 ? league.classTags : ['GT3']),
     [league.classTags]

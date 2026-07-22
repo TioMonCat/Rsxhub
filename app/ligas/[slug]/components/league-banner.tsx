@@ -57,14 +57,11 @@ export function LeagueBanner({
       <div className="space-y-4 p-4 md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap gap-2 text-[11px]">
-            <span className="border border-shell-line bg-black/20 px-2 py-1 text-slate-200 rounded-none">
+            <span className="border border-rose-500/60 bg-rose-950/80 text-rose-300 font-black uppercase px-2.5 py-1 rounded-none tracking-wide shadow-sm">
               {simulatorLabel(league.simulator)}
             </span>
-            <span className="border border-shell-line bg-black/20 px-2 py-1 text-slate-200 rounded-none font-bold uppercase">
+            <span className="border border-blue-500/60 bg-blue-950/80 text-blue-300 font-black uppercase px-2.5 py-1 rounded-none tracking-wide shadow-sm">
               {league.format}
-            </span>
-            <span className="border border-shell-line bg-black/20 px-2 py-1 text-slate-200 rounded-none">
-              {league.registrationOpen ? 'Registration Open' : 'Registration Closed'}
             </span>
           </div>
 
