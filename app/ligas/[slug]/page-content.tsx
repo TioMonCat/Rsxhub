@@ -1380,87 +1380,32 @@ export default function LeagueDetailPageContent({
                       </div>
                     </div>
 
-                    {/* FEATURED LATERAL VEHICLE SHOWCASE CARD */}
-                    <div className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-[#0c1322] via-[#111c30] to-[#080d18] p-3.5 rounded-none shadow-[0_4px_25px_rgba(0,0,0,0.6)] group">
-                      {/* Motorsport background grid texture */}
-                      <div className="absolute inset-0 bg-[radial-gradient(#1274de_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.07] pointer-events-none" />
-                      
-                      <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
-                        <div className="space-y-1.5 w-full sm:w-1/2">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2 py-0.5 border border-cyan-500/30">
-                              FEATURED LIVERY
-                            </span>
-                            <ClassBadge classTag={tag} className="text-[9px]" />
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {featuredTeam?.logoUrl && (
-                              <img
-                                src={featuredTeam.logoUrl}
-                                alt={featuredTeam.name}
-                                className="w-6 h-6 object-cover border border-white/20 shrink-0"
-                              />
-                            )}
-                            <h3 className="text-sm font-black uppercase italic tracking-tight text-white truncate">
-                              {featuredTeam ? featuredTeam.name : 'NO TEAM REGISTERED'}
-                            </h3>
-                          </div>
-
-                          <div className="flex items-center gap-2 text-xxs font-bold text-slate-300">
-                            {featuredTeam?.assignedNumber != null && (
-                              <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 border border-amber-500/40 font-mono">
-                                #{featuredTeam.assignedNumber}
-                              </span>
-                            )}
-                            <span className="text-slate-400 font-mono">
-                              {featuredTeam ? `${featuredTeam.points} PTS · POS #${(teamList.findIndex(t => t.id === featuredTeam.id) + 1) || 1}` : ''}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Lateral Vehicle Graphic */}
-                        <div className="relative w-full sm:w-1/2 h-20 sm:h-24 flex items-center justify-center pointer-events-none">
-                          <img
-                            src={featuredTeam?.carImageUrl || '/branding/lateral-car.png'}
-                            alt="Lateral Vehicle"
-                            className="max-h-full max-w-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)] group-hover:scale-105 transition-transform duration-300"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
+                    <div className="space-y-1.5">
                       {visibleTeams.length === 0 ? (
                         <p className="text-xs text-slate-400 italic">No teams registered in this class.</p>
                       ) : (
                         visibleTeams.map((team) => {
                           const originalIdx = teamList.findIndex(t => t.id === team.id)
-                          const isSelected = featuredTeam?.id === team.id
                           return (
                             <div
                               key={team.id}
-                              onClick={() => setActiveShowcaseTeamId(prev => ({ ...prev, [tag]: team.id }))}
-                              className={`border p-2.5 rounded-none flex items-center justify-between gap-3 cursor-pointer transition-all ${
-                                isSelected
-                                  ? 'border-cyan-500 bg-cyan-950/40 shadow-[0_0_15px_rgba(18,116,222,0.25)]'
-                                  : 'border-shell-line bg-black/20 hover:border-slate-500 hover:bg-white/5'
-                              }`}
+                              className="border border-shell-line bg-black/30 p-2 md:p-2.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-500 transition-colors"
                             >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <span className={`w-5 text-center text-xs font-black ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              {/* Left: Position + Logo + Team Info */}
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <span className={`w-5 text-center text-xs font-black shrink-0 ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
                                   {originalIdx === 0 ? '🥇' : originalIdx === 1 ? '🥈' : originalIdx === 2 ? '🥉' : originalIdx + 1}
                                 </span>
                                 <img
                                   src={team.logoUrl}
                                   alt={team.name}
-                                  className="w-8 h-8 object-cover border border-slate-700 rounded-none shrink-0"
+                                  className="w-7 h-7 object-cover border border-slate-700 rounded-none shrink-0"
                                 />
                                 <div className="min-w-0">
-                                  <h4 className="text-xs font-black uppercase text-white truncate leading-tight flex items-center gap-1.5 flex-wrap">
-                                    <span>{team.name}</span>
+                                  <h4 className="text-xs font-bold uppercase text-white truncate leading-tight flex items-center gap-1.5">
+                                    <span className="truncate">{team.name}</span>
                                     {team.assignedNumber != null && (
-                                      <span className="text-[10px] bg-cyan-950 text-cyan-400 font-extrabold px-1.5 py-0.5 border border-cyan-800/50 rounded-none whitespace-nowrap">
+                                      <span className="text-[10px] bg-cyan-950 text-cyan-400 font-extrabold px-1.5 py-0.5 border border-cyan-800/50 rounded-none font-mono shrink-0">
                                         #{team.assignedNumber}
                                       </span>
                                     )}
@@ -1468,8 +1413,16 @@ export default function LeagueDetailPageContent({
                                 </div>
                               </div>
 
+                              {/* Right: Lateral Vehicle Image + Points */}
                               <div className="flex items-center gap-3 shrink-0">
-                                <span className="text-xs font-bold text-slate-200 bg-black/40 px-2 py-0.5 border border-shell-line">
+                                <div className="h-7 w-20 md:w-24 hidden sm:flex items-center justify-center opacity-90 hover:opacity-100 transition-opacity">
+                                  <img
+                                    src={team.carImageUrl || '/branding/lateral-car.png'}
+                                    alt="Vehicle side profile"
+                                    className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                                  />
+                                </div>
+                                <span className="text-xs font-extrabold text-slate-200 bg-black/60 px-2 py-1 border border-white/10 font-mono">
                                   {team.points} pts
                                 </span>
                               </div>
