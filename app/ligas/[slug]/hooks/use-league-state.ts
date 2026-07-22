@@ -268,23 +268,22 @@ export function useLeagueState({
     })
   }
 
-  // Track registrations grouped by team & category
-  const managedTeamIds = useMemo(() => new Set(myManagedTeams.map((t) => t.id)), [myManagedTeams])
-  const registeredCars = useMemo(
-    () => initialRegistrations.filter((r) => r.teamId && managedTeamIds.has(r.teamId) && r.status !== 'rejected'),
-    [initialRegistrations, managedTeamIds]
+  // Track registrations grouped by team & category across all teams in league
+  const allRegisteredCars = useMemo(
+    () => initialRegistrations.filter((r) => r.teamId && r.status !== 'rejected'),
+    [initialRegistrations]
   )
 
   const uniqueRegisteredCars = useMemo(
     () =>
       Array.from(
-        registeredCars.reduce((acc, r) => {
+        allRegisteredCars.reduce((acc, r) => {
           const key = `${r.teamId}_${r.classTag}_${r.assignedNumber}`
           if (!acc.has(key)) acc.set(key, r)
           return acc
         }, new Map<string, Registration>()).values()
       ),
-    [registeredCars]
+    [allRegisteredCars]
   )
 
   const groupedRegistrations = useMemo(() => {
@@ -292,7 +291,11 @@ export function useLeagueState({
     
     uniqueRegisteredCars.forEach((car) => {
       if (!car.teamId) return
-      const teamName = myManagedTeams.find((t) => t.id === car.teamId)?.name || 'Team'
+      const teamName =
+        teamInfo[car.teamId]?.name ||
+        myManagedTeams.find((t) => t.id === car.teamId)?.name ||
+        car.displayName ||
+        'Team'
       const tag = car.classTag || 'GENERAL'
       if (!map.has(car.teamId)) {
         map.set(car.teamId, { teamId: car.teamId, teamName, categories: [] })
@@ -304,7 +307,7 @@ export function useLeagueState({
     })
 
     return Array.from(map.values())
-  }, [uniqueRegisteredCars, myManagedTeams])
+  }, [uniqueRegisteredCars, myManagedTeams, teamInfo])
 
   return {
     events,
@@ -317,7 +320,7 @@ export function useLeagueState({
     customCarImages,
     handleCarImageUpload,
     scrollStandings,
-    registeredCars,
+    registeredCars: allRegisteredCars,
     uniqueRegisteredCars,
     groupedRegistrations
   }

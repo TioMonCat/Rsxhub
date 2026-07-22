@@ -281,27 +281,27 @@ export default function LeagueDetailPageContent({
         }
       ` }} />
 
-      {/* 1. Main Banner */}
+      {/* 1. Header Banner */}
       <LeagueBanner
         league={league}
         accentHex={accentHex}
         isAdmin={isAdmin}
         onEditSettings={() => setIsEditLeagueOpen(true)}
         onDeleteLeague={handleLeagueDelete}
+        registrationElement={
+          <LeagueRegistration
+            league={league}
+            session={session}
+            myManagedTeams={myManagedTeams}
+            groupedRegistrations={groupedRegistrations}
+            registeredCarsCount={registeredCars.length}
+            onOpenRegisterModal={() => setIsRegisterOpen(true)}
+            onWithdrawTeam={handleWithdrawTeam}
+          />
+        }
       />
 
-      {/* 2. Team Registration Card */}
-      <LeagueRegistration
-        league={league}
-        session={session}
-        myManagedTeams={myManagedTeams}
-        groupedRegistrations={groupedRegistrations}
-        registeredCarsCount={registeredCars.length}
-        onOpenRegisterModal={() => setIsRegisterOpen(true)}
-        onWithdrawTeam={handleWithdrawTeam}
-      />
-
-      {/* 3. Main Content Grid */}
+      {/* 2. Main Content Grid */}
       <section className="grid gap-4 md:grid-cols-[1.6fr_1.4fr]">
         <LeagueSchedule
           league={league}

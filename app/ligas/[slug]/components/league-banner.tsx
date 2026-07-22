@@ -11,6 +11,7 @@ interface LeagueBannerProps {
   isAdmin: boolean
   onEditSettings: () => void
   onDeleteLeague: () => void
+  registrationElement?: React.ReactNode
 }
 
 export function LeagueBanner({
@@ -19,6 +20,7 @@ export function LeagueBanner({
   isAdmin,
   onEditSettings,
   onDeleteLeague,
+  registrationElement,
 }: LeagueBannerProps) {
   return (
     <section className="overflow-hidden border border-shell-line bg-[#0f1521] rounded-none relative">
@@ -66,24 +68,28 @@ export function LeagueBanner({
             </span>
           </div>
 
-          {isAdmin && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onEditSettings}
-                className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
-              >
-                <Settings className="h-3.5 w-3.5" />
-                Edit Settings
-              </button>
-              <button
-                onClick={onDeleteLeague}
-                className="border border-rose-500/40 hover:bg-rose-500/10 px-3 py-1.5 text-xs font-bold uppercase text-rose-400 rounded-none transition-colors flex items-center gap-1.5"
-              >
-                <Trash className="h-3.5 w-3.5" />
-                Delete
-              </button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {registrationElement}
+
+            {isAdmin && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onEditSettings}
+                  className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
+                >
+                  <Settings className="h-3.5 w-3.5" />
+                  Edit Settings
+                </button>
+                <button
+                  onClick={onDeleteLeague}
+                  className="border border-rose-500/40 hover:bg-rose-500/10 px-3 py-1.5 text-xs font-bold uppercase text-rose-400 rounded-none transition-colors flex items-center gap-1.5"
+                >
+                  <Trash className="h-3.5 w-3.5" />
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div>
