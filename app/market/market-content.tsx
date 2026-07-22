@@ -240,7 +240,7 @@ export default function MarketPageContent({
       <div className="shell-panel p-5 md:p-6 rounded-none">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold uppercase tracking-tight text-white">Driver Market</h1>
+            <h1 className="text-3xl font-bold uppercase tracking-tight text-white">MARKET</h1>
             <p className="mt-1 text-slate-400 text-sm">
               Teams looking for drivers and drivers looking for active teams.
             </p>

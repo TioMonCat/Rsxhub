@@ -107,7 +107,7 @@ export default function LigasPageContent({
       {/* Search and Filters Box */}
       <section className="shell-panel p-4 md:p-5 rounded-none">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4 border-b border-shell-line pb-3">
-          <SectionTitle title="Hosted Races" subtitle="Filter by sim, status and format just like a race browser." />
+          <SectionTitle title="LEAGUES" subtitle="Filter by sim, status and format just like a race browser." />
           {isAdmin && (
             <button
               onClick={() => setIsCreateOpen(true)}

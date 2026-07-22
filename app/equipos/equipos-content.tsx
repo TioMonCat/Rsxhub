@@ -76,7 +76,7 @@ export default function EquiposContent({
       {/* Header Panel */}
       <section className="shell-panel p-5 rounded-none border border-shell-line bg-zinc-950/40 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
         <SectionTitle
-          title="Teams"
+          title="TEAMS"
           subtitle="Create and manage your team info, registered drivers, and skin download links."
         />
         {session && (
