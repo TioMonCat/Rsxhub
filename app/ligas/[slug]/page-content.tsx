@@ -606,23 +606,14 @@ export default function LeagueDetailPageContent({
               {/* SECTION 4: Media & Banner */}
               <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                  4. Branding e Imágenes de Portada
+                  4. Imagen de Portada de la Liga
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <ImagePicker
-                      name="bannerUrl"
-                      defaultValue={formBannerUrl}
-                      label="Imagen de Banner de la Liga"
-                    />
-                  </div>
-                  <div>
-                    <ImagePicker
-                      name="logoUrl"
-                      defaultValue={formLogoUrl}
-                      label="Logo de la Liga (Badge / Escudo)"
-                    />
-                  </div>
+                <div>
+                  <ImagePicker
+                    name="bannerUrl"
+                    defaultValue={formBannerUrl}
+                    label="Imagen de Banner de la Liga (Cabecera Principal)"
+                  />
                 </div>
               </div>
 
