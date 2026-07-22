@@ -118,6 +118,7 @@ type TeamStanding = {
   logoUrl: string
   drivers: string
   assignedNumber?: number | null
+  carImageUrl?: string | null
 }
 
 export default function LeagueDetailPageContent({
@@ -140,6 +141,7 @@ export default function LeagueDetailPageContent({
   const classTags = league.classTags && league.classTags.length > 0 ? league.classTags : ['GT3']
   const [standings, setStandings] = useState<Record<string, TeamStanding[]>>({})
   const [standingsIndices, setStandingsIndices] = useState<Record<string, number>>({})
+  const [activeShowcaseTeamId, setActiveShowcaseTeamId] = useState<Record<string, string>>({})
 
   // Recent results state (Top 3 on page, full list in sheet modal)
   const [recentResults, setRecentResults] = useState<{
@@ -177,6 +179,7 @@ export default function LeagueDetailPageContent({
             
             const teamName = teamDetails.name
             const logoUrl = teamDetails.logoUrl || `https://placehold.co/40x40/0a1220/ffffff?text=${teamName.slice(0, 3).toUpperCase()}`
+            const carImageUrl = (teamDetails as any).carImageUrl || (teamDetails as any).lateralImageUrl || '/branding/lateral-car.png'
 
             list.push({
               id: uniqueKey,
@@ -185,6 +188,7 @@ export default function LeagueDetailPageContent({
               logoUrl,
               drivers: '',
               assignedNumber: dorsal,
+              carImageUrl,
             })
           }
         }
@@ -1341,6 +1345,10 @@ export default function LeagueDetailPageContent({
                 const startIndex = standingsIndices[tag] || 0
                 const visibleTeams = teamList.slice(startIndex, startIndex + 3)
 
+                // Selected or leader team for showcase
+                const activeId = activeShowcaseTeamId[tag]
+                const featuredTeam = teamList.find((t) => t.id === activeId) || teamList[0]
+
                 return (
                   <div key={tag} className="space-y-3">
                     <div className="flex items-center justify-between border-b border-shell-line/20 pb-1">
@@ -1372,20 +1380,76 @@ export default function LeagueDetailPageContent({
                       </div>
                     </div>
 
+                    {/* FEATURED LATERAL VEHICLE SHOWCASE CARD */}
+                    <div className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-[#0c1322] via-[#111c30] to-[#080d18] p-3.5 rounded-none shadow-[0_4px_25px_rgba(0,0,0,0.6)] group">
+                      {/* Motorsport background grid texture */}
+                      <div className="absolute inset-0 bg-[radial-gradient(#1274de_1px,transparent_1px)] [background-size:16px_16px] opacity-[0.07] pointer-events-none" />
+                      
+                      <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <div className="space-y-1.5 w-full sm:w-1/2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[9px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2 py-0.5 border border-cyan-500/30">
+                              FEATURED LIVERY
+                            </span>
+                            <ClassBadge classTag={tag} className="text-[9px]" />
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {featuredTeam?.logoUrl && (
+                              <img
+                                src={featuredTeam.logoUrl}
+                                alt={featuredTeam.name}
+                                className="w-6 h-6 object-cover border border-white/20 shrink-0"
+                              />
+                            )}
+                            <h3 className="text-sm font-black uppercase italic tracking-tight text-white truncate">
+                              {featuredTeam ? featuredTeam.name : 'NO TEAM REGISTERED'}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xxs font-bold text-slate-300">
+                            {featuredTeam?.assignedNumber != null && (
+                              <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.5 border border-amber-500/40 font-mono">
+                                #{featuredTeam.assignedNumber}
+                              </span>
+                            )}
+                            <span className="text-slate-400 font-mono">
+                              {featuredTeam ? `${featuredTeam.points} PTS · POS #${(teamList.findIndex(t => t.id === featuredTeam.id) + 1) || 1}` : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Lateral Vehicle Graphic */}
+                        <div className="relative w-full sm:w-1/2 h-20 sm:h-24 flex items-center justify-center pointer-events-none">
+                          <img
+                            src={featuredTeam?.carImageUrl || '/branding/lateral-car.png'}
+                            alt="Lateral Vehicle"
+                            className="max-h-full max-w-full object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)] group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
                       {visibleTeams.length === 0 ? (
                         <p className="text-xs text-slate-400 italic">No teams registered in this class.</p>
                       ) : (
                         visibleTeams.map((team) => {
                           const originalIdx = teamList.findIndex(t => t.id === team.id)
+                          const isSelected = featuredTeam?.id === team.id
                           return (
                             <div
                               key={team.id}
-                              className="border border-shell-line bg-black/20 p-2.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-600 transition-colors"
+                              onClick={() => setActiveShowcaseTeamId(prev => ({ ...prev, [tag]: team.id }))}
+                              className={`border p-2.5 rounded-none flex items-center justify-between gap-3 cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'border-cyan-500 bg-cyan-950/40 shadow-[0_0_15px_rgba(18,116,222,0.25)]'
+                                  : 'border-shell-line bg-black/20 hover:border-slate-500 hover:bg-white/5'
+                              }`}
                             >
                               <div className="flex items-center gap-3 min-w-0">
-                                <span className="w-5 text-center text-xs font-black text-slate-400">
-                                  {originalIdx + 1}
+                                <span className={`w-5 text-center text-xs font-black ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
+                                  {originalIdx === 0 ? '🥇' : originalIdx === 1 ? '🥈' : originalIdx === 2 ? '🥉' : originalIdx + 1}
                                 </span>
                                 <img
                                   src={team.logoUrl}
