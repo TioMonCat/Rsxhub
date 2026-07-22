@@ -19,7 +19,7 @@ export default async function HomePage() {
   })
 
   const uniqueDrivers = new Set(registrations.map((r) => r.userId)).size || 2
-  const activeLeagues = leagues.filter((l) => l.status === 'open' || l.status === 'ongoing' || l.status === 'upcoming')
+  const activeLeagues = leagues.filter((l) => l.status === 'open' || l.status === 'ongoing')
   const displayedLeagues = activeLeagues.length > 0 ? activeLeagues : leagues
 
   return (
