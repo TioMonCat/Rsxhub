@@ -219,182 +219,230 @@ export default function LigasPageContent({
                     </div>
                   )}
 
-                  {/* Title */}
-                  <div>
-                    <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">League Title *</label>
-                    <input
-                      name="title"
-                      type="text"
-                      required
-                      placeholder="e.g. ALR GT3 Sprint Series"
-                      className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-white/30 rounded-none transition-colors"
-                    />
-                  </div>
-
-                  {/* Simulator & Format */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">Simulator</label>
-                      <select
-                        name="simulator"
-                        required
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white outline-none rounded-none cursor-pointer focus:border-white/30 transition-colors"
-                      >
-                        <option value="ac">Assetto Corsa</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">Format</label>
-                      <select
-                        name="format"
-                        required
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white outline-none rounded-none cursor-pointer focus:border-white/30 transition-colors"
-                      >
-                        <option value="gt3">GT3</option>
-                        <option value="endurance">Endurance</option>
-                        <option value="prototype">Prototype</option>
-                        <option value="formula">Formula</option>
-                        <option value="sprint">Sprint</option>
-                      </select>
+                  {/* SECTION 1: General Info */}
+                  <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                      1. Información Principal & Títulos
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Nombre de la Liga (Title) *</label>
+                        <input
+                          name="title"
+                          type="text"
+                          required
+                          placeholder="e.g. ALR GT3 Sprint Series"
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-bold"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Abreviatura / URL (Slug)</label>
+                        <input
+                          name="slug"
+                          type="text"
+                          placeholder="e.g. alr-gt3-sprint"
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-cyan-300 outline-none rounded-none focus:border-cyan-400 font-mono"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Class Tags & Car Limits */}
-                  <div className="space-y-2">
-                    <label className="block text-xs text-slate-355 uppercase tracking-wider font-semibold">Competition Categories & Max Cars</label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      {['GT3', 'LMP2', 'HYPERCAR'].map((tag) => {
-                        const isChecked = selectedTags.includes(tag)
-                        return (
-                          <div key={tag} className={`border p-3 flex flex-col justify-between gap-2 transition-all rounded-none ${
-                            isChecked ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-shell-line bg-black/40'
-                          }`}>
-                            <label className="flex items-center gap-2 text-xs text-slate-200 cursor-pointer hover:text-white select-none">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleTagToggle(tag)}
-                                className="rounded-none border-slate-700 bg-transparent text-cyan-500 focus:ring-0 w-4 h-4 cursor-pointer"
-                              />
-                              <span className="font-bold">{tag}</span>
-                            </label>
-                            {isChecked && (
-                              <div className="mt-1 space-y-1">
-                                <label className="block text-[10px] text-slate-400 uppercase tracking-wider font-bold">Max Cars</label>
-                                <input
-                                  type="number"
-                                  name={`max_cars_${tag}`}
-                                  defaultValue={30}
-                                  min={1}
-                                  max={100}
-                                  required
-                                  className="w-full border border-shell-line bg-black/60 px-2 py-1 text-xs text-white outline-none rounded-none focus:border-white/30"
-                                />
+                  {/* SECTION 2: Rules, Simulator & Format */}
+                  <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                      2. Simulador, Formato & Estado de la Liga
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Simulador</label>
+                        <select
+                          name="simulator"
+                          required
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
+                        >
+                          <option value="ac">Assetto Corsa</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Formato</label>
+                        <select
+                          name="format"
+                          required
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
+                        >
+                          <option value="endurance">Endurance (Resistencia)</option>
+                          <option value="sprint">Sprint</option>
+                          <option value="championship">Championship (Campeonato)</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Estado de la Liga</label>
+                        <select
+                          name="status"
+                          defaultValue="open"
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
+                        >
+                          <option value="open">Abiertas (Cualquier equipo nuevo se puede inscribir)</option>
+                          <option value="completed">Cerrada (Ningún equipo nuevo puede entrar)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Modo de Inscripción</label>
+                        <select
+                          name="registrationMode"
+                          defaultValue="team"
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                        >
+                          <option value="team">Por Escudería / Equipo (Team Registration)</option>
+                          <option value="individual">Por Piloto Individual (Individual Entry)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 3: Categories, Max Slots & Color Palette */}
+                  <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                      3. Categorías, Slot Máximos, Color Visual & Fechas
+                    </h3>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Category Selection & Max Slots */}
+                      <div>
+                        <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categorías & Slot Máximos por Categoría</label>
+                        <div className="grid grid-cols-1 gap-2.5 bg-black/60 p-3 border border-shell-line/50">
+                          {['GT3', 'HYPERCAR', 'LMP2'].map((cat) => {
+                            const isChecked = selectedTags.includes(cat)
+                            return (
+                              <div
+                                key={cat}
+                                className={`p-2 border transition-colors flex items-center justify-between gap-3 ${
+                                  isChecked
+                                    ? 'bg-cyan-950/40 border-cyan-400/60'
+                                    : 'bg-black/40 border-white/10 opacity-60'
+                                }`}
+                              >
+                                <label className="flex items-center gap-2 text-xs font-bold text-white cursor-pointer select-none">
+                                  <input
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => handleTagToggle(cat)}
+                                    className="h-4 w-4 accent-cyan-400 cursor-pointer"
+                                  />
+                                  <span>{cat}</span>
+                                </label>
+
+                                {isChecked && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Max Cars:</span>
+                                    <input
+                                      type="number"
+                                      name={`max_cars_${cat}`}
+                                      defaultValue={30}
+                                      min={1}
+                                      max={100}
+                                      required
+                                      className="w-16 border border-shell-line bg-black/80 px-2 py-1 text-xs text-cyan-300 font-mono text-center outline-none rounded-none focus:border-cyan-400"
+                                    />
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            )
+                          })}
+                        </div>
+                        <input type="hidden" name="classTags" value={selectedTags.join(', ')} />
+                      </div>
+
+                      {/* Predefined Color Palette */}
+                      <div>
+                        <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Color Visual de la Liga (Paleta de Colores)</label>
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap bg-black/60 p-2.5 border border-shell-line/50">
+                            {[
+                              { name: 'Cyan Neón', hex: '#00f2fe' },
+                              { name: 'Rojo Carrera', hex: '#ff3b30' },
+                              { name: 'Azul Eléctrico', hex: '#1274de' },
+                              { name: 'Verde Esmeralda', hex: '#10b981' },
+                              { name: 'Naranja Hyper', hex: '#ff6b00' },
+                              { name: 'Púrpura Neón', hex: '#a855f7' },
+                            ].map((color) => (
+                              <button
+                                key={color.hex}
+                                type="button"
+                                onClick={() => setSelectedAccent(color.hex)}
+                                title={color.name}
+                                className={`h-7 w-7 rounded-none transition-transform border ${
+                                  selectedAccent.toLowerCase() === color.hex.toLowerCase()
+                                    ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
+                                    : 'border-white/20 hover:scale-110'
+                                }`}
+                                style={{ backgroundColor: color.hex }}
+                              />
+                            ))}
                           </div>
-                        )
-                      })}
-                    </div>
-                    <input type="hidden" name="classTags" value={selectedTags.join(', ')} />
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">Start Date</label>
-                      <input
-                        name="startsAt"
-                        type="date"
-                        required
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white outline-none rounded-none focus:border-white/30 transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">End Date</label>
-                      <input
-                        name="endsAt"
-                        type="date"
-                        required
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white outline-none rounded-none focus:border-white/30 transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Capacity & Reg Status */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">Registered Teams Limit</label>
-                      <div className="w-full border border-shell-line bg-black/20 px-3 py-2 text-sm text-slate-300 font-bold uppercase rounded-none">
-                        Infinite / Unlimited
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] text-slate-400 font-mono">Personalizado:</span>
+                            <input
+                              type="text"
+                              name="accentColor"
+                              value={selectedAccent}
+                              onChange={(e) => setSelectedAccent(e.target.value)}
+                              className="w-28 border border-shell-line bg-black/60 px-2.5 py-1 text-xs text-white font-mono outline-none rounded-none"
+                            />
+                          </div>
+                        </div>
                       </div>
-                      <input type="hidden" name="maxDrivers" value={9999} />
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">Registration Status</label>
-                      <select
-                        name="registrationOpen"
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white outline-none rounded-none cursor-pointer focus:border-white/30 transition-colors"
-                      >
-                        <option value="true">Open</option>
-                        <option value="false">Closed</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Slogan & Accent Color */}
-                  <div className="space-y-4 border border-white/5 bg-white/[0.02] p-4">
-                    <div>
-                      <label className="mb-1 block text-xs text-slate-355 uppercase tracking-wider font-semibold">League Slogan</label>
-                      <input
-                        name="slogan"
-                        type="text"
-                        placeholder="e.g. The Ultimate Endurance Challenge"
-                        className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-white/30 rounded-none transition-colors"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-2 block text-xs text-slate-355 uppercase tracking-wider font-semibold">League Accent Color</label>
-                      <div className="flex flex-wrap gap-2">
-                        {[
-                          { name: 'Neon Blue', hex: '#1274de', bg: 'bg-[#1274de]' },
-                          { name: 'Neon Pink', hex: '#ec4899', bg: 'bg-[#ec4899]' },
-                          { name: 'Electric Lime', hex: '#84cc16', bg: 'bg-[#84cc16]' },
-                          { name: 'Fire Orange', hex: '#f97316', bg: 'bg-[#f97316]' },
-                          { name: 'Gold Yellow', hex: '#eab308', bg: 'bg-[#eab308]' },
-                          { name: 'Acid Purple', hex: '#a855f7', bg: 'bg-[#a855f7]' },
-                          { name: 'Electric Blue', hex: '#3b82f6', bg: 'bg-[#3b82f6]' },
-                          { name: 'Emerald Green', hex: '#22c55e', bg: 'bg-[#22c55e]' },
-                        ].map((color) => {
-                          const isSelected = selectedAccent === color.hex
-                          return (
-                            <button
-                              key={color.hex}
-                              type="button"
-                              onClick={() => setSelectedAccent(color.hex)}
-                              className={`flex items-center gap-1.5 border px-2.5 py-1.5 text-[11px] font-bold tracking-wider uppercase transition-all rounded-none cursor-pointer ${
-                                isSelected
-                                  ? 'border-white bg-white/10 text-white'
-                                  : 'border-white/10 bg-black/40 hover:bg-white/5 text-slate-400'
-                              }`}
-                            >
-                              <span className={`h-2.5 w-2.5 rounded-full ${color.bg}`} />
-                              {color.name}
-                            </button>
-                          )
-                        })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Fecha de Inicio *</label>
+                        <input
+                          name="startsAt"
+                          type="date"
+                          required
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                        />
                       </div>
-                      <input type="hidden" name="accentColor" value={selectedAccent} />
+                      <div>
+                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Fecha de Finalización *</label>
+                        <input
+                          name="endsAt"
+                          type="date"
+                          required
+                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <ImagePicker name="bannerUrl" defaultValue="" label="League Banner Image" />
-
-                  <ImagePicker name="logoUrl" defaultValue="" label="League Logo (Upper right badge)" />
+                  {/* SECTION 4: Media & Banner */}
+                  <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
+                    <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
+                      4. Branding e Imágenes de Portada
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <ImagePicker
+                          name="bannerUrl"
+                          defaultValue=""
+                          label="Imagen de Banner de la Liga"
+                        />
+                      </div>
+                      <div>
+                        <ImagePicker
+                          name="logoUrl"
+                          defaultValue=""
+                          label="Logo de la Liga (Badge / Escudo)"
+                        />
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Buttons */}
                   <div className="flex justify-end gap-3 pt-4 border-t border-shell-line/50">
@@ -403,14 +451,14 @@ export default function LigasPageContent({
                       onClick={() => setIsCreateOpen(false)}
                       className="border border-shell-line bg-transparent hover:bg-white/5 px-5 py-2.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer"
                     >
-                      Cancel
+                      Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-shell-accent hover:bg-red-700 disabled:bg-red-900/60 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 cursor-pointer"
+                      className="bg-cyan-500 hover:bg-cyan-400 disabled:bg-cyan-900/60 text-black font-extrabold px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 cursor-pointer shadow-[0_0_15px_rgba(0,242,254,0.3)]"
                     >
-                      {isSubmitting ? 'Saving...' : 'Create League'}
+                      {isSubmitting ? 'Creando Liga...' : 'Crear Liga'}
                     </button>
                   </div>
                 </form>

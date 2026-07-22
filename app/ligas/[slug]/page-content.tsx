@@ -273,11 +273,23 @@ export default function LeagueDetailPageContent({
   return (
     <div className="league-custom-theme space-y-6">
       <style dangerouslySetInnerHTML={{ __html: `
-        .league-custom-theme .bg-shell-accent {
-          background-color: ${accentHex} !important;
+        :root {
+          --league-accent: ${accentHex};
         }
-        .league-custom-theme .text-shell-accent {
+        .league-custom-theme .theme-accent-border-l {
+          border-left: 3px solid ${accentHex} !important;
+        }
+        .league-custom-theme .theme-accent-border {
+          border-color: ${accentHex} !important;
+        }
+        .league-custom-theme .theme-accent-glow {
+          box-shadow: 0 0 20px ${accentHex}35 !important;
+        }
+        .league-custom-theme .theme-accent-text {
           color: ${accentHex} !important;
+        }
+        .league-custom-theme .theme-accent-bg {
+          background-color: ${accentHex} !important;
         }
       ` }} />
 
@@ -468,41 +480,60 @@ export default function LeagueDetailPageContent({
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Category Selection */}
+                  {/* Category Selection & Max Slots */}
                   <div>
-                    <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categorías Habilitadas en la Liga</label>
-                    <div className="flex flex-wrap items-center gap-2 bg-black/60 p-3 border border-shell-line/50">
+                    <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categorías & Slot Máximos por Categoría</label>
+                    <div className="grid grid-cols-1 gap-2.5 bg-black/60 p-3 border border-shell-line/50">
                       {['GT3', 'Hypercar', 'LMP2'].map((cat) => {
                         const currentCats = formClassTags
                           .split(',')
                           .map((s) => s.trim().toUpperCase())
                           .filter(Boolean)
                         const isChecked = currentCats.includes(cat.toUpperCase())
+                        const currentLimit = (league as any).classLimits?.[cat.toUpperCase()] ?? 30
+
                         return (
-                          <label
+                          <div
                             key={cat}
-                            className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 border transition-colors cursor-pointer ${
+                            className={`p-2 border transition-colors flex items-center justify-between gap-3 ${
                               isChecked
-                                ? 'bg-cyan-950/60 border-cyan-400 text-cyan-200'
-                                : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'
+                                ? 'bg-cyan-950/40 border-cyan-400/60'
+                                : 'bg-black/40 border-white/10 opacity-60'
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={(e) => {
-                                let updated: string[]
-                                if (e.target.checked) {
-                                  updated = Array.from(new Set([...currentCats, cat.toUpperCase()]))
-                                } else {
-                                  updated = currentCats.filter((c) => c !== cat.toUpperCase())
-                                }
-                                setFormClassTags(updated.join(', '))
-                              }}
-                              className="h-3.5 w-3.5 accent-cyan-400 cursor-pointer"
-                            />
-                            <span>{cat}</span>
-                          </label>
+                            <label className="flex items-center gap-2 text-xs font-bold text-white cursor-pointer select-none">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  let updated: string[]
+                                  if (e.target.checked) {
+                                    updated = Array.from(new Set([...currentCats, cat.toUpperCase()]))
+                                  } else {
+                                    updated = currentCats.filter((c) => c !== cat.toUpperCase())
+                                  }
+                                  setFormClassTags(updated.join(', '))
+                                }}
+                                className="h-4 w-4 accent-cyan-400 cursor-pointer"
+                              />
+                              <span>{cat}</span>
+                            </label>
+
+                            {isChecked && (
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-slate-400 font-mono uppercase font-bold">Max Cars:</span>
+                                <input
+                                  type="number"
+                                  name={`max_cars_${cat.toUpperCase()}`}
+                                  defaultValue={currentLimit}
+                                  min={1}
+                                  max={100}
+                                  required
+                                  className="w-16 border border-shell-line bg-black/80 px-2 py-1 text-xs text-cyan-300 font-mono text-center outline-none rounded-none focus:border-cyan-400"
+                                />
+                              </div>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
