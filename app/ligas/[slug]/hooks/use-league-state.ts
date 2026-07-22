@@ -117,8 +117,10 @@ export function useLeagueState({
 
       initialRegistrations.forEach((reg) => {
         if (reg.classTag === tag && reg.teamId && reg.status !== 'rejected') {
-          const teamDetails = teamInfo[reg.teamId] || myManagedTeams.find((t) => t.id === reg.teamId)
-          if (!teamDetails) return
+          const teamDetails = teamInfo[reg.teamId] || myManagedTeams.find((t) => t.id === reg.teamId) || {
+            name: reg.displayName,
+            logoUrl: `https://placehold.co/40x40/0a1220/ffffff?text=${reg.displayName.slice(0, 3).toUpperCase()}`
+          }
 
           const dorsal = reg.assignedNumber != null ? Number(reg.assignedNumber) : null
           const uniqueKey = `${reg.teamId}_${dorsal != null ? dorsal : ''}`
