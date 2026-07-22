@@ -322,9 +322,6 @@ export default async function AdminPage({
                           {/* Actions */}
                           <td className="p-3 text-right">
                             <div className="flex items-center gap-2 justify-end">
-                              <Link href={`/admin/ligas/${league.id}`} className="border border-shell-line bg-white/5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-white/10 transition-colors">
-                                Manage
-                              </Link>
                               <DeleteLeagueButton
                                 leagueId={league.id}
                                 leagueTitle={league.title}

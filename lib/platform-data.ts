@@ -99,7 +99,29 @@ export const getLeagues = cache(async (): Promise<League[]> => {
 
 export const getLeagueBySlug = cache(async (slug: string): Promise<League | null> => {
   const leagues = await getLeagues()
-  return leagues.find((league) => league.slug === slug) ?? null
+  if (!slug) return null
+
+  const decoded = decodeURIComponent(slug).trim()
+  const normalized = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+
+  return (
+    leagues.find((league) => {
+      if (!league) return false
+      if (league.slug === slug || league.id === slug) return true
+      if (league.slug === decoded || league.id === decoded) return true
+
+      const leagueSlugNormalized = (league.slug || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+      if (leagueSlugNormalized && leagueSlugNormalized === normalized) return true
+
+      const leagueIdNormalized = (league.id || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+      if (leagueIdNormalized && leagueIdNormalized === normalized) return true
+
+      const leagueTitleNormalized = (league.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+      if (leagueTitleNormalized && leagueTitleNormalized === normalized) return true
+
+      return false
+    }) ?? null
+  )
 })
 
 export const getCircuits = cache(async (): Promise<Circuit[]> => {
