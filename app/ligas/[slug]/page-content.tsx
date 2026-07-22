@@ -215,22 +215,45 @@ export default function LeagueDetailPageContent({
   }, [])
 
   const handleCarImageUpload = async (teamId: string, file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('type', 'car')
+    // Instant local FileReader Data URL preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      if (result) {
+        setCustomCarImages((prev) => {
+          const next = { ...prev, [teamId]: result }
+          try {
+            const saved = JSON.parse(localStorage.getItem('team_car_images') || '{}')
+            saved[teamId] = result
+            localStorage.setItem('team_car_images', JSON.stringify(saved))
+          } catch (err) {}
+          return next
+        })
+      }
+    }
+    reader.readAsDataURL(file)
+
     try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'car')
       const res = await fetch('/api/uploads', {
         method: 'POST',
         body: formData,
       })
       if (res.ok) {
         const data = await res.json()
-        const newUrl = data.url
-        setCustomCarImages((prev) => {
-          const next = { ...prev, [teamId]: newUrl }
-          localStorage.setItem('team_car_images', JSON.stringify(next))
-          return next
-        })
+        if (data.url) {
+          setCustomCarImages((prev) => {
+            const next = { ...prev, [teamId]: data.url }
+            try {
+              const saved = JSON.parse(localStorage.getItem('team_car_images') || '{}')
+              saved[teamId] = data.url
+              localStorage.setItem('team_car_images', JSON.stringify(saved))
+            } catch (err) {}
+            return next
+          })
+        }
       }
     } catch (err) {
       console.error('Failed to upload car image:', err)
@@ -1111,51 +1134,56 @@ export default function LeagueDetailPageContent({
             </p>
           </div>
 
-          {/* Team Registration Box */}
-          <div className="border border-shell-line bg-black/20 p-3 rounded-none flex flex-col justify-center">
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 mb-1">Team Registration</p>
-              
-              {!session ? (
-                <p className="text-xs text-slate-400 italic">Please sign in to register.</p>
-              ) : myManagedTeams.length === 0 ? (
-                <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  Only Team Leaders can sign up.
-                </p>
-              ) : (
-                <div className="space-y-2 w-full">
-                  {groupedRegistrations.map((group) => (
-                    <div key={group.teamId} className="border border-slate-700 bg-black/40 px-2.5 py-1.5 text-xxs flex items-center justify-between gap-2">
-                      <span className="font-bold text-slate-100 text-xs truncate">{group.teamName}</span>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {group.categories.map((cat) => (
-                          <div key={cat} className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 border border-white/10">
-                            <ClassBadge classTag={cat} className="scale-90" />
-                            <button
-                              onClick={() => handleWithdrawTeam(group.teamId, cat)}
-                              title={`Withdraw ${cat}`}
-                              className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 rounded-none transition-colors"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-
-                  {league.registrationOpen && league.status === 'open' && (
-                    <button
-                      onClick={() => setIsRegisterOpen(true)}
-                      className="bg-shell-accent hover:bg-red-700 px-3 py-1.5 text-xs font-bold uppercase text-white rounded-none transition-colors w-full flex items-center justify-center gap-1"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      {registeredCars.length > 0 ? 'Add New Vehicles' : 'Register Team'}
-                    </button>
-                  )}
-                </div>
+          {/* Team Registration Box - Compact & Small */}
+          <div className="border border-shell-line bg-black/40 p-2.5 rounded-none max-w-md space-y-2">
+            <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-1">
+              <p className="text-[10px] uppercase font-bold tracking-wider text-slate-400">Team Registration</p>
+              {groupedRegistrations.length > 0 && (
+                <span className="text-[10px] font-mono text-cyan-400">{groupedRegistrations.length} team{groupedRegistrations.length > 1 ? 's' : ''}</span>
               )}
             </div>
+            
+            {!session ? (
+              <p className="text-xs text-slate-400 italic">Please sign in to register.</p>
+            ) : myManagedTeams.length === 0 ? (
+              <p className="text-xs text-amber-400 font-semibold flex items-center gap-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                Only Team Leaders can sign up.
+              </p>
+            ) : (
+              <div className="space-y-1.5 w-full">
+                {groupedRegistrations.map((group) => (
+                  <div key={group.teamId} className="border border-slate-700 bg-black/60 px-2 py-1 text-xxs flex items-center justify-between gap-2">
+                    <span className="font-bold text-slate-200 text-xs truncate">{group.teamName}</span>
+                    <div className="flex flex-wrap items-center gap-1">
+                      {group.categories.map((cat) => (
+                        <div key={cat} className="flex items-center gap-1 bg-black/80 px-1.5 py-0.5 border border-white/10">
+                          <ClassBadge classTag={cat} className="scale-90" />
+                          <button
+                            onClick={() => handleWithdrawTeam(group.teamId, cat)}
+                            title={`Withdraw ${cat}`}
+                            className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 rounded-none transition-colors"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+
+                {league.registrationOpen && league.status === 'open' && (
+                  <button
+                    onClick={() => setIsRegisterOpen(true)}
+                    className="bg-shell-accent hover:bg-red-700 px-3 py-1.5 text-xs font-bold uppercase text-white rounded-none transition-colors w-full flex items-center justify-center gap-1 mt-1"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    {registeredCars.length > 0 ? 'Add New Vehicles' : 'Register Team'}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
           </div>
         </section>
 
