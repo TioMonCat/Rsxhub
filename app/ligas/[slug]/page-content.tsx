@@ -387,7 +387,7 @@ export default function LeagueDetailPageContent({
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">URL Identificativa (Slug)</label>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Abreviatura / URL (Slug)</label>
                     <input
                       type="text"
                       value={formSlug}
@@ -397,23 +397,12 @@ export default function LeagueDetailPageContent({
                     />
                   </div>
                 </div>
-
-                <div>
-                  <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Eslogan de Cabecera (Slogan)</label>
-                  <input
-                    type="text"
-                    value={formSlogan}
-                    onChange={(e) => setFormSlogan(e.target.value)}
-                    placeholder="e.g. Campeonato de Resistencia Multiclase 2026"
-                    className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
-                  />
-                </div>
               </div>
 
               {/* SECTION 2: Rules, Simulator & Format */}
               <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                  2. Simulador, Formato & Estado de Inscripción
+                  2. Simulador, Formato & Estado de la Liga
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -421,14 +410,9 @@ export default function LeagueDetailPageContent({
                     <select
                       value={formSimulator}
                       onChange={(e) => setFormSimulator(e.target.value)}
-                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
                     >
-                      <option value="ac">🏎️ Assetto Corsa</option>
-                      <option value="lmu">🏁 Le Mans Ultimate</option>
-                      <option value="iracing">🏎️ iRacing</option>
-                      <option value="acc">🏆 Assetto Corsa Competizione</option>
-                      <option value="ams2">🎮 Automobilista 2</option>
-                      <option value="rf2">🏁 rFactor 2</option>
+                      <option value="ac">Assetto Corsa</option>
                     </select>
                   </div>
 
@@ -437,25 +421,27 @@ export default function LeagueDetailPageContent({
                     <select
                       value={formFormat}
                       onChange={(e) => setFormFormat(e.target.value)}
-                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
                     >
-                      <option value="endurance">⏳ Endurance (Resistencia)</option>
-                      <option value="sprint">⚡ Sprint</option>
-                      <option value="championship">🏆 Championship (Campeonato)</option>
+                      <option value="endurance">Endurance (Resistencia)</option>
+                      <option value="sprint">Sprint</option>
+                      <option value="championship">Championship (Campeonato)</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Estado de la Liga</label>
                     <select
-                      value={formStatus}
-                      onChange={(e) => setFormStatus(e.target.value)}
-                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
+                      value={formStatus === 'open' ? 'open' : 'completed'}
+                      onChange={(e) => {
+                        const val = e.target.value
+                        setFormStatus(val)
+                        setFormRegistrationOpen(val === 'open')
+                      }}
+                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
                     >
-                      <option value="open">🟢 Inscripciones Abiertas (Open)</option>
-                      <option value="ongoing">🟡 Campeonato En Curso (Ongoing)</option>
-                      <option value="draft">⚪ Borrador / Próximamente (Draft)</option>
-                      <option value="completed">🔴 Finalizada (Completed)</option>
+                      <option value="open">Abiertas (Cualquier equipo nuevo se puede inscribir)</option>
+                      <option value="completed">Cerrada (Ningún equipo nuevo puede entrar)</option>
                     </select>
                   </div>
                 </div>
@@ -468,62 +454,117 @@ export default function LeagueDetailPageContent({
                       onChange={(e) => setFormRegistrationMode(e.target.value)}
                       className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
                     >
-                      <option value="team">👥 Por Escudería / Equipo (Team Registration)</option>
-                      <option value="individual">👤 Por Piloto Individual (Individual Entry)</option>
+                      <option value="team">Por Escudería / Equipo (Team Registration)</option>
+                      <option value="individual">Por Piloto Individual (Individual Entry)</option>
                     </select>
                   </div>
 
                   <div className="flex items-center justify-between border border-shell-line bg-black/40 px-4 py-2 mt-auto">
                     <div>
-                      <span className="block text-xs font-bold text-white uppercase">Inscripciones Abiertas</span>
+                      <span className="block text-xs font-bold text-white uppercase">Inscripciones Activas</span>
                       <span className="text-[10px] text-slate-400">Permite que nuevos equipos se registren</span>
                     </div>
                     <input
                       type="checkbox"
                       checked={formRegistrationOpen}
-                      onChange={(e) => setFormRegistrationOpen(e.target.checked)}
+                      onChange={(e) => {
+                        setFormRegistrationOpen(e.target.checked)
+                        setFormStatus(e.target.checked ? 'open' : 'completed')
+                      }}
                       className="h-4 w-4 accent-cyan-400 cursor-pointer"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* SECTION 3: Categories & Dates */}
+              {/* SECTION 3: Categories & Color Palette */}
               <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                  3. Categorías, Fechas & Color Visual
+                  3. Categorías, Color Visual & Fechas
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Categorías de la Liga (Separadas por Comas)</label>
-                    <input
-                      type="text"
-                      value={formClassTags}
-                      onChange={(e) => setFormClassTags(e.target.value)}
-                      placeholder="e.g. GT3, LMP2, HYPERCAR"
-                      className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-cyan-300 font-mono outline-none rounded-none focus:border-cyan-400"
-                    />
-                  </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Category Selection */}
                   <div>
-                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Color Visual de la Liga (HEX)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={formAccentColor}
-                        onChange={(e) => setFormAccentColor(e.target.value)}
-                        className="h-8 w-10 bg-transparent border border-shell-line cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={formAccentColor}
-                        onChange={(e) => setFormAccentColor(e.target.value)}
-                        className="w-full border border-shell-line bg-black/60 px-3 py-1.5 text-xs text-white font-mono outline-none rounded-none"
-                      />
+                    <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categorías Habilitadas en la Liga</label>
+                    <div className="flex flex-wrap items-center gap-2 bg-black/60 p-3 border border-shell-line/50">
+                      {['GT3', 'Hypercar', 'LMP2'].map((cat) => {
+                        const currentCats = formClassTags
+                          .split(',')
+                          .map((s) => s.trim().toUpperCase())
+                          .filter(Boolean)
+                        const isChecked = currentCats.includes(cat.toUpperCase())
+                        return (
+                          <label
+                            key={cat}
+                            className={`flex items-center gap-2 text-xs font-bold px-3 py-1.5 border transition-colors cursor-pointer ${
+                              isChecked
+                                ? 'bg-cyan-950/60 border-cyan-400 text-cyan-200'
+                                : 'bg-black/40 border-white/10 text-slate-400 hover:border-white/30'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                let updated: string[]
+                                if (e.target.checked) {
+                                  updated = Array.from(new Set([...currentCats, cat.toUpperCase()]))
+                                } else {
+                                  updated = currentCats.filter((c) => c !== cat.toUpperCase())
+                                }
+                                setFormClassTags(updated.join(', '))
+                              }}
+                              className="h-3.5 w-3.5 accent-cyan-400 cursor-pointer"
+                            />
+                            <span>{cat}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Predefined Color Palette */}
+                  <div>
+                    <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Color Visual de la Liga (Paleta de Colores)</label>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap bg-black/60 p-2.5 border border-shell-line/50">
+                        {[
+                          { name: 'Cyan Neón', hex: '#00f2fe' },
+                          { name: 'Rojo Carrera', hex: '#ff3b30' },
+                          { name: 'Azul Eléctrico', hex: '#1274de' },
+                          { name: 'Verde Esmeralda', hex: '#10b981' },
+                          { name: 'Naranja Hyper', hex: '#ff6b00' },
+                          { name: 'Púrpura Neón', hex: '#a855f7' },
+                        ].map((color) => (
+                          <button
+                            key={color.hex}
+                            type="button"
+                            onClick={() => setFormAccentColor(color.hex)}
+                            title={color.name}
+                            className={`h-7 w-7 rounded-none transition-transform border ${
+                              formAccentColor.toLowerCase() === color.hex.toLowerCase()
+                                ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
+                                : 'border-white/20 hover:scale-110'
+                            }`}
+                            style={{ backgroundColor: color.hex }}
+                          />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-400 font-mono">Personalizado:</span>
+                        <input
+                          type="text"
+                          value={formAccentColor}
+                          onChange={(e) => setFormAccentColor(e.target.value)}
+                          className="w-28 border border-shell-line bg-black/60 px-2.5 py-1 text-xs text-white font-mono outline-none rounded-none"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div>
                     <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Fecha de Inicio</label>
                     <input
@@ -550,23 +591,14 @@ export default function LeagueDetailPageContent({
               {/* SECTION 4: Media & Banner */}
               <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                  4. Branding & Imágenes de Portada
+                  4. Imagen de Portada & Simulador
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <ImagePicker
-                      name="bannerUrl"
-                      defaultValue={formBannerUrl}
-                      label="Imagen de Banner de la Liga (Cabecera)"
-                    />
-                  </div>
-                  <div>
-                    <ImagePicker
-                      name="logoUrl"
-                      defaultValue={formLogoUrl}
-                      label="Logo de la Liga (Badge / Escudo)"
-                    />
-                  </div>
+                <div>
+                  <ImagePicker
+                    name="bannerUrl"
+                    defaultValue={formBannerUrl}
+                    label="Imagen de Banner de la Liga (Cabecera Principal)"
+                  />
                 </div>
               </div>
 
