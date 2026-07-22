@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { COUNTRIES } from '@/lib/countries'
+import { ClassBadge } from '@/components/class-badge'
 
 type ProfileData = {
   displayName: string
@@ -118,7 +119,7 @@ export default function EditProfileForm({ profile, updateAction }: Props) {
                     : 'border-shell-line bg-black/20 text-slate-400 hover:border-slate-500 hover:text-slate-300'
                 }`}
               >
-                <span className="text-xs tracking-wider">{category}</span>
+                <ClassBadge classTag={category} className="text-xs px-2.5 py-1" />
                 <input
                   type="checkbox"
                   name="preferredCategories"

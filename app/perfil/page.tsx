@@ -6,6 +6,7 @@ import { simulatorLabel } from '@/lib/utils'
 import { respondTeamInvite } from './actions'
 import { SteamLoginButton } from '@/components/steam-login-button'
 import { getCountryName, getCountryFlag } from '@/lib/countries'
+import { ClassBadge } from '@/components/class-badge'
 
 export default async function PerfilPage({
   searchParams,
@@ -149,7 +150,7 @@ export default async function PerfilPage({
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Driver Profile</p>
               <h1 className="mt-1 text-3xl font-bold text-white">{profile.displayName}</h1>
-              <p className="mt-1 text-slate-300 text-sm">{profile.bio || 'No bio configured yet.'}</p>
+              <p className="mt-1 text-slate-300 text-sm whitespace-pre-line">{profile.bio || 'No bio configured yet.'}</p>
             </div>
           </div>
           <Link href="/perfil/editar" className="inline-flex border border-shell-line bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 rounded-none self-start md:self-auto">
@@ -234,12 +235,7 @@ export default async function PerfilPage({
             <p className="text-sm text-slate-400">No category preferences set yet.</p>
           ) : (
             profile.preferredCategories.map((category) => (
-              <span
-                key={category}
-                className="border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs font-bold text-cyan-300 uppercase tracking-wider rounded-none"
-              >
-                {category}
-              </span>
+              <ClassBadge key={category} classTag={category} className="px-3.5 py-1.5 text-xs font-black shadow-md" />
             ))
           )}
         </div>
