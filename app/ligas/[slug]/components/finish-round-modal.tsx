@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Upload, FileText, BarChart3, CheckCircle2, AlertCircle, RefreshCw, Edit3 } from 'lucide-react'
+import { X, Upload, FileText, BarChart3, CheckCircle2, AlertCircle, RefreshCw, Edit3, Eraser } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import type { LeagueEvent } from '../hooks/use-league-state'
 
@@ -154,6 +154,11 @@ export function FinishRoundModal({
     )
   }
 
+  // Clear all points (set to 0)
+  const handleClearPoints = () => {
+    setParsedRows((prev) => prev.map((row) => ({ ...row, points: 0 })))
+  }
+
   // Recalculate Points automatically based on Category Position
   const handleRecalculatePoints = () => {
     setParsedRows((prev) =>
@@ -266,13 +271,22 @@ export function FinishRoundModal({
           </div>
 
           {activeTab === 'preview' && (
-            <button
-              onClick={handleRecalculatePoints}
-              className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold uppercase flex items-center gap-1 bg-cyan-950/40 border border-cyan-800/40 px-2.5 py-1 transition-colors"
-              title="Recalcular puntos de la escala por defecto"
-            >
-              <RefreshCw className="h-3 w-3" /> Auto-Recalcular Puntos
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleClearPoints}
+                className="text-[11px] text-rose-400 hover:text-rose-300 font-bold uppercase flex items-center gap-1 bg-rose-950/40 border border-rose-800/40 px-2.5 py-1 transition-colors"
+                title="Establecer 0 puntos a todas las posiciones"
+              >
+                <Eraser className="h-3 w-3 text-rose-400" /> Eliminar Puntos
+              </button>
+              <button
+                onClick={handleRecalculatePoints}
+                className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold uppercase flex items-center gap-1 bg-cyan-950/40 border border-cyan-800/40 px-2.5 py-1 transition-colors"
+                title="Recalcular puntos de la escala por defecto"
+              >
+                <RefreshCw className="h-3 w-3 text-cyan-400" /> Auto-Recalcular Puntos
+              </button>
+            </div>
           )}
         </div>
 
