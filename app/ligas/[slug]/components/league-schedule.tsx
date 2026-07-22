@@ -118,7 +118,7 @@ export function LeagueSchedule({
                 </div>
 
                 {/* Grid Occupancy Meter */}
-                <div className="flex flex-wrap gap-3 border-t border-shell-line/20 pt-3 z-10 w-full">
+                <div className="flex flex-wrap gap-4 pt-2 z-10 w-full">
                   {classTags.map((tag) => {
                     const limit = (league as any).classLimits?.[tag] ?? 30
                     const confirmedCount = confirmations.filter(
@@ -127,16 +127,16 @@ export function LeagueSchedule({
                     const pct = Math.min(100, (confirmedCount / limit) * 100)
 
                     return (
-                      <div key={tag} className="flex-1 min-w-[120px] bg-black/40 border border-shell-line/40 p-2 space-y-1">
-                        <div className="flex justify-between items-center text-[10px]">
-                          <ClassBadge classTag={tag} className="text-[9px] font-extrabold" />
-                          <span className="font-mono font-bold text-slate-300">
+                      <div key={tag} className="flex-1 min-w-[140px] space-y-1.5">
+                        <div className="flex justify-between items-center text-xs">
+                          <ClassBadge classTag={tag} className="text-[10px] font-extrabold" />
+                          <span className="font-mono text-xs font-bold text-slate-300">
                             {confirmedCount} / {limit} cars
                           </span>
                         </div>
-                        <div className="w-full bg-slate-800 h-1.5 overflow-hidden">
+                        <div className="w-full bg-slate-900/80 border border-white/5 h-2 overflow-hidden rounded-none">
                           <div
-                            className="h-full bg-cyan-500 transition-all duration-300"
+                            className="h-full transition-all duration-300"
                             style={{
                               width: `${pct}%`,
                               backgroundColor: pct >= 100 ? '#f43f5e' : (league.accentColor || '#1274de'),
