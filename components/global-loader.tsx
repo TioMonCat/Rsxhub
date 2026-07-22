@@ -8,9 +8,12 @@ export function GlobalLoader() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  // Deactivate loading overlay when pathname or searchParams change (navigation finished)
+  // Deactivate loading overlay after page transition and DOM render finish
   useEffect(() => {
-    setIsLoading(false)
+    const timer = setTimeout(() => {
+      setIsLoading(false)
+    }, 450)
+    return () => clearTimeout(timer)
   }, [pathname, searchParams])
 
   useEffect(() => {
