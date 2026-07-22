@@ -706,16 +706,19 @@ export default function CalendarContent({
                                     </p>
                                   )}
                                   {simLogo && (
-                                    <div className="absolute right-2 top-2 z-10 pointer-events-none">
+                                    <div className="absolute right-2 top-2 z-10 pointer-events-none bg-white p-0.5 rounded-none shadow-sm">
                                       <img
                                         src={simLogo}
                                         alt={league?.simulator}
-                                        className="h-5 w-auto object-contain"
+                                        className="h-4 w-auto object-contain"
                                       />
                                     </div>
                                   )}
-                                  <div className="absolute inset-x-2 bottom-2">
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                  <div className="absolute inset-x-2 bottom-1.5">
+                                    <p className="text-[9px] font-black uppercase italic tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] leading-none mb-0.5">
+                                      {getEventType(event, league)}
+                                    </p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
                                       {event.serverLink && (
                                         <a
                                           href={event.serverLink}
@@ -724,13 +727,13 @@ export default function CalendarContent({
                                           onClick={(e) => {
                                             e.stopPropagation()
                                           }}
-                                          className="inline-flex items-center gap-1 bg-[#e10600] hover:bg-red-700 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white italic border border-red-500/30 shadow-[0_0_8px_rgba(225,6,0,0.35)] transition-colors rounded-none"
+                                          className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-wider italic border border-emerald-400/30 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-colors rounded-none"
                                         >
                                           <Play className="h-2 w-2 fill-current" />
                                           Join
                                         </a>
                                       )}
-                                      <p className="line-clamp-1 text-[15px] font-black uppercase italic leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
+                                      <p className="line-clamp-1 text-[13px] font-black uppercase italic leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
                                         {raceTitle}
                                       </p>
                                     </div>
@@ -783,15 +786,19 @@ export default function CalendarContent({
                                     </span>
                                   </p>
                                   {simLogo && (
-                                    <div className="absolute right-2 top-2 z-10 pointer-events-none">
+                                    <div className="absolute right-2 top-2 z-10 pointer-events-none bg-white p-1 rounded-none shadow-sm">
                                       <img
                                         src={simLogo}
                                         alt={league?.simulator}
-                                        className="h-8 w-auto object-contain"
+                                        className="h-5 w-auto object-contain"
                                       />
                                     </div>
                                   )}
                                   <div className="absolute inset-x-2 bottom-2">
+                                    {/* Event Format Tag (QUALIFYING, RACE, TIME ATTACK) */}
+                                    <p className="text-[11px] font-black uppercase italic tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] mb-0.5">
+                                      {getEventType(primaryEvent, league)}
+                                    </p>
                                     <div className="flex items-center gap-2 flex-wrap">
                                       {primaryEvent.serverLink && (
                                         <a
@@ -801,7 +808,7 @@ export default function CalendarContent({
                                           onClick={(e) => {
                                             e.stopPropagation()
                                           }}
-                                          className="inline-flex items-center gap-1.5 bg-[#e10600] hover:bg-red-700 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white italic border border-red-500/30 shadow-[0_0_10px_rgba(225,6,0,0.45)] transition-colors rounded-none"
+                                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 text-[10px] font-black uppercase tracking-wider italic border border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.45)] transition-colors rounded-none mb-1"
                                         >
                                           <Play className="h-2.5 w-2.5 fill-current" />
                                           Join Server
