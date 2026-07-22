@@ -71,7 +71,7 @@ export function LeagueStandings({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="space-y-1.5 max-h-[360px] overflow-y-auto pr-1">
                   {visibleTeams.length === 0 ? (
                     <p className="text-xs text-slate-400 italic">No teams registered in this class.</p>
                   ) : (
@@ -80,7 +80,7 @@ export function LeagueStandings({
                       return (
                         <div
                           key={team.id}
-                          className="border border-shell-line bg-black/40 p-3 md:p-3.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-500 transition-colors"
+                          className="border border-shell-line bg-black/40 p-2 md:p-2.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-500 transition-colors"
                         >
                           {/* 1. Pos */}
                           <span
