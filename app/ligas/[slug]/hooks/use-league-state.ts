@@ -287,7 +287,7 @@ export function useLeagueState({
   )
 
   const groupedRegistrations = useMemo(() => {
-    const map = new Map<string, { teamId: string; teamName: string; categories: string[] }>()
+    const map = new Map<string, { teamId: string; teamName: string; logoUrl: string | null; categories: string[] }>()
     
     uniqueRegisteredCars.forEach((car) => {
       if (!car.teamId) return
@@ -296,9 +296,13 @@ export function useLeagueState({
         myManagedTeams.find((t) => t.id === car.teamId)?.name ||
         car.displayName ||
         'Team'
+      const logoUrl =
+        teamInfo[car.teamId]?.logoUrl ||
+        myManagedTeams.find((t) => t.id === car.teamId)?.logoUrl ||
+        null
       const tag = car.classTag || 'GENERAL'
       if (!map.has(car.teamId)) {
-        map.set(car.teamId, { teamId: car.teamId, teamName, categories: [] })
+        map.set(car.teamId, { teamId: car.teamId, teamName, logoUrl, categories: [] })
       }
       const teamRecord = map.get(car.teamId)!
       if (!teamRecord.categories.includes(tag)) {
