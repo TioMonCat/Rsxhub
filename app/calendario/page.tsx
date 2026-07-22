@@ -4,7 +4,7 @@ import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
 import { getLeagueEvents, getLeagues } from '@/lib/platform-data'
 import CalendarContent from './calendar-content'
 
-type ViewMode = 'month' | 'week'
+type ViewMode = 'month' | 'programme'
 
 function pad(value: number) {
   return String(value).padStart(2, '0')
@@ -49,7 +49,7 @@ export default async function CalendarioPage({
   const isAdmin = access.canAccessPlatformAdmin
 
   const params = await searchParams
-  const view: ViewMode = params.view === 'week' ? 'week' : 'month'
+  const view: ViewMode = params.view === 'programme' ? 'programme' : 'month'
   const anchorDate = parseDateInput(params.date)
 
   const events = await getLeagueEvents()
