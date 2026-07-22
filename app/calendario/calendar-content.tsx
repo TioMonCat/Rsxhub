@@ -70,15 +70,15 @@ export default function CalendarContent({
     const slug = String(leagueSlug || '').toLowerCase()
     
     if (slug.includes('erc-ng') || slug.includes('nextgen') || title.includes('NEXT GEN') || title.includes('NG')) {
-      // Next Gen: Vibrant Red-Orange Motorsport Gradient
-      return 'linear-gradient(135deg, rgba(220, 38, 38, 0.8) 0%, rgba(234, 88, 12, 0.7) 60%, rgba(120, 18, 18, 0.55) 100%)'
+      // Next Gen: Smooth Coral-Red to Warm Orange Horizontal Fade (matching sample screenshot)
+      return 'linear-gradient(to right, #ea384d 0%, #f96332 55%, #ff8c42 100%)'
     }
     if (slug.includes('erc') || title.includes('ERC') || title.includes('ENDURANCE REAL')) {
-      // ERC: Vibrant Motorsport Blue Gradient
-      return 'linear-gradient(135deg, rgba(14, 116, 222, 0.8) 0%, rgba(29, 78, 216, 0.7) 60%, rgba(15, 30, 80, 0.55) 100%)'
+      // ERC: Smooth Motorsport Blue to Soft Cyan Horizontal Fade
+      return 'linear-gradient(to right, #1d4ed8 0%, #2563eb 55%, #38bdf8 100%)'
     }
-    // General fallback: Rich Electric Cyan-Blue Gradient
-    return 'linear-gradient(135deg, rgba(6, 182, 212, 0.8) 0%, rgba(14, 116, 222, 0.7) 60%, rgba(15, 25, 70, 0.55) 100%)'
+    // General fallback: Smooth Teal to Soft Cyan Horizontal Fade
+    return 'linear-gradient(to right, #0f766e 0%, #0d9488 55%, #2dd4bf 100%)'
   }
 
   const [events, setEvents] = useState<LeagueEvent[]>(initialEvents)
@@ -759,40 +759,52 @@ export default function CalendarContent({
                                 : league?.simulator === 'lmu'
                                   ? '/branding/LMULogo.png'
                                   : null
+                              const eventFormat = getEventType(primaryEvent, league)
+                              const eventFormatLabel = eventFormat === 'QUALIFYING' ? 'QUALIFYING' : eventFormat === 'TIME ATTACK' ? 'TIME ATTACK' : 'RACE'
+
                               return (
                                 <div
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     router.push(league ? `/ligas/${league.slug}` : '/ligas')
                                   }}
-                                  className="absolute inset-0 block cursor-pointer"
+                                  className="absolute inset-0 block cursor-pointer p-2.5 md:p-3 flex flex-col justify-between overflow-hidden"
                                 >
+                                  {/* Background Smooth Gradient */}
                                   <div
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: primaryEvent.circuitImageUrl
-                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${primaryEvent.circuitImageUrl})`
+                                        ? `linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.05) 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${primaryEvent.circuitImageUrl})`
                                         : getLeagueGradient(league?.title, league?.slug),
+                                      backgroundBlendMode: primaryEvent.circuitImageUrl ? 'overlay' : 'normal',
                                     }}
                                   />
-                                  <p className="absolute left-2 top-2 text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
-                                    <span>{date.getUTCDate()}</span>
-                                    <span className="text-[12px] text-slate-200 font-mono font-bold bg-black/60 px-1.5 py-0.5 border border-white/10 flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-cyan-400" />
-                                      {formatTime(primaryEvent.startsAt)}
-                                    </span>
-                                  </p>
-                                  {simLogo && (
-                                    <div className="absolute right-2 top-2 z-10 pointer-events-none">
-                                      <img
-                                        src={simLogo}
-                                        alt={league?.simulator}
-                                        className="h-8 w-auto object-contain"
-                                      />
+
+                                  {/* Top Row: Left (Day Number + Event Title) & Right (Sim Logo Container) */}
+                                  <div className="relative z-10 flex items-start justify-between gap-1">
+                                    <div className="space-y-0.5 min-w-0 flex-1">
+                                      <p className="text-lg md:text-xl font-extrabold text-white leading-none drop-shadow-sm">
+                                        {date.getUTCDate()}
+                                      </p>
+                                      <p className="line-clamp-1 text-xs md:text-sm font-black uppercase tracking-tight text-white drop-shadow-sm leading-tight">
+                                        {raceTitle}
+                                      </p>
                                     </div>
-                                  )}
-                                  <div className="absolute inset-x-2 bottom-2">
-                                    <div className="flex items-center gap-2 flex-wrap">
+                                    {simLogo && (
+                                      <div className="bg-white/95 p-1 rounded-none shadow-sm shrink-0">
+                                        <img
+                                          src={simLogo}
+                                          alt={league?.simulator}
+                                          className="h-4 md:h-5 w-auto object-contain"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Bottom Row: Left (Format + Time + Join Button) & Right (League Title Tag) */}
+                                  <div className="relative z-10 flex items-end justify-between gap-1 pt-2">
+                                    <div className="space-y-0.5">
                                       {primaryEvent.serverLink && (
                                         <a
                                           href={primaryEvent.serverLink}
@@ -801,21 +813,24 @@ export default function CalendarContent({
                                           onClick={(e) => {
                                             e.stopPropagation()
                                           }}
-                                          className="inline-flex items-center gap-1.5 bg-[#e10600] hover:bg-red-700 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-white italic border border-red-500/30 shadow-[0_0_10px_rgba(225,6,0,0.45)] transition-colors rounded-none"
+                                          className="inline-flex items-center gap-1 bg-[#e10600] hover:bg-red-700 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-white italic shadow-sm transition-colors rounded-none mb-1"
                                         >
-                                          <Play className="h-2.5 w-2.5 fill-current" />
-                                          Join Server
+                                          <Play className="h-2 w-2 fill-current" />
+                                          Join
                                         </a>
                                       )}
-                                      <p className="line-clamp-2 text-[18px] font-black uppercase italic leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                                        {raceTitle}
+                                      <p className="text-xs md:text-sm font-black italic uppercase tracking-wider text-white/90 leading-none">
+                                        {eventFormatLabel}
+                                      </p>
+                                      <p className="text-base md:text-lg font-black text-white font-mono leading-none drop-shadow-sm">
+                                        {formatTime(primaryEvent.startsAt)}
                                       </p>
                                     </div>
-                                    {league ? (
-                                      <p className="mt-1 text-xs font-semibold text-slate-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                                    {league && (
+                                      <p className="text-xs md:text-sm font-black uppercase italic tracking-tighter text-white drop-shadow-sm text-right shrink-0">
                                         {league.title}
                                       </p>
-                                    ) : null}
+                                    )}
                                   </div>
                                 </div>
                               )
