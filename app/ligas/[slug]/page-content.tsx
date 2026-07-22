@@ -410,19 +410,19 @@ export default function LeagueDetailPageContent({
   )
 
   const groupedRegistrations = useMemo(() => {
-    const map = new Map<string, { teamId: string; teamName: string; cars: Array<{ id: string; classTag: string; assignedNumber: number | null }> }>()
+    const map = new Map<string, { teamId: string; teamName: string; categories: string[] }>()
     
     uniqueRegisteredCars.forEach((car) => {
       if (!car.teamId) return
       const teamName = myManagedTeams.find((t) => t.id === car.teamId)?.name || 'Team'
+      const tag = car.classTag || 'GENERAL'
       if (!map.has(car.teamId)) {
-        map.set(car.teamId, { teamId: car.teamId, teamName, cars: [] })
+        map.set(car.teamId, { teamId: car.teamId, teamName, categories: [] })
       }
-      map.get(car.teamId)!.cars.push({
-        id: car.id,
-        classTag: car.classTag || 'GENERAL',
-        assignedNumber: car.assignedNumber
-      })
+      const teamRecord = map.get(car.teamId)!
+      if (!teamRecord.categories.includes(tag)) {
+        teamRecord.categories.push(tag)
+      }
     })
 
     return Array.from(map.values())
@@ -1125,22 +1125,16 @@ export default function LeagueDetailPageContent({
               ) : (
                 <div className="space-y-2 w-full">
                   {groupedRegistrations.map((group) => (
-                    <div key={group.teamId} className="border border-slate-700 bg-black/40 p-2 text-xxs space-y-1.5">
-                      <div className="flex items-center justify-between gap-2 border-b border-white/5 pb-1">
-                        <span className="font-bold text-slate-100 text-xs truncate">{group.teamName}</span>
-                        <span className="text-[10px] text-slate-400 font-mono">{group.cars.length} car{group.cars.length > 1 ? 's' : ''}</span>
-                      </div>
+                    <div key={group.teamId} className="border border-slate-700 bg-black/40 px-2.5 py-1.5 text-xxs flex items-center justify-between gap-2">
+                      <span className="font-bold text-slate-100 text-xs truncate">{group.teamName}</span>
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {group.cars.map((car) => (
-                          <div key={car.id} className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 border border-white/10">
-                            <ClassBadge classTag={car.classTag} className="scale-90" />
-                            {car.assignedNumber != null && (
-                              <span className="font-mono text-[10px] font-bold text-cyan-400">#{car.assignedNumber}</span>
-                            )}
+                        {group.categories.map((cat) => (
+                          <div key={cat} className="flex items-center gap-1 bg-black/60 px-1.5 py-0.5 border border-white/10">
+                            <ClassBadge classTag={cat} className="scale-90" />
                             <button
-                              onClick={() => handleWithdrawTeam(group.teamId, car.classTag)}
-                              title="Withdraw vehicle"
-                              className="ml-1 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 py-0.2 rounded-none transition-colors"
+                              onClick={() => handleWithdrawTeam(group.teamId, cat)}
+                              title={`Withdraw ${cat}`}
+                              className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 rounded-none transition-colors"
                             >
                               ×
                             </button>
@@ -1461,10 +1455,10 @@ export default function LeagueDetailPageContent({
                           return (
                             <div
                               key={team.id}
-                              className="border border-shell-line bg-black/40 p-2 md:p-2.5 rounded-none flex items-center justify-between gap-2.5 hover:border-slate-500 transition-colors"
+                              className="border border-shell-line bg-black/40 p-3 md:p-3.5 rounded-none flex items-center justify-between gap-3 hover:border-slate-500 transition-colors"
                             >
                               {/* 1. Pos */}
-                              <span className={`w-6 text-center text-xs font-black shrink-0 ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
+                              <span className={`w-7 text-center text-sm font-black shrink-0 ${originalIdx === 0 ? 'text-amber-400' : originalIdx === 1 ? 'text-slate-300' : originalIdx === 2 ? 'text-amber-600' : 'text-slate-400'}`}>
                                 {originalIdx === 0 ? '🥇' : originalIdx === 1 ? '🥈' : originalIdx === 2 ? '🥉' : originalIdx + 1}
                               </span>
 
@@ -1472,16 +1466,16 @@ export default function LeagueDetailPageContent({
                               <img
                                 src={team.logoUrl}
                                 alt={team.name}
-                                className="w-7 h-7 object-cover border border-slate-700 rounded-none shrink-0"
+                                className="w-9 h-9 md:w-10 md:h-10 object-cover border border-slate-700 rounded-none shrink-0"
                               />
 
                               {/* 3. Nombre Equipo + Dorsal (sin recuadro azul) */}
-                              <div className="min-w-0 flex-1 flex items-center gap-1.5">
-                                <h4 className="text-xs font-bold uppercase text-white truncate leading-tight">
+                              <div className="min-w-0 flex-1 flex items-center gap-2">
+                                <h4 className="text-sm font-extrabold uppercase text-white truncate leading-tight">
                                   {team.name}
                                 </h4>
                                 {team.assignedNumber != null && (
-                                  <span className="text-xs font-mono font-bold text-slate-300 shrink-0">
+                                  <span className="text-xs font-mono font-black text-cyan-300 shrink-0">
                                     #{team.assignedNumber}
                                   </span>
                                 )}
@@ -1490,7 +1484,7 @@ export default function LeagueDetailPageContent({
                               {/* 4. Foto del carro (con opción de subir/cambiar foto) */}
                               <label
                                 title="Click to upload/change car photo"
-                                className="h-7 w-20 md:w-28 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-0.5 cursor-pointer group transition-colors"
+                                className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-1 cursor-pointer group transition-colors"
                               >
                                 <input
                                   type="file"
@@ -1506,13 +1500,13 @@ export default function LeagueDetailPageContent({
                                   alt="Vehicle side profile"
                                   className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
                                 />
-                                <div className="absolute inset-0 bg-black/80 text-[8px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                                  <Upload className="h-3 w-3" /> Change
+                                <div className="absolute inset-0 bg-black/80 text-[9px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                  <Upload className="h-3.5 w-3.5" /> Change
                                 </div>
                               </label>
 
                               {/* 5. Puntos */}
-                              <span className="text-xs font-black text-white bg-black/80 px-2 py-0.5 border border-white/10 font-mono shrink-0 min-w-[50px] text-center">
+                              <span className="text-sm font-black text-white bg-black/80 px-3 py-1 border border-white/10 font-mono shrink-0 min-w-[60px] text-center">
                                 {team.points} pts
                               </span>
                             </div>
