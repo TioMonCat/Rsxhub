@@ -82,6 +82,10 @@ export default function LigasPageContent({
       await createLeagueAction(formData)
       setIsCreateOpen(false)
     } catch (err: any) {
+      if (err?.digest?.startsWith('NEXT_REDIRECT') || err?.message === 'NEXT_REDIRECT') {
+        setIsCreateOpen(false)
+        return
+      }
       setErrorMessage(err.message || 'Failed to create league.')
     } finally {
       setIsSubmitting(false)

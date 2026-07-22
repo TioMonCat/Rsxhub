@@ -127,7 +127,6 @@ export async function createLeagueAction(formData: FormData) {
   }
 
   revalidatePath('/ligas')
-  redirect('/ligas')
 }
 
 export async function updateLeagueDetailsAction(formData: FormData) {

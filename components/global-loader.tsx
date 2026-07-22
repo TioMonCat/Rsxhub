@@ -80,8 +80,8 @@ export function GlobalLoader() {
 
   return (
     <div className="fixed top-0 left-0 w-full h-[3.5px] bg-black/80 z-[99999] overflow-hidden pointer-events-none">
-      {/* Base track with high-contrast motorsport gradient */}
-      <div className="absolute inset-0 bg-gradient-to-r from-red-600 via-blue-600 to-[#1274de] opacity-90" />
+      {/* Base track with high-contrast blue motorsport gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-[#0052cc] via-[#1274de] to-[#00bfff] opacity-90" />
       {/* Shimmer effect */}
       <div 
         className="absolute inset-y-0 bg-gradient-to-r from-transparent via-white/90 to-transparent w-1/3"
