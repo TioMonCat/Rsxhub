@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --rsx-bg: #06080d;
+  --rsx-bg-soft: #0b1018;
+  --rsx-panel: #0b111b;
+  --rsx-panel-2: #0f1724;
+  --rsx-border: rgba(255, 255, 255, 0.12);
+  --rsx-border-soft: rgba(255, 255, 255, 0.12);
+  --rsx-accent: #1274de;
+  --rsx-accent-strong: #1f8dff;
+}
+
+html,
+body {
+  margin: 0;
+  background: #070b12;
+  color: #e5e7eb;
+}
+
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-y: visible;
+  min-height: 100vh;
+  letter-spacing: -0.015em;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+}
+
+.bg-shell {
+  background:
+    radial-gradient(1000px 340px at 50% -14%, rgba(18, 116, 222, 0.14), transparent 62%),
+    linear-gradient(180deg, var(--rsx-bg-soft) 0%, var(--rsx-bg) 62%, #04060b 100%);
+}
+
+.bg-shell-side {
+  background: linear-gradient(180deg, #0c121d 0%, #0a0f18 100%);
+}
+
+.bg-shell-top {
+  background: linear-gradient(180deg, rgba(18, 25, 37, 0.88), rgba(12, 17, 27, 0.88));
+}
+
+.border-shell-line {
+  border-color: var(--rsx-border-soft);
+}
+
+.text-shell-accent {
+  color: var(--rsx-accent-strong);
+}
+
+.bg-shell-accent {
+  background-color: var(--rsx-accent);
+}
+
+.shell-panel {
+  border: 1px solid var(--rsx-border);
+  background: linear-gradient(180deg, var(--rsx-panel-2), var(--rsx-panel));
+  border-radius: 0px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.shell-nav-item {
+  display: block;
+  border: 1px solid transparent;
+  border-radius: 0px;
+  padding: 9px 10px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.shell-nav-item:hover {
+  border-color: rgba(148, 163, 184, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: #ffffff;
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  animation: page-enter 180ms ease-out;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+}
