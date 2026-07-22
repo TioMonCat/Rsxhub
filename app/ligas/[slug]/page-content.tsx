@@ -301,6 +301,8 @@ export default function LeagueDetailPageContent({
       <LeagueResults
         isAdmin={isAdmin}
         recentResults={recentResults}
+        classTags={classTags}
+        events={events}
         onOpenResultsModal={() => setIsResultsOpen(true)}
       />
 
