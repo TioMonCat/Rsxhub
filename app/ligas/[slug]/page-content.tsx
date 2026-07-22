@@ -446,7 +446,7 @@ export default function LeagueDetailPageContent({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="pt-2">
                   <div>
                     <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Modo de Inscripción</label>
                     <select
@@ -457,22 +457,6 @@ export default function LeagueDetailPageContent({
                       <option value="team">Por Escudería / Equipo (Team Registration)</option>
                       <option value="individual">Por Piloto Individual (Individual Entry)</option>
                     </select>
-                  </div>
-
-                  <div className="flex items-center justify-between border border-shell-line bg-black/40 px-4 py-2 mt-auto">
-                    <div>
-                      <span className="block text-xs font-bold text-white uppercase">Inscripciones Activas</span>
-                      <span className="text-[10px] text-slate-400">Permite que nuevos equipos se registren</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={formRegistrationOpen}
-                      onChange={(e) => {
-                        setFormRegistrationOpen(e.target.checked)
-                        setFormStatus(e.target.checked ? 'open' : 'completed')
-                      }}
-                      className="h-4 w-4 accent-cyan-400 cursor-pointer"
-                    />
                   </div>
                 </div>
               </div>
@@ -591,14 +575,23 @@ export default function LeagueDetailPageContent({
               {/* SECTION 4: Media & Banner */}
               <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                  4. Imagen de Portada & Simulador
+                  4. Branding e Imágenes de Portada
                 </h3>
-                <div>
-                  <ImagePicker
-                    name="bannerUrl"
-                    defaultValue={formBannerUrl}
-                    label="Imagen de Banner de la Liga (Cabecera Principal)"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <ImagePicker
+                      name="bannerUrl"
+                      defaultValue={formBannerUrl}
+                      label="Imagen de Banner de la Liga"
+                    />
+                  </div>
+                  <div>
+                    <ImagePicker
+                      name="logoUrl"
+                      defaultValue={formLogoUrl}
+                      label="Logo de la Liga (Badge / Escudo)"
+                    />
+                  </div>
                 </div>
               </div>
 
