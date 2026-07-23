@@ -133,7 +133,7 @@ export function Footer() {
 
               {/* Discord */}
               <a
-                href="https://discord.gg/rsx"
+                href="https://discord.gg/J8WESXaX9v"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 p-2 bg-[#090e1a] hover:bg-[#0f172a] border border-white/10 hover:border-indigo-500/40 rounded-lg transition-all"
