@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Plus, Trash, Users, ShieldAlert, Filter, Trophy, AlertTriangle } from 'lucide-react'
+import { Plus, Trash, Users, ShieldAlert, Filter, Trophy, AlertTriangle, Upload, FileArchive } from 'lucide-react'
 
 export type CarEntry = {
   id: string
@@ -65,6 +65,45 @@ export function TeamCarsEditor({
 
   // Selected Filter Tab: 'all' or league.id
   const [activeTab, setActiveTab] = useState<string>('all')
+  const [uploadingCarId, setUploadingCarId] = useState<string | null>(null)
+
+  const handleSkinFileUpload = async (carId: string, file: File) => {
+    if (!file) return
+
+    const isArchive = /\.(zip|rar|7z|tar|gz|tgz)$/i.test(file.name)
+    if (!isArchive) {
+      alert('Únicamente se permiten archivos comprimidos (.zip, .rar, .7z, .tar.gz)')
+      return
+    }
+
+    setUploadingCarId(carId)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'skin')
+
+      const res = await fetch('/api/uploads', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+      if (!res.ok || data.error) {
+        alert(data.error || 'Error al subir el archivo de skin comprimido.')
+        return
+      }
+
+      if (data.url) {
+        updateCarField(carId, 'skinUrl', data.url)
+      }
+    } catch (err) {
+      console.error('Skin upload failed:', err)
+      alert('Error al conectar con el servidor para subir el archivo.')
+    } finally {
+      setUploadingCarId(null)
+    }
+  }
 
   // Set of all assigned drivers across ALL cars
   const assignedDriverUserIds = useMemo(() => {
@@ -430,19 +469,56 @@ export function TeamCarsEditor({
                           )}
                         </div>
 
-                        {/* Skin URL */}
+                        {/* Compressed Skin File Upload */}
                         <div>
-                          <label className="mb-1 block text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
-                            URL Descarga Skin
+                          <label className="mb-1 text-[11px] text-slate-300 font-semibold uppercase tracking-wider flex items-center justify-between">
+                            <span>Skin Comprimido (.zip, .rar)</span>
+                            {uploadingCarId === car.id && (
+                              <span className="text-[10px] text-cyan-400 font-normal animate-pulse">Subiendo...</span>
+                            )}
                           </label>
-                          <input
-                            type="text"
-                            required
-                            value={car.skinUrl}
-                            onChange={(e) => updateCarField(car.id, 'skinUrl', e.target.value)}
-                            placeholder="https://mega.nz/file/..."
-                            className="w-full bg-[#0a0f1d] border border-slate-700 focus:border-cyan-400 text-xs text-white rounded-lg px-3 py-2 outline-none transition-all shadow-inner"
-                          />
+
+                          {car.skinUrl ? (
+                            <div className="flex items-center gap-2 bg-[#0a0f1d] border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-emerald-300 min-w-0">
+                              <FileArchive className="h-4 w-4 shrink-0 text-emerald-400" />
+                              <span className="truncate flex-1 font-mono text-[11px]" title={car.skinUrl}>
+                                {car.skinUrl.split('/').pop() || 'skin.zip'}
+                              </span>
+                              <label className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 cursor-pointer underline shrink-0 ml-1">
+                                Cambiar
+                                <input
+                                  type="file"
+                                  accept=".zip,.rar,.7z,.tar,.tar.gz,.gz"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0]
+                                    if (f) handleSkinFileUpload(car.id, f)
+                                  }}
+                                />
+                              </label>
+                            </div>
+                          ) : (
+                            <label className={`w-full flex items-center justify-center gap-2 bg-[#0a0f1d] border border-dashed rounded-lg px-3 py-1.5 text-xs cursor-pointer transition-all ${
+                              uploadingCarId === car.id
+                                ? 'border-cyan-500/50 text-cyan-300 bg-cyan-950/20'
+                                : 'border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white'
+                            }`}>
+                              <Upload className="h-4 w-4 text-cyan-400" />
+                              <span className="font-medium text-[11px]">
+                                {uploadingCarId === car.id ? 'Subiendo skin...' : 'Subir .zip / .rar'}
+                              </span>
+                              <input
+                                type="file"
+                                accept=".zip,.rar,.7z,.tar,.tar.gz,.gz"
+                                className="hidden"
+                                disabled={uploadingCarId === car.id}
+                                onChange={(e) => {
+                                  const f = e.target.files?.[0]
+                                  if (f) handleSkinFileUpload(car.id, f)
+                                }}
+                              />
+                            </label>
+                          )}
                         </div>
 
                         {/* League Assignment Filter Tag */}

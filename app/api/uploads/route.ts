@@ -186,7 +186,32 @@ export async function POST(req: Request) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '')
 
+    const isArchive = /\.(zip|rar|7z|tar|gz|tgz)$/i.test(file.name)
     const isRasterImage = /\.(png|jpe?g|gif|webp)$/i.test(file.name)
+
+    // Compressed skin archives upload
+    if (type === 'skin' || isArchive) {
+      if (!isArchive) {
+        return NextResponse.json(
+          { error: 'Formato no permitido. Únicamente se permiten archivos comprimidos (.zip, .rar, .7z, .tar.gz)' },
+          { status: 400 }
+        )
+      }
+
+      const SKINS_DIR = path.join(process.cwd(), 'public', 'uploads', 'skins')
+      const safeSkinName = `${safeBase}-${Date.now()}${ext.toLowerCase()}`
+      const skinTargetPath = path.join(SKINS_DIR, safeSkinName)
+
+      try {
+        await fs.mkdir(SKINS_DIR, { recursive: true })
+        await fs.writeFile(skinTargetPath, inputBuffer)
+        const finalUrl = `/uploads/skins/${safeSkinName}`
+        return NextResponse.json({ url: finalUrl, name: file.name })
+      } catch (fsErr) {
+        console.warn('Writing compressed skin to disk failed:', fsErr)
+        return NextResponse.json({ error: 'No se pudo guardar el archivo comprimido' }, { status: 500 })
+      }
+    }
 
     // Compress raster images with sharp → WebP, max 1200x600, quality 82
     if (isRasterImage) {
