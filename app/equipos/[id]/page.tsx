@@ -9,7 +9,7 @@ import { TeamCarsEditor } from '@/components/team-cars-editor'
 import { CopyableSteamId } from '@/components/copyable-steam-id'
 import { CopyVehicleDriverIdsButton } from '@/components/copy-vehicle-driver-ids-button'
 import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
-import { getLeagues } from '@/lib/platform-data'
+import { getLeagues, getRegistrations, getLeagueEvents } from '@/lib/platform-data'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
 import { formatDate, formatDateTime } from '@/lib/utils'
@@ -206,97 +206,67 @@ export default async function TeamProfilePage({
         }
       }
 
-      const teamRegsSnapshot = await db.collection('league_team_registrations').where('team_id', '==', team.id).get()
-      const teamRegistrationRows = teamRegsSnapshot.docs.map((doc: any) => {
-        const data = doc.data()
-        return {
-          id: doc.id,
-          league_id: data.league_id || '',
-          status: data.status || 'pending',
-        }
-      }).filter((row: any) => Boolean(row.league_id))
+      let teamRegRows: Array<{ leagueId: string; userId: string; status: string; classTag: string; assignedNumber: number }> = []
 
-      const teamRegistrationIds = teamRegistrationRows.map((row: any) => row.id)
-      const leagueIds = Array.from(new Set(teamRegistrationRows.map((row: any) => row.league_id)))
-      const leagueByRegistrationId = new Map<string, string>(teamRegistrationRows.map((row: any) => [row.id, row.league_id]))
-      const driverIdsByLeague = new Map<string, Set<string>>()
-
-      if (teamRegistrationIds.length > 0) {
-        const chunks = []
-        for (let i = 0; i < teamRegistrationIds.length; i += 10) {
-          chunks.push(teamRegistrationIds.slice(i, i + 10))
-        }
-        const snaps = await Promise.all(chunks.map((chunk: any) => db.collection('league_team_registration_drivers').where('team_registration_id', 'in', chunk).get()))
-        const mappedDrivers = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
-
-        for (const mapping of mappedDrivers) {
-          const leagueId = leagueByRegistrationId.get(mapping.team_registration_id)
-          if (!leagueId) continue
-          const current = driverIdsByLeague.get(leagueId) || new Set<string>()
-          current.add(mapping.user_id)
-          driverIdsByLeague.set(leagueId, current)
+      if (hasFirebase && db) {
+        try {
+          const teamRegsSnapshot = await db.collection('league_registrations').where('team_id', '==', team.id).get()
+          if (!teamRegsSnapshot.empty) {
+            teamRegRows = teamRegsSnapshot.docs.map((doc: any) => {
+              const data = doc.data()
+              return {
+                leagueId: data.league_id || '',
+                userId: data.user_id || '',
+                status: data.status || 'approved',
+                classTag: data.class_tag || '',
+                assignedNumber: Number(data.assigned_number || 0),
+              }
+            }).filter((row: any) => Boolean(row.leagueId))
+          }
+        } catch (err) {
+          console.error('Error querying team registrations:', err)
         }
       }
 
+      if (teamRegRows.length === 0) {
+        const allRegs = await getRegistrations()
+        teamRegRows = allRegs
+          .filter((r) => r.teamId === team.id)
+          .map((r) => ({
+            leagueId: r.leagueId,
+            userId: r.userId,
+            status: r.status,
+            classTag: r.classTag || '',
+            assignedNumber: r.assignedNumber || 0,
+          }))
+      }
+
+      const leagueIds = Array.from(new Set(teamRegRows.map((row) => row.leagueId)))
+
       if (leagueIds.length > 0) {
-        const chunks = []
-        for (let i = 0; i < leagueIds.length; i += 10) {
-          chunks.push(leagueIds.slice(i, i + 10))
-        }
-        const leaguesSnaps = await Promise.all(chunks.map((chunk: any) => db.collection('leagues').where('__name__', 'in', chunk).get()))
-        const leaguesData = leaguesSnaps.flatMap((snap: any) => snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })))
+        const allLeagues = await getLeagues()
+        const relevantLeagues = allLeagues.filter((l) => leagueIds.includes(l.id))
 
-        const eventsSnaps = await Promise.all(chunks.map((chunk: any) => db.collection('league_events').where('league_id', 'in', chunk).get()))
-        const rawEvents = eventsSnaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
+        for (const lg of relevantLeagues) {
+          const lgRows = teamRegRows.filter((r) => r.leagueId === lg.id)
+          const approvedCount = lgRows.filter((r) => r.status === 'approved').length
+          const pendingCount = lgRows.filter((r) => r.status === 'pending').length
+          const driverUserIds = Array.from(new Set(lgRows.map((r) => r.userId).filter(Boolean)))
 
-        const nowStr = new Date().toISOString()
-        const futureEvents = rawEvents.filter(e => {
-          const startsAt = e.starts_at && typeof e.starts_at.toDate === 'function' ? e.starts_at.toDate().toISOString() : e.starts_at
-          return startsAt >= nowStr
-        })
-        futureEvents.sort((a, b) => {
-          const aStart = a.starts_at && typeof a.starts_at.toDate === 'function' ? a.starts_at.toDate().toISOString() : a.starts_at
-          const bStart = b.starts_at && typeof b.starts_at.toDate === 'function' ? b.starts_at.toDate().toISOString() : b.starts_at
-          return aStart.localeCompare(bStart)
-        })
+          const events = await getLeagueEvents(lg.id)
+          const nowStr = new Date().toISOString()
+          const upcomingEvents = events.filter((e) => e.startsAt >= nowStr).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
 
-        const eventsByLeague = new Map<string, string[]>()
-        for (const event of futureEvents) {
-          const startsAt = event.starts_at && typeof event.starts_at.toDate === 'function' ? event.starts_at.toDate().toISOString() : event.starts_at
-          const current = eventsByLeague.get(event.league_id) || []
-          current.push(startsAt)
-          eventsByLeague.set(event.league_id, current)
-        }
-
-        const byLeague = new Map<
-          string,
-          {
-            approved: number
-            pending: number
-          }
-        >()
-
-        for (const row of teamRegistrationRows) {
-          const slot = byLeague.get(row.league_id) || { approved: 0, pending: 0 }
-          if (row.status === 'approved') slot.approved += 1
-          if (row.status === 'pending') slot.pending += 1
-          byLeague.set(row.league_id, slot)
-        }
-
-        for (const league of leaguesData) {
-          const rollup = byLeague.get(league.id)
-          if (!rollup) continue
-          const leagueEvents = eventsByLeague.get(league.id) || []
           leagueParticipation.push({
-            leagueId: league.id,
-            title: league.title || '',
-            bannerUrl: league.banner_url || null,
-            status: league.status || 'open',
-            simulator: league.simulator || 'ac',
-            teamDriversInLeague: (driverIdsByLeague.get(league.id) || new Set<string>()).size,
-            approvedEntries: rollup.approved,
-            pendingEntries: rollup.pending,
-            nextEventAt: leagueEvents[0] || null,
+            leagueId: lg.id,
+            title: lg.title || '',
+            bannerUrl: lg.bannerUrl || null,
+            status: lg.status || 'open',
+            simulator: lg.simulator || 'ac',
+            teamDriversInLeague: driverUserIds.length,
+            approvedEntries: approvedCount > 0 ? approvedCount : lgRows.length,
+            pendingEntries: pendingCount,
+            nextEventAt: upcomingEvents[0]?.startsAt || null,
           })
         }
 
@@ -350,9 +320,7 @@ export default async function TeamProfilePage({
             })
             .filter((row) => {
               if (!Number.isFinite(row.position) || row.position <= 0) return false
-              const leagueDriverSet = driverIdsByLeague.get(row.leagueId)
-              if (!leagueDriverSet) return false
-              return leagueDriverSet.has(row.userId)
+              return teamRegRows.some((r) => r.leagueId === row.leagueId && r.userId === row.userId)
             })
 
           const resultLeagueIds = Array.from(new Set(normalizedResults.map((row) => row.leagueId)))
