@@ -10,6 +10,7 @@ import { LeagueSchedule } from './components/league-schedule'
 import { LeagueStandings } from './components/league-standings'
 import { LeagueResults } from './components/league-results'
 import { FinishRoundModal } from './components/finish-round-modal'
+import { ViewResultsModal } from './components/view-results-modal'
 import { updateLeagueDetailsAction, deleteLeagueAction, registerTeamAction, unregisterTeamAction } from '@/app/ligas/actions'
 import { saveCalendarEvent, deleteCalendarEvent } from '@/app/calendario/actions'
 import { ClassBadge } from '@/components/class-badge'
@@ -70,6 +71,7 @@ export default function LeagueDetailPageContent({
   const [isResultsOpen, setIsResultsOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
   const [finishingEvent, setFinishingEvent] = useState<LeagueEvent | null>(null)
+  const [viewingResultsEvent, setViewingResultsEvent] = useState<LeagueEvent | null>(null)
 
   // Edit League Form States
   const [formTitle, setFormTitle] = useState(league.title)
@@ -122,14 +124,14 @@ export default function LeagueDetailPageContent({
 
   // Lock body scrolling when any modal is open to prevent double scrollbars
   useEffect(() => {
-    const isAnyModalOpen = isEditLeagueOpen || isEventModalOpen || isRegisterOpen || isResultsOpen || Boolean(finishingEvent)
+    const isAnyModalOpen = isEditLeagueOpen || isEventModalOpen || isRegisterOpen || isResultsOpen || Boolean(finishingEvent) || Boolean(viewingResultsEvent)
     if (!isAnyModalOpen) return
     const original = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = original
     }
-  }, [isEditLeagueOpen, isEventModalOpen, isRegisterOpen, isResultsOpen, finishingEvent])
+  }, [isEditLeagueOpen, isEventModalOpen, isRegisterOpen, isResultsOpen, finishingEvent, viewingResultsEvent])
 
   // Handlers
   const handleLeagueDelete = async () => {
@@ -319,6 +321,7 @@ export default function LeagueDetailPageContent({
           onOpenEventModal={handleOpenEventModal}
           onDeleteEvent={handleEventDelete}
           onFinishRound={(ev) => setFinishingEvent(ev)}
+          onViewResults={(ev) => setViewingResultsEvent(ev)}
         />
 
         <LeagueStandings
@@ -340,7 +343,17 @@ export default function LeagueDetailPageContent({
         onOpenResultsModal={() => setIsResultsOpen(true)}
       />
 
-      {/* Finish Round Modal */}
+      {/* View Results Modal (Read-Only for Pilots & Users) */}
+      {viewingResultsEvent && (
+        <ViewResultsModal
+          event={viewingResultsEvent}
+          leagueId={league.id}
+          classTags={classTags}
+          onClose={() => setViewingResultsEvent(null)}
+        />
+      )}
+
+      {/* Finish Round Modal (Admin Only) */}
       {finishingEvent && (
         <FinishRoundModal
           event={finishingEvent}

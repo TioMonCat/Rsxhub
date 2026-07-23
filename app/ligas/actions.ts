@@ -866,3 +866,67 @@ export async function cancelAttendanceAction(formData: FormData) {
 
   revalidatePath(`/ligas/${slug}`)
 }
+
+export async function getEventResultsAction(leagueId: string, eventId: string) {
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const snap = await db.collection('league_results')
+          .where('event_id', '==', eventId)
+          .get()
+
+        if (!snap.empty) {
+          const rawDocs = snap.docs.map((d: any) => ({ id: d.id, ...d.data() }))
+          const userIds = Array.from(new Set(rawDocs.map((r: any) => r.user_id).filter(Boolean)))
+
+          const [profilesSnap, steamSnap, teamsSnap] = await Promise.all([
+            userIds.length > 0 ? db.collection('profiles').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
+            userIds.length > 0 ? db.collection('steam_accounts').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
+            db.collection('teams').get()
+          ])
+
+          const profilesMap = new Map<string, string>(
+            profilesSnap ? profilesSnap.docs.map((d: any) => [d.data().user_id, d.data().display_name]) : []
+          )
+          const steamMap = new Map<string, { steamId: string; name: string }>(
+            steamSnap ? steamSnap.docs.map((d: any) => [d.data().user_id, { steamId: d.data().steam_id, name: d.data().steam_display_name }]) : []
+          )
+
+          const teamsList = teamsSnap ? teamsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })) : []
+
+          return rawDocs.map((row: any) => {
+            const uid = row.user_id || ''
+            const profName = profilesMap.get(uid)
+            const stm = steamMap.get(uid)
+            const dName = profName || stm?.name || row.driver_name || row.displayName || (uid ? `Piloto ${uid.slice(0, 4)}` : 'Piloto')
+            const sId = stm?.steamId || row.steam_id || row.steamId || ''
+
+            let tName = row.team_name || row.teamName || 'Independiente'
+            if (!row.team_name) {
+              const matchedTeam = teamsList.find((t: any) =>
+                t.members?.some((m: any) => m.userId === uid || m.user_id === uid)
+              )
+              if (matchedTeam) tName = matchedTeam.name
+            }
+
+            return {
+              id: row.id,
+              position: Number(row.position || 0),
+              driverName: dName,
+              teamName: tName,
+              steamId: sId,
+              classTag: String(row.class_tag || row.classTag || row.category || 'GT3').toUpperCase(),
+              dorsal: row.dorsal ? Number(row.dorsal) : (row.car_number ? Number(row.car_number) : null),
+              points: row.points != null ? Number(row.points) : 0,
+            }
+          }).sort((a: any, b: any) => a.position - b.position)
+        }
+      } catch (err) {
+        console.error('Failed to load event results from Firestore:', err)
+      }
+    }
+  }
+
+  return []
+}

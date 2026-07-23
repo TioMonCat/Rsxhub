@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2 } from 'lucide-react'
+import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2, Trophy } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { FormattedDate } from '@/components/formatted-date'
 import { formatDateTime } from '@/lib/utils'
@@ -20,6 +20,7 @@ interface LeagueScheduleProps {
   onOpenEventModal: (event?: LeagueEvent) => void
   onDeleteEvent: (eventId: string) => void
   onFinishRound?: (event: LeagueEvent) => void
+  onViewResults?: (event: LeagueEvent) => void
 }
 
 export function LeagueSchedule({
@@ -33,6 +34,7 @@ export function LeagueSchedule({
   onOpenEventModal,
   onDeleteEvent,
   onFinishRound,
+  onViewResults,
 }: LeagueScheduleProps) {
   const router = useRouter()
   const [localConfirmations, setLocalConfirmations] = useState<EventConfirmation[]>(confirmations)
@@ -44,35 +46,33 @@ export function LeagueSchedule({
   return (
     <div className="shell-panel p-4 md:p-5 rounded-none space-y-4">
       <div className="flex items-center justify-between border-b border-shell-line pb-3">
-        <div>
-          <h2 className="text-xl font-bold uppercase tracking-tight text-white">League Schedule</h2>
-          <p className="text-xs text-slate-400 mt-0.5">Timeline of rounds and race sessions.</p>
-        </div>
+        <h2 className="text-xl font-bold uppercase tracking-tight text-white">League Schedule</h2>
         {isAdmin && (
           <button
+            type="button"
             onClick={() => onOpenEventModal()}
-            className="border border-cyan-500/40 hover:bg-cyan-500/10 px-3 py-1.5 text-xs font-bold uppercase text-cyan-400 rounded-none transition-colors flex items-center gap-1.5"
+            className="border border-cyan-500/40 bg-cyan-950/30 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1 cursor-pointer"
           >
-            <Plus className="h-3.5 w-3.5" /> Add Round
+            <Plus className="h-3.5 w-3.5" />
+            Add Round
           </button>
         )}
       </div>
+      <p className="text-xs text-slate-400">Timeline of rounds and race sessions.</p>
 
       <div className="space-y-4">
         {events.length === 0 ? (
-          <div className="border border-dashed border-shell-line p-8 text-center">
-            <p className="text-sm text-slate-400">No rounds scheduled for this league yet.</p>
-          </div>
+          <p className="text-sm text-slate-300">No scheduled rounds yet.</p>
         ) : (
           events.map((ev, index) => {
-            const isCompleted = ev.status === 'completed'
+            const isCompleted = ev.status === 'completed' || new Date(ev.startsAt) < new Date()
 
             return (
               <div
                 key={ev.id}
-                className={`border p-4 rounded-none space-y-3 relative overflow-hidden transition-colors ${
+                className={`border p-4 transition-colors space-y-3 rounded-none relative ${
                   isCompleted
-                    ? 'border-slate-800 bg-slate-900/40 opacity-75'
+                    ? 'border-slate-800 bg-slate-900/40 opacity-90'
                     : 'border-shell-line bg-black/40 hover:border-cyan-500/30'
                 }`}
               >
@@ -106,13 +106,25 @@ export function LeagueSchedule({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* READ-ONLY RESULTS BUTTON FOR PILOTS & USERS WHEN ROUND IS COMPLETED */}
+                    {isCompleted && onViewResults && (
+                      <button
+                        type="button"
+                        onClick={() => onViewResults(ev)}
+                        className="border border-emerald-500/50 bg-emerald-950/60 hover:bg-emerald-500/20 text-emerald-300 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                      >
+                        <Trophy className="h-3.5 w-3.5 text-emerald-400" />
+                        Ver Resultados
+                      </button>
+                    )}
+
                     {isAdmin && (
                       <div className="flex items-center gap-2">
                         {onFinishRound && !isCompleted && (
                           <button
                             type="button"
                             onClick={() => onFinishRound(ev)}
-                            className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5"
+                            className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer"
                           >
                             <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
                             Finalizar Ronda
