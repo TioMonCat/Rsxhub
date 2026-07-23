@@ -874,53 +874,6 @@ export default async function TeamProfilePage({
                       )}
                     </div>
 
-                    {/* Section 2: Invite Driver Form */}
-                    <div className="bg-[#0c1220] border border-slate-800/90 rounded-xl p-4 space-y-3 shadow-md">
-                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                        <UserPlus className="h-4 w-4 text-emerald-400" />
-                        Invitar Piloto al Equipo
-                      </h3>
-
-                      <form action={invitePilot} className="space-y-3">
-                        <input type="hidden" name="teamId" value={team.id} />
-                        <input type="hidden" name="redirectTo" value={`/equipos/${team.id}`} />
-                        
-                        {inviteCandidates.length > 0 ? (
-                          <select
-                            name="invitedUserId"
-                            className="w-full bg-[#141d31] border border-slate-700 focus:border-cyan-400 text-xs text-white rounded-lg px-3 py-2.5 outline-none cursor-pointer"
-                            required
-                          >
-                            <option value="">-- Seleccionar piloto registrado --</option>
-                            {inviteCandidates.map((candidate) => (
-                              <option key={candidate.userId} value={candidate.userId}>
-                                {candidate.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <p className="text-xs text-slate-400 bg-[#141d31] border border-slate-800 px-3.5 py-2.5 rounded-lg italic">
-                            No hay otros pilotos disponibles para invitar en este momento.
-                          </p>
-                        )}
-
-                        <input
-                          name="message"
-                          placeholder="Mensaje de invitación (opcional)"
-                          className="w-full bg-[#141d31] border border-slate-700 focus:border-cyan-400 text-xs text-white rounded-lg px-3 py-2.5 outline-none"
-                        />
-
-                        <div className="flex justify-end">
-                          <button
-                            disabled={inviteCandidates.length === 0}
-                            className="bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 disabled:from-slate-800 disabled:to-slate-800 disabled:text-slate-500 text-white font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-lg transition-all shadow-md cursor-pointer disabled:cursor-not-allowed"
-                          >
-                            Enviar Invitación
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-
                     {/* Section 3: Pending Applications from Driver Market */}
                     <div className="bg-[#0c1220] border border-slate-800/90 rounded-xl p-4 space-y-3 shadow-md">
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
