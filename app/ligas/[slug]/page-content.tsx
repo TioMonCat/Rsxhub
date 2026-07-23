@@ -83,6 +83,7 @@ export default function LeagueDetailPageContent({
   const [formEndsAt, setFormEndsAt] = useState(league.endsAt.split('T')[0])
   const [formClassLimits, setFormClassLimits] = useState<Record<string, number>>((league as any).classLimits || {})
   const [formRegistrationOpen, setFormRegistrationOpen] = useState(league.registrationOpen)
+  const [formMaxDriversPerCar, setFormMaxDriversPerCar] = useState<number>((league as any).maxDriversPerCar ?? 4)
   const [formSlogan, setFormSlogan] = useState(league.slogan || '')
   const [formAccentColor, setFormAccentColor] = useState(accentHex)
   const [formBannerUrl, setFormBannerUrl] = useState(league.bannerUrl || '')
@@ -147,6 +148,7 @@ export default function LeagueDetailPageContent({
       formData.set('endsAt', formEndsAt)
       formData.set('classLimitsJson', JSON.stringify(formClassLimits))
       formData.set('registrationOpen', formRegistrationOpen ? 'true' : 'false')
+      formData.set('maxDriversPerCar', String(formMaxDriversPerCar))
       formData.set('slogan', formSlogan)
       formData.set('accentColor', formAccentColor)
       formData.set('bannerUrl', formBannerUrl)
@@ -516,6 +518,28 @@ export default function LeagueDetailPageContent({
                           </div>
                         )
                       })}
+                    </div>
+
+                    {/* Max Drivers Per Car Input */}
+                    <div className="mt-3 bg-black/60 p-3 border border-shell-line/50 space-y-1">
+                      <label className="block text-xs text-slate-300 uppercase font-semibold flex items-center justify-between">
+                        <span>Máx. Pilotos por Coche / Dorsal</span>
+                        <span className="text-[10px] text-cyan-400 font-mono font-bold">{formMaxDriversPerCar} PILOTOS POR DOSAL</span>
+                      </label>
+                      <input
+                        type="number"
+                        name="maxDriversPerCar"
+                        min={1}
+                        max={6}
+                        value={formMaxDriversPerCar}
+                        onChange={(e) => setFormMaxDriversPerCar(Number(e.target.value) || 4)}
+                        required
+                        className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-cyan-300 outline-none rounded-none focus:border-cyan-400 font-mono font-bold"
+                        placeholder="Ej: 4"
+                      />
+                      <p className="text-[10px] text-slate-400">
+                        Define el número máximo de pilotos asignables por cada vehículo/dorsal en esta liga.
+                      </p>
                     </div>
                   </div>
 
