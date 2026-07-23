@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { X, AlertCircle, Play, Clock } from 'lucide-react'
 import { useLeagueState, League, LeagueEvent, Registration, ManagedTeam, LeagueCar, EventConfirmation } from './hooks/use-league-state'
@@ -119,6 +119,17 @@ export default function LeagueDetailPageContent({
     GT3: [],
     HYPERCAR: []
   })
+
+  // Lock body scrolling when any modal is open to prevent double scrollbars
+  useEffect(() => {
+    const isAnyModalOpen = isEditLeagueOpen || isEventModalOpen || isRegisterOpen || isResultsOpen || Boolean(finishingEvent)
+    if (!isAnyModalOpen) return
+    const original = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = original
+    }
+  }, [isEditLeagueOpen, isEventModalOpen, isRegisterOpen, isResultsOpen, finishingEvent])
 
   // Handlers
   const handleLeagueDelete = async () => {
@@ -345,8 +356,8 @@ export default function LeagueDetailPageContent({
 
       {/* MODALS */}
       {isAdmin && isEditLeagueOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm p-4 md:p-6 flex justify-center items-start sm:items-center animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative my-auto">
             <button
               onClick={() => setIsEditLeagueOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -654,8 +665,8 @@ export default function LeagueDetailPageContent({
       )}
 
       {isAdmin && isEventModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative grid md:grid-cols-[1.1fr_0.9fr] gap-6 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm p-4 md:p-6 flex justify-center items-start sm:items-center animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-4xl w-full p-5 md:p-6 text-white rounded-none shadow-[0_0_60px_rgba(0,0,0,0.9)] relative grid md:grid-cols-[1.1fr_0.9fr] gap-6 my-auto">
             <button
               onClick={() => setIsEventModalOpen(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
@@ -873,8 +884,8 @@ export default function LeagueDetailPageContent({
       )}
 
       {isRegisterOpen && myManagedTeams.length > 0 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-md w-full p-5 text-white rounded-none relative">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-sm p-4 md:p-6 flex justify-center items-start sm:items-center animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-md w-full p-5 text-white rounded-none relative my-auto">
             <button onClick={() => setIsRegisterOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
               <X className="h-4 w-4" />
             </button>
