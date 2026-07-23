@@ -632,14 +632,16 @@ export default async function TeamProfilePage({
           <div className="relative z-[1] max-w-4xl">
             <div className="flex items-center gap-3">
               <span className="text-xs font-bold uppercase tracking-[0.24em] text-[#b8d8ff]">RSX Team Profile</span>
-              <span className="text-[11px] text-slate-400 font-semibold font-sans">
-                Creator: <span className="text-cyan-400 font-bold">{ownerDisplayName}</span>
+              <span className="text-[11px] text-slate-400 font-semibold font-sans flex items-center gap-2">
+                <span>Creator: <span className="text-cyan-400 font-bold">{ownerDisplayName}</span></span>
                 {coOwners.length > 0 && (
                   <>
-                    <span className="mx-2 text-slate-600">|</span>
-                    Co-Founder: <span className="text-cyan-400 font-bold">{coOwners.join(', ')}</span>
+                    <span className="text-slate-600">|</span>
+                    <span>Co-Founder: <span className="text-cyan-400 font-bold">{coOwners.join(', ')}</span></span>
                   </>
                 )}
+                <span className="text-slate-600">|</span>
+                <span>Created: <span className="text-slate-200 font-bold"><FormattedDate date={team.createdAt} mode="date" /></span></span>
               </span>
             </div>
             <h1 className="mt-2 text-4xl font-black uppercase italic leading-[0.95] text-white md:text-7xl">{team.name}</h1>
@@ -1296,16 +1298,6 @@ export default async function TeamProfilePage({
               </div>
             ))
           )}
-        </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-2">
-          <div className="border border-shell-line bg-black/20 p-3 rounded-none">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400">Created</p>
-            <p className="mt-1 text-white"><FormattedDate date={team.createdAt} mode="date" /></p>
-          </div>
-          <div className="border border-shell-line bg-black/20 p-3 rounded-none">
-            <p className="text-[11px] uppercase tracking-wider text-slate-400">Team creator</p>
-            <p className="mt-1 text-white">{ownerDisplayName}</p>
-          </div>
         </div>
       </section>
 
