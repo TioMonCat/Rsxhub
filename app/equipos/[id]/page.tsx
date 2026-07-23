@@ -26,6 +26,7 @@ function profileStatusMessage(params: { updated?: string; invite?: string; membe
   if (params.error === 'already-member') return { kind: 'warn', text: 'This driver is already a member of this team.' }
   if (params.error === 'owner-protected') return { kind: 'warn', text: 'You cannot remove the team owner.' }
   if (params.error === 'invalid-role') return { kind: 'warn', text: 'Invalid role.' }
+  if (params.error === 'dorsal-duplicate') return { kind: 'error', text: 'Error: Uno de los dorsales seleccionados ya pertenece a otro equipo o está duplicado.' }
   if (params.error) return { kind: 'error', text: 'Could not complete the action.' }
   return null
 }
@@ -56,6 +57,29 @@ export default async function TeamProfilePage({
   const team = teams.find((item) => item.id === id)
 
   if (!team) return notFound()
+
+  const takenDorsals: Array<{ teamId: string; teamName: string; category: string; dorsal: string }> = []
+  for (const t of teams) {
+    if (t.id !== team.id && Array.isArray(t.cars)) {
+      for (const c of t.cars) {
+        if (c && c.dorsal) {
+          takenDorsals.push({
+            teamId: t.id,
+            teamName: t.name || 'Otro equipo',
+            category: c.category || '',
+            dorsal: String(c.dorsal).trim(),
+          })
+        }
+      }
+    }
+  }
+
+  const leaguesOptions = leagues.map((l) => ({
+    id: l.id,
+    slug: l.slug,
+    title: l.title,
+    classTags: l.classTags || [],
+  }))
   const access = await getAdminAccessContext(session?.userId)
   const isPlatformAdmin = access.canAccessPlatformAdmin
 
@@ -658,10 +682,14 @@ export default async function TeamProfilePage({
             <p className="mt-3 max-w-2xl text-sm text-slate-200 md:text-base">{team.description || 'Official team profile and performance standings.'}</p>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {team.logoUrl ? (
-                <span className="inline-flex h-10 w-10 items-center justify-center border border-white/25 bg-black/25 p-1 rounded-none">
+                <span className="inline-flex h-10 w-10 items-center justify-center border border-white/25 bg-black/25 p-1 rounded-none shadow-sm">
                   <img src={team.logoUrl} alt={team.name} className="h-full w-full object-contain" />
                 </span>
-              ) : null}
+              ) : (
+                <span className="inline-flex h-10 w-10 items-center justify-center border border-white/25 bg-black/40 text-xs font-black tracking-wider text-cyan-300 rounded-none shadow-sm">
+                  {team.name.slice(0, 3).toUpperCase()}
+                </span>
+              )}
               <span className="border border-white/20 bg-black/25 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-100 rounded-none">
                 Drivers: {teamPilots.length || team.members.length}
               </span>
@@ -1042,6 +1070,9 @@ export default async function TeamProfilePage({
                     <TeamCarsEditor
                       teamMembers={teamMembersOptions}
                       initialCars={team.cars || []}
+                      takenDorsals={takenDorsals}
+                      leaguesOptions={leaguesOptions}
+                      currentTeamId={team.id}
                     />
                   </div>
 
@@ -1062,6 +1093,7 @@ export default async function TeamProfilePage({
                 text: string
                 border: string
                 bg: string
+                badge: string
                 carBorder: string
                 carDorsal: string
                 driverActive: string
@@ -1070,37 +1102,40 @@ export default async function TeamProfilePage({
                 glow: string
               }> = {
                 HYPERCAR: {
-                  text: 'text-rose-400 font-extrabold shadow-[0_0_15px_rgba(244,63,94,0.1)]',
+                  text: 'text-rose-400 font-extrabold',
                   border: 'border-rose-500/40',
                   bg: 'bg-rose-950/20',
+                  badge: 'border-rose-500/40 bg-rose-950/50 text-rose-300',
                   carBorder: 'border-rose-500/30 hover:border-rose-400/80 hover:shadow-[0_0_15px_rgba(244,63,94,0.25)]',
                   carDorsal: 'text-rose-400 font-black',
                   driverActive: 'border-rose-500/40 bg-rose-500/10 text-rose-100',
                   line: 'border-rose-500/30',
                   skinBtn: 'border-rose-500/40 bg-rose-950/30 hover:bg-rose-500 hover:text-white hover:border-rose-400 text-rose-300',
-                  glow: 'shadow-[inset_0_1px_0_0_rgba(244,63,94,0.3),0_0_30px_rgba(244,63,94,0.12)] bg-[#210c10]/50 border-rose-500/40'
+                  glow: 'border-rose-500/30 bg-[#160a0d]/40'
                 },
                 LMP2: {
-                  text: 'text-blue-400 font-extrabold shadow-[0_0_15px_rgba(59,130,246,0.1)]',
+                  text: 'text-blue-400 font-extrabold',
                   border: 'border-blue-500/40',
                   bg: 'bg-blue-950/20',
+                  badge: 'border-blue-500/40 bg-blue-950/50 text-blue-300',
                   carBorder: 'border-blue-500/30 hover:border-blue-400/80 hover:shadow-[0_0_15px_rgba(59,130,246,0.25)]',
                   carDorsal: 'text-blue-400 font-black',
                   driverActive: 'border-blue-500/40 bg-blue-500/10 text-blue-100',
                   line: 'border-blue-500/30',
                   skinBtn: 'border-blue-500/40 bg-blue-950/30 hover:bg-blue-500 hover:text-white hover:border-blue-400 text-blue-300',
-                  glow: 'shadow-[inset_0_1px_0_0_rgba(59,130,246,0.3),0_0_30px_rgba(59,130,246,0.12)] bg-[#0a1226]/50 border-blue-500/40'
+                  glow: 'border-blue-500/30 bg-[#0a1020]/40'
                 },
                 GT3: {
-                  text: 'text-emerald-400 font-extrabold shadow-[0_0_15px_rgba(16,185,129,0.1)]',
+                  text: 'text-emerald-400 font-extrabold',
                   border: 'border-emerald-500/40',
                   bg: 'bg-emerald-950/20',
+                  badge: 'border-emerald-500/40 bg-emerald-950/50 text-emerald-300',
                   carBorder: 'border-emerald-500/30 hover:border-emerald-400/80 hover:shadow-[0_0_15px_rgba(16,185,129,0.25)]',
                   carDorsal: 'text-emerald-400 font-black',
                   driverActive: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-100',
                   line: 'border-emerald-500/30',
                   skinBtn: 'border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-500 hover:text-white hover:border-emerald-400 text-emerald-300',
-                  glow: 'shadow-[inset_0_1px_0_0_rgba(16,185,129,0.3),0_0_30px_rgba(16,185,129,0.12)] bg-[#09180f]/50 border-emerald-500/40'
+                  glow: 'border-emerald-500/30 bg-[#08160e]/40'
                 }
               }
 
@@ -1110,6 +1145,7 @@ export default async function TeamProfilePage({
                   text: 'text-cyan-400',
                   border: 'border-cyan-500/20',
                   bg: 'bg-cyan-950/10',
+                  badge: 'border-cyan-500/40 bg-cyan-950/40 text-cyan-300',
                   carBorder: 'border-cyan-500/20 hover:border-cyan-500/40',
                   carDorsal: 'text-cyan-400',
                   driverActive: 'border-cyan-500/10 bg-cyan-500/5 text-slate-200',
@@ -1122,8 +1158,8 @@ export default async function TeamProfilePage({
                   <div key={category} className={`border p-4 rounded-none space-y-4 transition-all duration-300 ${theme.glow}`}>
                     <h3 className={`text-sm font-black uppercase italic tracking-wider border-b pb-2 flex items-center justify-between ${theme.text} ${theme.line}`}>
                       <span>{category}</span>
-                      <span className="text-[10px] font-mono not-italic px-2 py-0.5 rounded-none border border-current bg-current/5 tracking-normal">
-                        {categoryCars.length} {categoryCars.length === 1 ? 'Vehículo' : 'Vehículos'}
+                      <span className={`text-[10px] font-mono not-italic px-2.5 py-0.5 rounded-none border font-bold tracking-normal ${theme.badge}`}>
+                        {categoryCars.length} {categoryCars.length === 1 ? 'VEHÍCULO' : 'VEHÍCULOS'}
                       </span>
                     </h3>
                     

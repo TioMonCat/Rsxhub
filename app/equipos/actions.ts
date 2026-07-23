@@ -436,8 +436,28 @@ export async function updateTeam(formData: FormData) {
   let teamCars = existingTeam?.cars || []
   if (formData.has('teamCarsJson')) {
     try {
-      teamCars = JSON.parse(teamCarsJson)
-    } catch {}
+      const rawCars = JSON.parse(teamCarsJson)
+      if (Array.isArray(rawCars)) {
+        teamCars = rawCars.map((car: any) => ({
+          ...car,
+          dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
+        }))
+
+        // Validate internal uniqueness of dorsals
+        const dorsalsSeen = new Set<string>()
+        for (const car of teamCars) {
+          const d = String(car.dorsal || '').trim()
+          if (d) {
+            if (dorsalsSeen.has(d)) {
+              redirect(`${redirectTo}?error=dorsal-duplicate`)
+            }
+            dorsalsSeen.add(d)
+          }
+        }
+      }
+    } catch (e: any) {
+      if (e?.digest?.startsWith('NEXT_REDIRECT')) throw e
+    }
   }
 
   const accentColor = formData.has('accentColor') ? String(formData.get('accentColor') || '').trim() : (existingTeam?.accentColor || existingTeam?.accent_color || '#3b82f6')
