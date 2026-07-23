@@ -48,43 +48,39 @@ export const getLeagues = cache(async (): Promise<League[]> => {
     const db = getFirestoreDb()
     if (db) {
       try {
-        let snapshot: any;
-        try {
-          snapshot = await db.collection('leagues').orderBy('starts_at', 'asc').get()
-        } catch {
-          snapshot = await db.collection('leagues').get()
-        }
+        const snapshot = await db.collection('leagues').get()
 
         if (!snapshot.empty) {
-          return snapshot.docs.map((doc: any) => {
+          const list = snapshot.docs.map((doc: any) => {
             const data = doc.data()
             return {
               id: doc.id,
               title: data.title || '',
               slug: data.slug || '',
-              shortDescription: data.short_description || '',
-              fullDescription: data.full_description || '',
+              shortDescription: data.short_description || data.shortDescription || '',
+              fullDescription: data.full_description || data.fullDescription || '',
               simulator: data.simulator || 'ac',
               format: data.format || 'sprint',
-              classTags: parseClassTags(data.class_tags),
+              classTags: parseClassTags(data.class_tags || data.classTags),
               status: data.status || 'open',
-              bannerUrl: data.banner_url || null,
-              logoUrl: data.logo_url || null,
-              startsAt: formatFirestoreValue(data.starts_at) || new Date().toISOString(),
-              endsAt: formatFirestoreValue(data.ends_at) || new Date().toISOString(),
+              bannerUrl: data.banner_url || data.bannerUrl || null,
+              logoUrl: data.logo_url || data.logoUrl || null,
+              startsAt: formatFirestoreValue(data.starts_at || data.startsAt) || new Date().toISOString(),
+              endsAt: formatFirestoreValue(data.ends_at || data.endsAt) || new Date().toISOString(),
               featured: Boolean(data.is_featured || data.featured),
-              registrationOpen: Boolean(data.registration_open !== false),
-              registrationMode: (data.registration_mode as League['registrationMode']) || 'individual',
-              maxDrivers: data.max_drivers ? Number(data.max_drivers) : null,
+              registrationOpen: Boolean(data.registration_open !== false && data.registrationOpen !== false),
+              registrationMode: (data.registration_mode || data.registrationMode || 'individual') as League['registrationMode'],
+              maxDrivers: data.max_drivers ? Number(data.max_drivers) : (data.maxDrivers ? Number(data.maxDrivers) : null),
               maxDriversPerCar: data.max_drivers_per_car ? Number(data.max_drivers_per_car) : (data.maxDriversPerCar ? Number(data.maxDriversPerCar) : 4),
-              accentColor: data.accent_color || null,
+              accentColor: data.accent_color || data.accentColor || null,
               slogan: data.slogan || null,
-              discordUrl: data.discord_url || null,
-              youtubeUrl: data.youtube_url || null,
-              rulebookUrl: data.rulebook_url || null,
-              classLimits: data.class_limits || null,
+              discordUrl: data.discord_url || data.discordUrl || null,
+              youtubeUrl: data.youtube_url || data.youtubeUrl || null,
+              rulebookUrl: data.rulebook_url || data.rulebookUrl || null,
+              classLimits: data.class_limits || data.classLimits || null,
             }
           })
+          return list.sort((a: any, b: any) => (a.startsAt || '').localeCompare(b.startsAt || ''))
         }
       } catch (error) {
         console.error('Failed to get leagues from Firestore:', error)
