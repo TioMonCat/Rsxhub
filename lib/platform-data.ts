@@ -275,7 +275,7 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
             displayName: data.display_name || '',
             steamId: data.steam_id || '',
             classTag: data.class_tag || null,
-            assignedNumber: data.assigned_number != null ? Number(data.assigned_number) : null,
+            assignedNumber: data.assigned_number != null ? String(data.assigned_number) : null,
             createdAt: formatFirestoreValue(data.created_at) || '',
             status: data.status || 'pending',
           }
@@ -289,7 +289,7 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
           if (!isMember) return false
           const car = (team.cars || []).find((c: any) => {
             const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
-            const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
+            const sameDorsal = String(c.dorsal || '') === String(r.assignedNumber || '') || Number(c.dorsal) === Number(r.assignedNumber)
             const drivers = Array.isArray(c.driverUserIds)
               ? c.driverUserIds
               : Array.isArray(c.driver_user_ids)

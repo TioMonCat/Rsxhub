@@ -204,7 +204,7 @@ export function LeagueSchedule({
                         (r) =>
                           r.teamId === team.id &&
                           String(r.classTag || '').toUpperCase() === String(carObj.category || '').toUpperCase() &&
-                          Number(r.assignedNumber) === Number(carObj.dorsal)
+                          (String(r.assignedNumber || '') === String(carObj.dorsal || '') || Number(r.assignedNumber) === Number(carObj.dorsal))
                       )
                     })
 
@@ -217,8 +217,9 @@ export function LeagueSchedule({
                           Confirm Attendance: {team.name}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {activeCarsWithDrivers.map((carObj: any) => {
+                          {activeCarsWithDrivers.map((carObj: any, carIdx: number) => {
                             const tag = String(carObj.category).toUpperCase()
+                            const dorsalDisplay = String(carObj.dorsal || '')
                             const num = Number(carObj.dorsal)
                             const limit = (league as any).classLimits?.[tag] ?? 30
                             const isConfirmed = localConfirmations.some(
@@ -226,7 +227,7 @@ export function LeagueSchedule({
                                 c.eventId === ev.id &&
                                 c.teamId === team.id &&
                                 c.classTag === tag &&
-                                c.carNumber === num &&
+                                (String((c as any).dorsalDisplay || c.carNumber) === dorsalDisplay || Number(c.carNumber) === num) &&
                                 c.status === 'confirmed'
                             )
                             const confirmedCount = localConfirmations.filter(
@@ -236,12 +237,12 @@ export function LeagueSchedule({
 
                             return (
                               <div
-                                key={`${tag}_${num}`}
+                                key={`${tag}_${dorsalDisplay}_${carIdx}`}
                                 className="flex items-center justify-between gap-2 bg-black/40 border border-shell-line/30 px-3 py-1.5"
                               >
                                 <div className="flex items-center gap-2">
                                   <ClassBadge classTag={tag} className="text-[9px]" />
-                                  <span className="font-mono text-xs font-bold text-slate-200">#{num}</span>
+                                  <span className="font-mono text-xs font-bold text-slate-200">#{dorsalDisplay}</span>
                                 </div>
 
                                 <button
@@ -256,7 +257,7 @@ export function LeagueSchedule({
                                               c.eventId === ev.id &&
                                               c.teamId === team.id &&
                                               c.classTag === tag &&
-                                              c.carNumber === num
+                                              (String((c as any).dorsalDisplay || c.carNumber) === dorsalDisplay || Number(c.carNumber) === num)
                                             )
                                         )
                                       )

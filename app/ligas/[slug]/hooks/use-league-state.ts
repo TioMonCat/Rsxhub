@@ -44,7 +44,7 @@ export type Registration = {
   teamId: string | null
   displayName: string
   classTag: string | null
-  assignedNumber: number | null
+  assignedNumber: number | string | null
   status: string
 }
 
@@ -68,8 +68,7 @@ export type EventConfirmation = {
   leagueId: string
   teamId: string
   classTag: string
-  carNumber: number
-  carModel: string
+  carNumber: number | string
   status: string
 }
 
@@ -79,7 +78,7 @@ export type TeamStanding = {
   points: number
   logoUrl: string
   drivers: string
-  assignedNumber?: number | null
+  assignedNumber?: number | string | null
   carImageUrl?: string | null
 }
 
@@ -141,7 +140,7 @@ export function useLeagueState({
             logoUrl: `https://placehold.co/40x40/0a1220/ffffff?text=${reg.displayName.slice(0, 3).toUpperCase()}`
           }
 
-          const dorsal = reg.assignedNumber != null ? Number(reg.assignedNumber) : null
+          const dorsal = reg.assignedNumber != null ? String(reg.assignedNumber) : null
           const uniqueKey = `${reg.teamId}_${dorsal != null ? dorsal : ''}`
 
           if (!uniqueKeys.has(uniqueKey)) {
