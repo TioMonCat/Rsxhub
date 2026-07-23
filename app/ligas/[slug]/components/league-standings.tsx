@@ -5,6 +5,7 @@ import { ClassBadge } from '@/components/class-badge'
 import { TeamStanding } from '../hooks/use-league-state'
 
 interface LeagueStandingsProps {
+  isAdmin?: boolean
   classTags: string[]
   standings: Record<string, TeamStanding[]>
   standingsIndices: Record<string, number>
@@ -14,6 +15,7 @@ interface LeagueStandingsProps {
 }
 
 export function LeagueStandings({
+  isAdmin = false,
   classTags,
   standings,
   standingsIndices,
@@ -116,29 +118,39 @@ export function LeagueStandings({
                             )}
                           </div>
 
-                          {/* 4. Foto del carro (con opción de subir/cambiar foto DataURL) */}
-                          <label
-                            title="Click to upload/change car photo"
-                            className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-1 cursor-pointer group transition-colors"
-                          >
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0]
-                                if (file) onCarImageUpload(team.id, file)
-                              }}
-                            />
-                            <img
-                              src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
-                              alt="Vehicle side profile"
-                              className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-                            />
-                            <div className="absolute inset-0 bg-black/80 text-[9px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
-                              <Upload className="h-3.5 w-3.5" /> Change
+                          {/* 4. Foto del carro (sólo editable para admins) */}
+                          {isAdmin ? (
+                            <label
+                              title="Click to upload/change car photo"
+                              className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-1 cursor-pointer group transition-colors"
+                            >
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) onCarImageUpload(team.id, file)
+                                }}
+                              />
+                              <img
+                                src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
+                                alt="Vehicle side profile"
+                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                              />
+                              <div className="absolute inset-0 bg-black/80 text-[9px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
+                                <Upload className="h-3.5 w-3.5" /> Change
+                              </div>
+                            </label>
+                          ) : (
+                            <div className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700/60 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
+                              <img
+                                src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
+                                alt="Vehicle side profile"
+                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                              />
                             </div>
-                          </label>
+                          )}
 
                           {/* 5. Puntos */}
                           <span className="text-sm font-black text-white bg-black/80 px-3 py-1 border border-white/10 font-mono shrink-0 min-w-[60px] text-center">

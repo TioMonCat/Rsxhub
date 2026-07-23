@@ -325,6 +325,7 @@ export default function LeagueDetailPageContent({
         />
 
         <LeagueStandings
+          isAdmin={isAdmin}
           classTags={classTags}
           standings={standings}
           standingsIndices={standingsIndices}
