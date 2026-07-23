@@ -115,7 +115,7 @@ export function Footer() {
 
               {/* Twitch */}
               <a
-                href="https://www.twitch.tv/sobranruedas_tv"
+                href="https://www.twitch.tv/realsimxperience"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 p-2 bg-[#090e1a] hover:bg-[#0f172a] border border-white/10 hover:border-purple-500/40 rounded-lg transition-all"
@@ -127,7 +127,7 @@ export function Footer() {
                 </div>
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-white group-hover:text-purple-400 transition-colors leading-none">Twitch</div>
-                  <div className="text-[10px] text-slate-400 mt-0.5 truncate">sobranruedas_tv</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5 truncate">realsimxperience</div>
                 </div>
               </a>
 
