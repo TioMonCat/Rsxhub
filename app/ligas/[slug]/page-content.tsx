@@ -276,20 +276,33 @@ export default function LeagueDetailPageContent({
         :root {
           --league-accent: ${accentHex};
         }
-        .league-custom-theme .theme-accent-border-l {
-          border-left: 3px solid ${accentHex} !important;
-        }
-        .league-custom-theme .theme-accent-border {
-          border-color: ${accentHex} !important;
-        }
-        .league-custom-theme .theme-accent-glow {
-          box-shadow: 0 0 20px ${accentHex}35 !important;
-        }
-        .league-custom-theme .theme-accent-text {
+        .league-custom-theme .text-cyan-400,
+        .league-custom-theme .text-cyan-300 {
           color: ${accentHex} !important;
         }
-        .league-custom-theme .theme-accent-bg {
+        .league-custom-theme .border-cyan-500,
+        .league-custom-theme .border-cyan-400,
+        .league-custom-theme .border-cyan-500\/40,
+        .league-custom-theme .border-cyan-500\/50,
+        .league-custom-theme .border-cyan-500\/60,
+        .league-custom-theme .border-cyan-500\/70 {
+          border-color: ${accentHex} !important;
+        }
+        .league-custom-theme .bg-cyan-500 {
           background-color: ${accentHex} !important;
+          color: #000000 !important;
+        }
+        .league-custom-theme .bg-cyan-950,
+        .league-custom-theme .bg-cyan-950\/40,
+        .league-custom-theme .bg-cyan-950\/60,
+        .league-custom-theme .bg-cyan-950\/80,
+        .league-custom-theme .bg-cyan-950\/90 {
+          background-color: ${accentHex}25 !important;
+        }
+        .league-custom-theme .shadow-\[0_0_20px_rgba\(0\,242\,254\,0\.2\)\] ,
+        .league-custom-theme .shadow-\[0_0_25px_rgba\(0\,242\,254\,0\.25\)\] ,
+        .league-custom-theme .shadow-\[0_0_15px_rgba\(0\,242\,254\,0\.3\)\] {
+          box-shadow: 0 0 22px ${accentHex}45 !important;
         }
       ` }} />
 

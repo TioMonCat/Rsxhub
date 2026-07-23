@@ -34,10 +34,16 @@ export function LeagueBanner({
       >
         {/* Status Badge - Top Left */}
         <div
-          className="absolute left-4 top-4 z-20 bg-[#1274de] border border-cyan-400/30 text-white font-black uppercase text-xs shadow-[0_4px_16px_rgba(0,0,0,0.45)] flex flex-col items-center justify-center p-2 rounded-none"
-          style={{ width: '64px', height: '64px', borderRight: `3px solid ${accentHex}` }}
+          className="absolute left-4 top-4 z-20 text-white font-black uppercase text-xs flex flex-col items-center justify-center p-2 rounded-none"
+          style={{
+            width: '64px',
+            height: '64px',
+            backgroundColor: accentHex,
+            borderRight: `3px solid ${accentHex}`,
+            boxShadow: `0 0 20px ${accentHex}80`,
+          }}
         >
-          <span className="text-[9px] text-cyan-100 font-bold uppercase tracking-wider leading-none mb-1">STATUS</span>
+          <span className="text-[9px] text-white/90 font-bold uppercase tracking-wider leading-none mb-1">STATUS</span>
           <span className="text-xs font-black tracking-wider leading-none text-white">{league.status.toUpperCase()}</span>
         </div>
 
