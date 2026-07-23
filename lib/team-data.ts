@@ -306,7 +306,7 @@ export const getTeamsDashboard = cache(async (currentUserId?: string) => {
 
         const mPromises = chunks.map((chunk) => db.collection('team_members').where('team_id', 'in', chunk).get())
         const iPromises = chunks.map((chunk) => db.collection('team_invites').where('team_id', 'in', chunk).get())
-        const rPromises = chunks.map((chunk) => db.collection('league_team_registrations').where('team_id', 'in', chunk).get())
+        const rPromises = chunks.map((chunk) => db.collection('league_registrations').where('team_id', 'in', chunk).get())
 
         const [mSnaps, iSnaps, rSnaps] = await Promise.all([
           Promise.all(mPromises),

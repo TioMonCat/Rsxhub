@@ -160,14 +160,7 @@ export const getLeagueEvents = cache(async (leagueId?: string): Promise<LeagueEv
         let query = db.collection('league_events')
         let snapshot: any;
         if (leagueId) {
-          const [snap1, snap2] = await Promise.all([
-            query.where('league_id', '==', leagueId).get().catch(() => ({ docs: [] })),
-            query.where('leagueId', '==', leagueId).get().catch(() => ({ docs: [] }))
-          ])
-          const docMap = new Map()
-          snap1.docs.forEach((d: any) => docMap.set(d.id, d))
-          snap2.docs.forEach((d: any) => docMap.set(d.id, d))
-          snapshot = { docs: Array.from(docMap.values()), empty: docMap.size === 0 }
+          snapshot = await query.where('league_id', '==', leagueId).get()
         } else {
           snapshot = await query.get()
         }

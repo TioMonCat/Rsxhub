@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 import { createSession, getSession } from '@/lib/session'
 import type { LeagueRole, PlatformRole, SessionUser } from '@/types'
@@ -12,7 +13,7 @@ const PLATFORM_ROLE_WEIGHT: Record<PlatformRole, number> = {
 const LEAGUE_ADMIN_ROLES: LeagueRole[] = ['league_owner', 'league_admin']
 const LEAGUE_STEWARD_ROLES: LeagueRole[] = ['league_owner', 'league_admin', 'steward']
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const session = await getSession()
   if (session) {
     if (!session.userId) {
@@ -34,7 +35,7 @@ export async function getCurrentUser() {
     }
   }
   return session
-}
+})
 
 function getConfiguredAdminSteamIds() {
   return (process.env.ADMIN_STEAM_IDS || '')
@@ -55,7 +56,7 @@ export function canStewardLeague(role?: LeagueRole | null) {
   return !!role && LEAGUE_STEWARD_ROLES.includes(role)
 }
 
-export async function getPlatformRole(userId?: string): Promise<PlatformRole | null> {
+export const getPlatformRole = cache(async (userId?: string): Promise<PlatformRole | null> => {
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
@@ -87,9 +88,9 @@ export async function getPlatformRole(userId?: string): Promise<PlatformRole | n
     console.error('Failed to get platform role from Firestore:', error)
     return 'user'
   }
-}
+})
 
-export async function getLeagueRole(leagueId: string, userId?: string): Promise<LeagueRole | null> {
+export const getLeagueRole = cache(async (leagueId: string, userId?: string): Promise<LeagueRole | null> => {
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
@@ -122,9 +123,9 @@ export async function getLeagueRole(leagueId: string, userId?: string): Promise<
     console.error('Failed to get league role from Firestore:', error)
     return null
   }
-}
+})
 
-export async function getLeagueMemberships(userId?: string) {
+export const getLeagueMemberships = cache(async (userId?: string) => {
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
@@ -163,9 +164,9 @@ export async function getLeagueMemberships(userId?: string) {
     console.error('Failed to get league memberships from Firestore:', error)
     return []
   }
-}
+})
 
-export async function getAdminAccessContext(userId?: string) {
+export const getAdminAccessContext = cache(async (userId?: string) => {
   const session = await getSession()
   if (!session) {
     return {
@@ -189,7 +190,7 @@ export async function getAdminAccessContext(userId?: string) {
     canAccessAnyLeagueAdmin: platformAdmin || managedLeagueIds.length > 0,
     canAccessPlatformAdmin: platformAdmin,
   }
-}
+})
 
 export async function isAdminUser() {
   const access = await getAdminAccessContext()

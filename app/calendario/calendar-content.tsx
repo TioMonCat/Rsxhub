@@ -92,69 +92,7 @@ export default function CalendarContent({
     setEvents(initialEvents)
   }, [initialEvents])
 
-  useEffect(() => {
-    let unsubscribe: (() => void) | undefined;
-    
-    // Import and set up client-side Firebase Firestore listener if available
-    import('@/lib/firebase-client').then(({ getFirebaseClientDb }) => {
-      const db = getFirebaseClientDb()
-      if (!db) return
 
-      import('firebase/firestore').then(({ collection, onSnapshot }) => {
-        unsubscribe = onSnapshot(collection(db, 'league_events'), (snapshot) => {
-          const fetchedEvents: LeagueEvent[] = []
-          snapshot.forEach((doc) => {
-            const data = doc.data()
-            let startsAt = ''
-            if (data.starts_at) {
-              if (typeof data.starts_at.toDate === 'function') {
-                startsAt = data.starts_at.toDate().toISOString()
-              } else {
-                startsAt = String(data.starts_at)
-              }
-            } else if (data.startsAt) {
-              startsAt = String(data.startsAt)
-            }
-
-            let endsAt = ''
-            if (data.ends_at) {
-              if (typeof data.ends_at.toDate === 'function') {
-                endsAt = data.ends_at.toDate().toISOString()
-              } else {
-                endsAt = String(data.ends_at)
-              }
-            } else if (data.endsAt) {
-              endsAt = String(data.endsAt)
-            }
-
-            fetchedEvents.push({
-              id: doc.id,
-              leagueId: data.league_id || data.leagueId || '',
-              circuitId: data.circuit_id || data.circuitId || null,
-              title: data.title || null,
-              circuitName: data.circuit_name || data.circuitName || '',
-              circuitImageUrl: data.circuit_image_url || data.circuitImageUrl || null,
-              serverLink: data.server_link || data.serverLink || null,
-              startsAt,
-              endsAt,
-              status: data.status || 'scheduled',
-              eventType: data.event_type || data.eventType || undefined,
-              countryCode: data.country_code || data.countryCode || null,
-            })
-          })
-
-          fetchedEvents.sort((a, b) => a.startsAt.localeCompare(b.startsAt))
-          setEvents(fetchedEvents)
-        }, (error) => {
-          console.error("Firestore onSnapshot error:", error)
-        })
-      }).catch((err) => console.error("Failed to load firebase/firestore:", err))
-    }).catch((err) => console.error("Failed to load @/lib/firebase:", err))
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [])
 
   const eventsByDay = new Map<string, LeagueEvent[]>()
   for (const event of events) {
