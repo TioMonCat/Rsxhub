@@ -73,21 +73,30 @@ export function NotificationsNav({
     }
   }
 
+  const hasUnread = unreadCount > 0
+
   return (
     <div className="relative" ref={dropdownRef}>
       {/* Bell Button */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative flex items-center justify-center h-10 w-10 border border-white/20 bg-white/5 hover:bg-white/10 rounded-md text-slate-200 hover:text-white transition-all cursor-pointer"
+        className={`relative flex items-center justify-center h-10 w-10 rounded-md transition-all cursor-pointer ${
+          hasUnread
+            ? 'bg-[#1274de]/25 border-2 border-[#1274de] text-[#1274de] animate-rsx-breath shadow-[0_0_18px_rgba(18,116,222,0.8)]'
+            : 'border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white'
+        }`}
         title="Centro de Notificaciones"
         aria-label="Centro de Notificaciones"
       >
-        <Bell className="h-4 w-4 text-cyan-400" />
-        {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-black text-white leading-none shadow-[0_0_10px_rgba(244,63,94,0.6)] animate-pulse">
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+        <Bell className={`h-4 w-4 transition-colors ${hasUnread ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]' : 'text-cyan-400'}`} />
+        {hasUnread && (
+          <>
+            <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#1274de] text-[10px] font-black text-white leading-none shadow-[0_0_12px_#00f0ff] ring-2 ring-cyan-400/80 animate-pulse z-10">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+            <span className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-cyan-400 opacity-75 animate-ping" />
+          </>
         )}
       </button>
 

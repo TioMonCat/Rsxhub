@@ -109,3 +109,20 @@ a {
     animation: none;
   }
 }
+
+@keyframes rsx-pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(18, 116, 222, 0.6), 0 0 20px rgba(18, 116, 222, 0.3);
+    border-color: rgba(18, 116, 222, 0.9);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(18, 116, 222, 1), 0 0 38px rgba(0, 240, 255, 0.8);
+    border-color: rgba(0, 240, 255, 1);
+    transform: scale(1.08);
+  }
+}
+
+.animate-rsx-breath {
+  animation: rsx-pulse-glow 1.8s infinite ease-in-out;
+}
