@@ -138,6 +138,8 @@ export default function CalendarContent({
               startsAt,
               endsAt,
               status: data.status || 'scheduled',
+              eventType: data.event_type || data.eventType || undefined,
+              countryCode: data.country_code || data.countryCode || null,
             })
           })
 

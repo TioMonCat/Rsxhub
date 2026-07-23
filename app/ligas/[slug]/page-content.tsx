@@ -209,7 +209,7 @@ export default function LeagueDetailPageContent({
       formData.set('endsAt', endsAtFull)
 
       if (editingEvent) {
-        formData.set('id', editingEvent.id)
+        formData.set('eventId', editingEvent.id)
       }
 
       await saveCalendarEvent(formData)
