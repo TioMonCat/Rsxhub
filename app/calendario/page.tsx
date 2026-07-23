@@ -94,6 +94,7 @@ export default async function CalendarioPage({
     title: l.title,
     slug: l.slug,
     simulator: l.simulator,
+    accentColor: (l as any).accentColor || null,
   }))
 
   return (

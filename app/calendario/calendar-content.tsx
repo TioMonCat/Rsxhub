@@ -29,6 +29,7 @@ type League = {
   slug: string
   simulator?: string
   registrationOpen?: boolean
+  accentColor?: string | null
 }
 
 type Props = {
@@ -65,7 +66,11 @@ export default function CalendarContent({
 
   const leagueById = new Map(leagues.map((league) => [league.id, league]))
 
-  function getLeagueGradient(leagueTitle?: string, leagueSlug?: string) {
+  function getLeagueGradient(leagueTitle?: string, leagueSlug?: string, accentColor?: string | null) {
+    if (accentColor && accentColor.startsWith('#')) {
+      return `linear-gradient(to right, ${accentColor} 0%, ${accentColor}dd 55%, ${accentColor}bb 100%)`
+    }
+
     const title = String(leagueTitle || '').toUpperCase()
     const slug = String(leagueSlug || '').toLowerCase()
     
@@ -687,8 +692,8 @@ export default function CalendarContent({
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: event.circuitImageUrl
-                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${event.circuitImageUrl})`
-                                        : getLeagueGradient(league?.title, league?.slug),
+                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug, league?.accentColor)}, url(${event.circuitImageUrl})`
+                                        : getLeagueGradient(league?.title, league?.slug, league?.accentColor),
                                     }}
                                   />
                                   {idx === 0 ? (
@@ -774,8 +779,8 @@ export default function CalendarContent({
                                     className="absolute inset-0 bg-cover bg-center"
                                     style={{
                                       backgroundImage: primaryEvent.circuitImageUrl
-                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug)}, url(${primaryEvent.circuitImageUrl})`
-                                        : getLeagueGradient(league?.title, league?.slug),
+                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug, league?.accentColor)}, url(${primaryEvent.circuitImageUrl})`
+                                        : getLeagueGradient(league?.title, league?.slug, league?.accentColor),
                                     }}
                                   />
                                   <p className="absolute left-2 top-2 text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
