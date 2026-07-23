@@ -24,6 +24,7 @@ export type TakenDorsal = {
   teamName: string
   category: string
   dorsal: string
+  leagueId?: string | null
 }
 
 export type LeagueOption = {
@@ -144,21 +145,16 @@ export function TeamCarsEditor({
     return set
   }, [cars, activeTab, getCarDriversForLeague])
 
-  // Dorsal Uniqueness Map and Validation
+  // Helper to check if two league scopes overlap (null/empty means "Todas las ligas")
+  const leaguesOverlap = (l1?: string | null, l2?: string | null) => {
+    if (!l1 || !l2) return true
+    return l1 === l2
+  }
+
+  // Dorsal Uniqueness Map and Validation (Per-Category & Per-League)
   const dorsalValidation = useMemo(() => {
     const errors: Record<string, string> = {}
-    const teamDorsalCount: Record<string, string[]> = {}
 
-    // First pass: collect dorsals within current team
-    for (const car of cars) {
-      const d = String(car.dorsal || '').trim()
-      if (d) {
-        if (!teamDorsalCount[d]) teamDorsalCount[d] = []
-        teamDorsalCount[d].push(car.id)
-      }
-    }
-
-    // Second pass: validate each car
     for (const car of cars) {
       const d = String(car.dorsal || '').trim()
       if (!d) continue
@@ -169,18 +165,42 @@ export function TeamCarsEditor({
         continue
       }
 
-      // Check duplicate within current team
-      if (teamDorsalCount[d] && teamDorsalCount[d].length > 1) {
-        errors[car.id] = `El dorsal #${d} está repetido en otro vehículo de tu equipo.`
+      // 1. Check duplicate within current team (matching category & overlapping league)
+      const internalCollision = cars.find((other) => {
+        if (other.id === car.id) return false
+        const otherD = String(other.dorsal || '').trim()
+        if (!otherD) return false
+        
+        const sameDorsal = otherD === d || Number(otherD) === Number(d)
+        if (!sameDorsal) return false
+
+        if (String(other.category).toUpperCase() !== String(car.category).toUpperCase()) return false
+
+        return leaguesOverlap(car.leagueId, other.leagueId)
+      })
+
+      if (internalCollision) {
+        errors[car.id] = `El dorsal #${d} está repetido en otro vehículo de tu equipo para la misma categoría y liga.`
         continue
       }
 
-      // Check taken by another team
-      const takenByOther = takenDorsals.find(
-        (td) => td.teamId !== currentTeamId && td.dorsal.trim() === d
-      )
+      // 2. Check taken by another team (matching category & overlapping league)
+      const takenByOther = takenDorsals.find((td) => {
+        if (td.teamId === currentTeamId) return false
+        const otherD = String(td.dorsal || '').trim()
+        if (!otherD) return false
+
+        const sameDorsal = otherD === d || Number(otherD) === Number(d)
+        if (!sameDorsal) return false
+
+        if (String(td.category).toUpperCase() !== String(car.category).toUpperCase()) return false
+
+        return leaguesOverlap(car.leagueId, td.leagueId)
+      })
+
       if (takenByOther) {
-        errors[car.id] = `El dorsal #${d} ya está registrado por el equipo "${takenByOther.teamName}".`
+        const teamLabel = takenByOther.teamName || 'Otro equipo'
+        errors[car.id] = `El dorsal #${d} ya está registrado por el equipo "${teamLabel}" en esta categoría y liga.`
       }
     }
 

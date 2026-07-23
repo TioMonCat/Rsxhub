@@ -59,7 +59,7 @@ export default async function TeamProfilePage({
 
   if (!team) return notFound()
 
-  const takenDorsals: Array<{ teamId: string; teamName: string; category: string; dorsal: string }> = []
+  const takenDorsals: Array<{ teamId: string; teamName: string; category: string; dorsal: string; leagueId?: string | null }> = []
   for (const t of teams) {
     if (t.id !== team.id && Array.isArray(t.cars)) {
       for (const c of t.cars) {
@@ -69,6 +69,7 @@ export default async function TeamProfilePage({
             teamName: t.name || 'Otro equipo',
             category: c.category || '',
             dorsal: String(c.dorsal).trim(),
+            leagueId: c.leagueId || null,
           })
         }
       }
