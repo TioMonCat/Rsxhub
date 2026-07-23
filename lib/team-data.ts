@@ -208,18 +208,11 @@ async function loadMockTeamsDashboard(currentUserId?: string) {
       }
     })
 
-    let myTeamIds = teams
-      .filter((t) => t.ownerUserId === currentUserId)
-      .map((t) => t.id)
-
-    try {
-      const { cookies } = await import('next/headers')
-      const cookieStore = await cookies()
-      const mockRole = cookieStore.get('mock_role')?.value
-      if (mockRole === 'leader' || mockRole === 'admin') {
-        myTeamIds = teams.map((team: any) => team.id)
-      }
-    } catch (e) {}
+    const myTeamIds = currentUserId
+      ? teams
+          .filter((t) => t.ownerUserId === currentUserId || (Array.isArray(t.members) && t.members.some((m: any) => m.userId === currentUserId && (m.role === 'owner' || m.role === 'manager'))))
+          .map((t) => t.id)
+      : []
 
     return {
       teams,
@@ -546,20 +539,11 @@ export const getTeamsDashboard = cache(async (currentUserId?: string) => {
       team.occupiedSlots = team.members.filter((member: any) => member.role === 'driver' || member.role === 'manager' || member.role === 'owner').length
     }
 
-    let myTeamIds = currentUserId
+    const myTeamIds = currentUserId
       ? teams
           .filter((team: any) => team.ownerUserId === currentUserId || team.members.some((member: any) => member.userId === currentUserId && (member.role === 'owner' || member.role === 'manager')))
           .map((team: any) => team.id)
       : []
-
-    try {
-      const { cookies } = await import('next/headers')
-      const cookieStore = await cookies()
-      const mockRole = cookieStore.get('mock_role')?.value
-      if (mockRole === 'leader' || mockRole === 'admin') {
-        myTeamIds = teams.map((team: any) => team.id)
-      }
-    } catch (e) {}
 
     return {
       teams,
