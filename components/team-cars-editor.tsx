@@ -30,6 +30,7 @@ export type LeagueOption = {
   slug: string
   title: string
   classTags: string[]
+  maxDriversPerCar?: number
 }
 
 const CATEGORIES: Array<'GT3' | 'LMP2' | 'HYPERCAR'> = ['GT3', 'LMP2', 'HYPERCAR']
@@ -359,6 +360,16 @@ export function TeamCarsEditor({
         </div>
       </div>
 
+      {/* Info Banner for Principal Tab */}
+      {activeTab === 'all' && (
+        <div className="bg-[#0b1320] border border-cyan-500/30 rounded-xl p-3 text-xs text-slate-300 flex items-center gap-3 shadow-md">
+          <Trophy className="h-4 w-4 text-amber-400 shrink-0" />
+          <p className="text-[11px] leading-relaxed">
+            <strong className="text-white">Vista General Preview:</strong> Aquí puedes ver todos los coches registrados y asignar su liga. Para gestionar y asignar los pilotos a cada coche, <span className="text-cyan-300 font-semibold underline">selecciona la pestaña de la liga correspondiente arriba</span>.
+          </p>
+        </div>
+      )}
+
       {/* Global Validation Warning Banner */}
       {hasErrors && (
         <div className="border border-rose-500/50 bg-rose-950/40 p-3.5 rounded-xl text-xs text-rose-200 flex items-start gap-3 shadow-md animate-pulse">
@@ -541,41 +552,51 @@ export function TeamCarsEditor({
                         </div>
                       </div>
 
-                      {/* Driver Slots Container */}
-                      <div className="bg-[#0a0f1d]/80 border border-slate-800 rounded-lg p-3 space-y-2">
-                        <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                          <Users className="h-3.5 w-3.5 text-cyan-400" />
-                          Pilotos Asignados (Máximo 4)
-                        </label>
-                        <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-                          {[0, 1, 2, 3].map((driverIdx) => {
-                            const currentVal = car.driverUserIds[driverIdx] || ''
+                      {/* Driver Slots Container - ONLY shown when filtering by a specific league */}
+                      {activeTab !== 'all' && (
+                        <div className="bg-[#0a0f1d]/80 border border-slate-800 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                              <Users className="h-3.5 w-3.5 text-cyan-400" />
+                              Pilotos Asignados a la Liga ({activeLeague?.title || 'Liga'})
+                            </label>
+                            <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded">
+                              Máx. {activeLeague?.maxDriversPerCar ?? 4} Pilotos por Coche
+                            </span>
+                          </div>
 
-                            return (
-                              <select
-                                key={driverIdx}
-                                value={currentVal}
-                                onChange={(e) => updateCarDriver(car.id, driverIdx, e.target.value)}
-                                className="w-full bg-[#131d31] border border-slate-700/70 focus:border-cyan-400 text-slate-200 rounded-md px-2.5 py-1.5 text-xs outline-none cursor-pointer hover:border-slate-600 transition-all"
-                              >
-                                <option value="">-- Vacante --</option>
-                                {teamMembers.map((m) => {
-                                  const isAssignedElsewhere =
-                                    assignedDriverUserIds.has(m.userId) && m.userId !== currentVal
+                          <div className={`grid gap-2 grid-cols-2 ${
+                            (activeLeague?.maxDriversPerCar ?? 4) > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'
+                          }`}>
+                            {Array.from({ length: activeLeague?.maxDriversPerCar ?? 4 }, (_, driverIdx) => {
+                              const currentVal = car.driverUserIds[driverIdx] || ''
 
-                                  if (isAssignedElsewhere) return null
+                              return (
+                                <select
+                                  key={driverIdx}
+                                  value={currentVal}
+                                  onChange={(e) => updateCarDriver(car.id, driverIdx, e.target.value)}
+                                  className="w-full bg-[#131d31] border border-slate-700/70 focus:border-cyan-400 text-slate-200 rounded-md px-2.5 py-1.5 text-xs outline-none cursor-pointer hover:border-slate-600 transition-all"
+                                >
+                                  <option value="">-- Vacante --</option>
+                                  {teamMembers.map((m) => {
+                                    const isAssignedElsewhere =
+                                      assignedDriverUserIds.has(m.userId) && m.userId !== currentVal
 
-                                  return (
-                                    <option key={m.userId} value={m.userId}>
-                                      {m.name} {m.steamId ? `(${m.steamId})` : ''}
-                                    </option>
-                                  )
-                                })}
-                              </select>
-                            )
-                          })}
+                                    if (isAssignedElsewhere) return null
+
+                                    return (
+                                      <option key={m.userId} value={m.userId}>
+                                        {m.name} {m.steamId ? `(${m.steamId})` : ''}
+                                      </option>
+                                    )
+                                  })}
+                                </select>
+                              )
+                            })}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )
                 })}

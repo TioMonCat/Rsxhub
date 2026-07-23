@@ -21,6 +21,7 @@ export async function createLeagueAction(formData: FormData) {
   const startsAt = String(formData.get('startsAt') || '').trim()
   const endsAt = String(formData.get('endsAt') || '').trim()
   const maxDrivers = Number(formData.get('maxDrivers') || 30)
+  const maxDriversPerCar = formData.get('maxDriversPerCar') ? Number(formData.get('maxDriversPerCar')) : 4
   const registrationOpen = formData.get('registrationOpen') === 'true'
   const bannerUrl = String(formData.get('bannerUrl') || '').trim()
   const logoUrl = String(formData.get('logoUrl') || '').trim()
@@ -57,6 +58,7 @@ export async function createLeagueAction(formData: FormData) {
     starts_at: new Date(startsAt).toISOString(),
     ends_at: new Date(endsAt).toISOString(),
     max_drivers: maxDrivers,
+    max_drivers_per_car: maxDriversPerCar,
     registration_open: registrationOpen,
     banner_url: bannerUrl || null,
     logo_url: logoUrl || null,
@@ -168,6 +170,7 @@ export async function updateLeagueDetailsAction(formData: FormData) {
   const startsAt = String(formData.get('startsAt') || '').trim()
   const endsAt = String(formData.get('endsAt') || '').trim()
   const maxDrivers = Number(formData.get('maxDrivers') || 30)
+  const maxDriversPerCar = formData.get('maxDriversPerCar') ? Number(formData.get('maxDriversPerCar')) : 4
   const registrationOpen = formData.get('registrationOpen') === 'true'
   const bannerUrl = String(formData.get('bannerUrl') || '').trim()
   const logoUrl = String(formData.get('logoUrl') || '').trim()
@@ -197,6 +200,7 @@ export async function updateLeagueDetailsAction(formData: FormData) {
     starts_at: new Date(startsAt).toISOString(),
     ends_at: new Date(endsAt).toISOString(),
     max_drivers: maxDrivers,
+    max_drivers_per_car: maxDriversPerCar,
     registration_open: registrationOpen,
     banner_url: bannerUrl || null,
     logo_url: logoUrl || null,

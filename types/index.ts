@@ -58,6 +58,7 @@ export interface League {
   registrationOpen?: boolean
   registrationMode?: LeagueRegistrationMode
   maxDrivers?: number | null
+  maxDriversPerCar?: number | null
   accentColor?: string | null
   slogan?: string | null
   discordUrl?: string | null
@@ -148,6 +149,7 @@ export interface Team {
     dorsal: string
     skinUrl: string
     driverUserIds: string[]
+    leagueId?: string | null
   }>
 }
 

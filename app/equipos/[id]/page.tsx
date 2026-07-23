@@ -80,6 +80,7 @@ export default async function TeamProfilePage({
     slug: l.slug,
     title: l.title,
     classTags: l.classTags || [],
+    maxDriversPerCar: l.maxDriversPerCar ?? 4,
   }))
   const access = await getAdminAccessContext(session?.userId)
   const isPlatformAdmin = access.canAccessPlatformAdmin
@@ -1185,9 +1186,12 @@ export default async function TeamProfilePage({
                       <p className="text-xs text-slate-500 italic">No vehicles registered in this category.</p>
                     ) : (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {categoryCars.map((car) => {
+                        {categoryCars.map((car: any) => {
+                          const carLeague = car.leagueId ? leagues.find((l) => l.id === car.leagueId || l.slug === car.leagueId) : null
+                          const maxSlots = carLeague?.maxDriversPerCar ?? 4
                           const carDriverSteamIds = (car.driverUserIds || [])
-                            .map((dId) => {
+                            .slice(0, maxSlots)
+                            .map((dId: string) => {
                               const driver = teamMembersOptions.find((m) => m.userId === dId)
                               return driver?.steamId || driver?.userId?.replace('steam_', '') || ''
                             })
@@ -1195,10 +1199,17 @@ export default async function TeamProfilePage({
 
                           return (
                             <div key={car.id} className={`border bg-black/40 p-4 rounded-none space-y-3 transition-all duration-300 ${theme.carBorder}`}>
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-black text-white uppercase italic tracking-wider">
-                                  Car Number: <span className={`font-bold ${theme.carDorsal}`}>#{car.dorsal || 'N/A'}</span>
-                                </span>
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-black text-white uppercase italic tracking-wider">
+                                    Car Number: <span className={`font-bold ${theme.carDorsal}`}>#{car.dorsal || 'N/A'}</span>
+                                  </span>
+                                  {carLeague && (
+                                    <span className="text-[10px] font-bold text-amber-400 bg-amber-950/40 border border-amber-500/30 px-2 py-0.5 rounded-none">
+                                      {carLeague.title}
+                                    </span>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2">
                                   <CopyVehicleDriverIdsButton
                                     driverSteamIds={carDriverSteamIds}
@@ -1207,6 +1218,7 @@ export default async function TeamProfilePage({
                                   {car.skinUrl && (
                                     <a
                                       href={car.skinUrl}
+                                      download
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className={`flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-none transition-colors ${theme.skinBtn}`}
@@ -1220,8 +1232,8 @@ export default async function TeamProfilePage({
                               
                               {/* Drivers slots */}
                               <div className={`border-t pt-2 ${theme.line}`}>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {[0, 1, 2, 3].map((idx) => {
+                                <div className={`grid gap-2 grid-cols-2 ${maxSlots > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'}`}>
+                                  {Array.from({ length: maxSlots }, (_, idx) => {
                                     const driverId = car.driverUserIds?.[idx]
                                     const driverObj = driverId ? teamMembersOptions.find((m) => m.userId === driverId) : null
                                     const driverName = driverObj?.name || null

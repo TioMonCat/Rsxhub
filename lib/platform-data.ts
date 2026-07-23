@@ -69,6 +69,7 @@ export const getLeagues = cache(async (): Promise<League[]> => {
             registrationOpen: Boolean(data.registration_open),
             registrationMode: (data.registration_mode as League['registrationMode']) || 'individual',
             maxDrivers: data.max_drivers ? Number(data.max_drivers) : null,
+            maxDriversPerCar: data.max_drivers_per_car ? Number(data.max_drivers_per_car) : (data.maxDriversPerCar ? Number(data.maxDriversPerCar) : 4),
             accentColor: data.accent_color || null,
             slogan: data.slogan || null,
             discordUrl: data.discord_url || null,

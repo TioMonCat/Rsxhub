@@ -234,7 +234,11 @@ export default async function AdminLeaguePage({
                 className="w-full border border-shell-line bg-black/20 px-3 py-2 text-sm text-white outline-none rounded-none"
               />
             </div>
-            <input name="maxDrivers" type="number" defaultValue={league.maxDrivers ?? ''} placeholder="Max drivers" className="border border-shell-line bg-black/20 px-3 py-2 text-sm text-white outline-none rounded-none" />
+            <input name="maxDrivers" type="number" defaultValue={league.maxDrivers ?? ''} placeholder="Max total drivers in league" className="border border-shell-line bg-black/20 px-3 py-2 text-sm text-white outline-none rounded-none" />
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase font-bold text-slate-400">Máx. Pilotos por Coche / Dorsal</label>
+              <input name="maxDriversPerCar" type="number" min={1} max={6} defaultValue={league.maxDriversPerCar ?? 4} placeholder="Máx. pilotos por coche (ej. 4)" className="border border-shell-line bg-black/20 px-3 py-2 text-sm text-white outline-none rounded-none" />
+            </div>
             <select name="status" defaultValue={league.status} className="border border-shell-line bg-black/20 px-3 py-2 text-sm text-white outline-none rounded-none">
               <option value="draft">Draft</option>
               <option value="open">Open</option>
