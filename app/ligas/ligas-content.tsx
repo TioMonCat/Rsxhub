@@ -103,26 +103,27 @@ export default function LigasPageContent({
   }
 
   return (
-    <div className="space-y-4 text-white">
+    <div className="space-y-6 text-white">
+      {/* Main Page Title Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-shell-line pb-4">
+        <SectionTitle
+          title="CHAMPIONSHIPS & LEAGUES"
+          subtitle="Filter by sim, status and format just like a race browser."
+          icon={<Trophy className="h-7 w-7 text-cyan-400 shrink-0" />}
+        />
+        {isAdmin && (
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-shell-accent hover:bg-red-700 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white rounded-none transition-colors flex items-center gap-1.5 shrink-0 self-start md:self-auto cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            Create League
+          </button>
+        )}
+      </div>
+
       {/* Search and Filters Box */}
       <section className="shell-panel p-4 md:p-5 rounded-none">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-4 border-b border-shell-line pb-3">
-          <SectionTitle
-            title="CHAMPIONSHIPS & LEAGUES"
-            subtitle="Filter by sim, status and format just like a race browser."
-            icon={<Trophy className="h-7 w-7 text-cyan-400 shrink-0" />}
-          />
-          {isAdmin && (
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="bg-shell-accent hover:bg-red-700 px-4 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-none transition-colors flex items-center gap-1.5"
-            >
-              <Plus className="h-4 w-4" />
-              Create League
-            </button>
-          )}
-        </div>
-
         <form className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
           <input
             name="q"
