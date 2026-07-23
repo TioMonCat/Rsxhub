@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2, Trophy } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Calendar, Clock, Plus, Edit2, Trash2, Users, CheckCircle2, Trophy, Eye, Copy, Check, X } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { FormattedDate } from '@/components/formatted-date'
 import { formatDateTime } from '@/lib/utils'
-import { League, LeagueEvent, Registration, ManagedTeam, EventConfirmation } from '../hooks/use-league-state'
+import { League, LeagueEvent, Registration, ManagedTeam, EventConfirmation, TeamStanding } from '../hooks/use-league-state'
 import { confirmAttendanceAction, cancelAttendanceAction } from '@/app/ligas/actions'
 import { useRouter } from 'next/navigation'
 
@@ -17,6 +17,7 @@ interface LeagueScheduleProps {
   confirmations: EventConfirmation[]
   initialRegistrations: Registration[]
   myManagedTeams: ManagedTeam[]
+  standings?: Record<string, TeamStanding[]>
   onOpenEventModal: (event?: LeagueEvent) => void
   onDeleteEvent: (eventId: string) => void
   onFinishRound?: (event: LeagueEvent) => void
@@ -31,6 +32,7 @@ export function LeagueSchedule({
   confirmations,
   initialRegistrations,
   myManagedTeams,
+  standings,
   onOpenEventModal,
   onDeleteEvent,
   onFinishRound,
@@ -38,6 +40,7 @@ export function LeagueSchedule({
 }: LeagueScheduleProps) {
   const router = useRouter()
   const [localConfirmations, setLocalConfirmations] = useState<EventConfirmation[]>(confirmations)
+  const [viewingEntryListEvent, setViewingEntryListEvent] = useState<LeagueEvent | null>(null)
 
   useEffect(() => {
     setLocalConfirmations(confirmations)
@@ -118,24 +121,35 @@ export function LeagueSchedule({
                       </button>
                     )}
 
-                    {isAdmin && (
-                      <div className="flex items-center gap-2">
-                        {onFinishRound && !isCompleted && (
-                          <button
-                            type="button"
-                            onClick={() => onFinishRound(ev)}
-                            className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
-                            Finalizar Ronda
-                          </button>
-                        )}
-                        <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
+                    {isAdmin && onFinishRound && !isCompleted && (
+                      <button
+                        type="button"
+                        onClick={() => onFinishRound(ev)}
+                        className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
+                        Finalizar Ronda
+                      </button>
+                    )}
+
+                    <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
+                      {/* EYE ICON: View Confirmed Teams & Entry List */}
+                      <button
+                        type="button"
+                        onClick={() => setViewingEntryListEvent(ev)}
+                        title="Ver Equipos Confirmados"
+                        className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
+                      >
+                        <Eye className="h-3.5 w-3.5" />
+                      </button>
+
+                      {isAdmin && (
+                        <>
                           <button
                             type="button"
                             onClick={() => onOpenEventModal(ev)}
                             title="Edit Round"
-                            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none"
+                            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
@@ -143,13 +157,13 @@ export function LeagueSchedule({
                             type="button"
                             onClick={() => onDeleteEvent(ev.id)}
                             title="Delete Round"
-                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none"
+                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
-                        </div>
-                      </div>
-                    )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -321,6 +335,273 @@ export function LeagueSchedule({
             )
           })
         )}
+      </div>
+
+      {/* View Entry List / Confirmed Teams Modal */}
+      {viewingEntryListEvent && (
+        <ViewEntryListModal
+          event={viewingEntryListEvent}
+          league={league}
+          classTags={classTags}
+          confirmations={localConfirmations.filter((c) => c.eventId === viewingEntryListEvent.id && c.status === 'confirmed')}
+          registrations={initialRegistrations}
+          myManagedTeams={myManagedTeams}
+          standings={standings}
+          isAdmin={isAdmin}
+          onClose={() => setViewingEntryListEvent(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function ViewEntryListModal({
+  event,
+  league,
+  classTags,
+  confirmations,
+  registrations,
+  myManagedTeams,
+  standings,
+  isAdmin,
+  onClose,
+}: {
+  event: LeagueEvent
+  league: League
+  classTags: string[]
+  confirmations: EventConfirmation[]
+  registrations: Registration[]
+  myManagedTeams: ManagedTeam[]
+  standings?: Record<string, TeamStanding[]>
+  isAdmin: boolean
+  onClose: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  // Map all confirmed teams
+  const allTeamsInStandings = useMemo(() => {
+    const list: TeamStanding[] = []
+    if (standings) {
+      Object.values(standings).forEach((arr) => {
+        arr.forEach((t) => {
+          if (!list.some((existing) => existing.id === t.id)) {
+            list.push(t)
+          }
+        })
+      })
+    }
+    return list
+  }, [standings])
+
+  const resolveTeamName = (teamId: string) => {
+    const fromManaged = myManagedTeams.find((t) => t.id === teamId)
+    if (fromManaged) return fromManaged.name
+
+    const fromStandings = allTeamsInStandings.find((t) => t.id === teamId)
+    if (fromStandings) return fromStandings.name
+
+    const fromReg = registrations.find((r) => r.teamId === teamId)
+    if (fromReg) return fromReg.displayName
+
+    return `Team ${teamId.slice(0, 8)}`
+  }
+
+  const resolveDrivers = (teamId: string, classTag: string, carNumber: string | number) => {
+    const matchedRegs = registrations.filter(
+      (r) =>
+        r.teamId === teamId &&
+        String(r.classTag || '').toUpperCase() === String(classTag || '').toUpperCase() &&
+        (String(r.assignedNumber || '') === String(carNumber) || Number(r.assignedNumber) === Number(carNumber))
+    )
+    if (matchedRegs.length > 0) {
+      return matchedRegs.map((r) => ({
+        name: r.displayName || 'Driver',
+        steamId: (r as any).steamId || r.userId || '',
+      }))
+    }
+
+    const managed = myManagedTeams.find((t) => t.id === teamId)
+    if (managed && managed.members) {
+      return managed.members.map((m) => ({
+        name: m.displayName || 'Driver',
+        steamId: m.userId || '',
+      }))
+    }
+
+    return []
+  }
+
+  // Group confirmations by category
+  const groupedConfirmations = useMemo(() => {
+    const map: Record<string, Array<{ teamId: string; teamName: string; dorsal: string; drivers: Array<{ name: string; steamId: string }> }>> = {}
+
+    classTags.forEach((tag) => {
+      map[tag] = []
+    })
+
+    confirmations.forEach((c) => {
+      const tag = String(c.classTag || '').toUpperCase()
+      const dorsal = String((c as any).dorsalDisplay || c.carNumber || '')
+      const teamName = resolveTeamName(c.teamId)
+      const drivers = resolveDrivers(c.teamId, tag, c.carNumber)
+
+      if (!map[tag]) map[tag] = []
+
+      if (!map[tag].some((item) => item.teamId === c.teamId && item.dorsal === dorsal)) {
+        map[tag].push({
+          teamId: c.teamId,
+          teamName,
+          dorsal,
+          drivers,
+        })
+      }
+    })
+
+    return map
+  }, [confirmations, classTags, myManagedTeams, registrations, allTeamsInStandings])
+
+  const totalConfirmed = confirmations.length
+
+  const handleCopyIDs = () => {
+    let copyText = `--- ENTRY LIST: ${event.title || event.circuitName} ---\n`
+    copyText += `League: ${league.title}\n`
+    copyText += `Date: ${formatDateTime(event.startsAt)}\n\n`
+
+    Object.entries(groupedConfirmations).forEach(([tag, teams]) => {
+      if (teams.length > 0) {
+        copyText += `=== CATEGORY: ${tag} (${teams.length} teams) ===\n`
+        teams.forEach((t) => {
+          const driverStr =
+            t.drivers.length > 0
+              ? t.drivers.map((d) => `${d.name} (${d.steamId})`).join(', ')
+              : 'No registered drivers'
+          copyText += `[#${t.dorsal}] ${t.teamName} | TeamID: ${t.teamId} | Drivers: ${driverStr}\n`
+        })
+        copyText += `\n`
+      }
+    })
+
+    navigator.clipboard.writeText(copyText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[150] overflow-y-auto bg-black/85 backdrop-blur-sm p-4 flex justify-center items-start md:items-center">
+      <div className="w-full max-w-2xl bg-[#090d16] border border-shell-line shadow-2xl my-auto relative overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-shell-line p-4 md:p-5 bg-black/60">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-0.5 text-[10px] font-mono font-bold uppercase">
+                {event.circuitName}
+              </span>
+              <span className="text-xs text-slate-400 font-bold uppercase tracking-wider">
+                {totalConfirmed} {totalConfirmed === 1 ? 'equipo confirmado' : 'equipos confirmados'}
+              </span>
+            </div>
+            <h2 className="text-lg md:text-xl font-black uppercase italic tracking-tight text-white mt-1">
+              {event.title || `Round: ${event.circuitName}`}
+            </h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={handleCopyIDs}
+                className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Copiar lista de IDs para el servidor"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-400" />
+                    <span className="text-emerald-400">¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5 text-cyan-400" />
+                    <span>Copiar IDs</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-slate-400 hover:text-white p-1.5 transition-colors cursor-pointer"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div className="p-4 md:p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+          {totalConfirmed === 0 ? (
+            <div className="text-center py-8 text-slate-400 text-sm font-medium">
+              No hay equipos confirmados para esta ronda aún.
+            </div>
+          ) : (
+            Object.entries(groupedConfirmations).map(([tag, teamList]) => {
+              if (teamList.length === 0) return null
+
+              return (
+                <div key={tag} className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                    <div className="flex items-center gap-2">
+                      <ClassBadge classTag={tag} className="text-xs font-black" />
+                      <span className="text-xs text-slate-400 font-bold uppercase">
+                        ({teamList.length} {teamList.length === 1 ? 'equipo' : 'equipos'})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-2">
+                    {teamList.map((t, idx) => (
+                      <div
+                        key={`${t.teamId}_${t.dorsal}_${idx}`}
+                        className="flex flex-wrap items-center justify-between gap-3 bg-black/40 border border-slate-800 p-3 hover:border-cyan-500/30 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 shrink-0">
+                            #{t.dorsal}
+                          </span>
+                          <div>
+                            <h4 className="text-sm font-bold text-white uppercase tracking-wide">
+                              {t.teamName}
+                            </h4>
+                            {t.drivers.length > 0 && (
+                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                {t.drivers.map((d, dIdx) => (
+                                  <span key={dIdx} className="inline-flex items-center gap-1">
+                                    <span className="text-slate-300 font-medium">{d.name}</span>
+                                    {isAdmin && d.steamId && (
+                                      <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1 border border-slate-800">
+                                        {d.steamId}
+                                      </span>
+                                    )}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase px-2 py-0.5">
+                            CONFIRMED
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
       </div>
     </div>
   )

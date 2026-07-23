@@ -318,6 +318,7 @@ export default function LeagueDetailPageContent({
           confirmations={confirmations}
           initialRegistrations={initialRegistrations}
           myManagedTeams={myManagedTeams}
+          standings={standings}
           onOpenEventModal={handleOpenEventModal}
           onDeleteEvent={handleEventDelete}
           onFinishRound={(ev) => setFinishingEvent(ev)}
