@@ -48,40 +48,46 @@ export const getLeagues = cache(async (): Promise<League[]> => {
     const db = getFirestoreDb()
     if (db) {
       try {
-        const snapshot = await db.collection('leagues').orderBy('starts_at', 'asc').get()
-        if (snapshot.empty) return []
-        return snapshot.docs.map((doc: any) => {
-          const data = doc.data()
-          return {
-            id: doc.id,
-            title: data.title || '',
-            slug: data.slug || '',
-            shortDescription: data.short_description || '',
-            fullDescription: data.full_description || '',
-            simulator: data.simulator || 'ac',
-            format: data.format || 'sprint',
-            classTags: parseClassTags(data.class_tags),
-            status: data.status || 'open',
-            bannerUrl: data.banner_url || null,
-            logoUrl: data.logo_url || null,
-            startsAt: formatFirestoreValue(data.starts_at) || '',
-            endsAt: formatFirestoreValue(data.ends_at) || '',
-            featured: Boolean(data.is_featured),
-            registrationOpen: Boolean(data.registration_open),
-            registrationMode: (data.registration_mode as League['registrationMode']) || 'individual',
-            maxDrivers: data.max_drivers ? Number(data.max_drivers) : null,
-            maxDriversPerCar: data.max_drivers_per_car ? Number(data.max_drivers_per_car) : (data.maxDriversPerCar ? Number(data.maxDriversPerCar) : 4),
-            accentColor: data.accent_color || null,
-            slogan: data.slogan || null,
-            discordUrl: data.discord_url || null,
-            youtubeUrl: data.youtube_url || null,
-            rulebookUrl: data.rulebook_url || null,
-            classLimits: data.class_limits || null,
-          }
-        })
+        let snapshot: any;
+        try {
+          snapshot = await db.collection('leagues').orderBy('starts_at', 'asc').get()
+        } catch {
+          snapshot = await db.collection('leagues').get()
+        }
+
+        if (!snapshot.empty) {
+          return snapshot.docs.map((doc: any) => {
+            const data = doc.data()
+            return {
+              id: doc.id,
+              title: data.title || '',
+              slug: data.slug || '',
+              shortDescription: data.short_description || '',
+              fullDescription: data.full_description || '',
+              simulator: data.simulator || 'ac',
+              format: data.format || 'sprint',
+              classTags: parseClassTags(data.class_tags),
+              status: data.status || 'open',
+              bannerUrl: data.banner_url || null,
+              logoUrl: data.logo_url || null,
+              startsAt: formatFirestoreValue(data.starts_at) || new Date().toISOString(),
+              endsAt: formatFirestoreValue(data.ends_at) || new Date().toISOString(),
+              featured: Boolean(data.is_featured || data.featured),
+              registrationOpen: Boolean(data.registration_open !== false),
+              registrationMode: (data.registration_mode as League['registrationMode']) || 'individual',
+              maxDrivers: data.max_drivers ? Number(data.max_drivers) : null,
+              maxDriversPerCar: data.max_drivers_per_car ? Number(data.max_drivers_per_car) : (data.maxDriversPerCar ? Number(data.maxDriversPerCar) : 4),
+              accentColor: data.accent_color || null,
+              slogan: data.slogan || null,
+              discordUrl: data.discord_url || null,
+              youtubeUrl: data.youtube_url || null,
+              rulebookUrl: data.rulebook_url || null,
+              classLimits: data.class_limits || null,
+            }
+          })
+        }
       } catch (error) {
         console.error('Failed to get leagues from Firestore:', error)
-        return []
       }
     }
   }
