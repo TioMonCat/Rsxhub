@@ -180,10 +180,23 @@ export function LeagueSchedule({
                   if (myRegisteredTeams.length === 0) return null
 
                   return myRegisteredTeams.map((team) => {
-                    const teamCars = initialRegistrations.filter(
-                      (r) => r.teamId === team.id && r.classTag && r.assignedNumber
-                    )
-                    if (teamCars.length === 0) return null
+                    const activeCarsWithDrivers = ((team as any).cars || []).filter((carObj: any) => {
+                      const drivers = Array.isArray(carObj.driverUserIds)
+                        ? carObj.driverUserIds.filter(Boolean)
+                        : Array.isArray((carObj as any).driver_user_ids)
+                        ? (carObj as any).driver_user_ids.filter(Boolean)
+                        : []
+                      if (drivers.length === 0) return false
+
+                      return initialRegistrations.some(
+                        (r) =>
+                          r.teamId === team.id &&
+                          String(r.classTag || '').toUpperCase() === String(carObj.category || '').toUpperCase() &&
+                          Number(r.assignedNumber) === Number(carObj.dorsal)
+                      )
+                    })
+
+                    if (activeCarsWithDrivers.length === 0) return null
 
                     return (
                       <div key={team.id} className="bg-slate-900/40 border border-cyan-500/10 p-3 z-10 space-y-2 mt-2">
@@ -192,9 +205,9 @@ export function LeagueSchedule({
                           Confirm Attendance: {team.name}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {teamCars.map((car) => {
-                            const tag = car.classTag!
-                            const num = car.assignedNumber!
+                          {activeCarsWithDrivers.map((carObj: any) => {
+                            const tag = String(carObj.category).toUpperCase()
+                            const num = Number(carObj.dorsal)
                             const limit = (league as any).classLimits?.[tag] ?? 30
                             const isConfirmed = localConfirmations.some(
                               (c) =>

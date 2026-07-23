@@ -52,6 +52,7 @@ export type ManagedTeam = {
   id: string
   name: string
   logoUrl: string | null
+  cars?: any[]
   members: Array<{ userId: string; displayName: string }>
 }
 
