@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { leagues as mockLeagues, leagueEvents as mockLeagueEvents, mockRegistrations } from '@/data/mock'
 import { DEFAULT_CIRCUITS } from '@/lib/circuit-catalog'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
+import { getTeamsDashboard } from '@/lib/team-data'
 import type { Circuit, League, LeagueCar, LeagueEvent, LeagueMember, LeagueRegistration, LeagueResult } from '@/types'
 
 function formatFirestoreValue(val: any): any {
@@ -270,7 +271,21 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
             status: data.status || 'pending',
           }
         })
-        return registrations.sort((a: any, b: any) => b.createdAt.localeCompare(a.createdAt))
+        const { teams } = await getTeamsDashboard()
+        const activeRegistrations = registrations.filter((r: LeagueRegistration) => {
+          if (!r.teamId) return true
+          const team = teams.find((t) => t.id === r.teamId)
+          if (!team) return false
+          const car = (team.cars || []).find((c: any) => {
+            const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
+            const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
+            const hasDrivers = Array.isArray(c.driverUserIds) && c.driverUserIds.some((id: string) => Boolean(id))
+            return sameClass && sameDorsal && hasDrivers
+          })
+          return Boolean(car)
+        })
+
+        return activeRegistrations.sort((a: any, b: any) => b.createdAt.localeCompare(a.createdAt))
       } catch (error) {
         console.error('Failed to get registrations from Firestore:', error)
         return []
@@ -292,7 +307,25 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
   if (leagues.length === 0) {
     return []
   }
-  return leagueId ? list.filter((item) => item.leagueId === leagueId) : list
+  const filteredList = leagueId ? list.filter((item) => item.leagueId === leagueId) : list
+
+  try {
+    const { teams } = await getTeamsDashboard()
+    return filteredList.filter((r: any) => {
+      if (!r.teamId) return true
+      const team = teams.find((t) => t.id === r.teamId)
+      if (!team) return false
+      const car = (team.cars || []).find((c: any) => {
+        const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
+        const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
+        const hasDrivers = Array.isArray(c.driverUserIds) && c.driverUserIds.some((id: string) => Boolean(id))
+        return sameClass && sameDorsal && hasDrivers
+      })
+      return Boolean(car)
+    })
+  } catch {
+    return filteredList
+  }
 })
 
 export const getLeagueResults = cache(async (leagueId: string): Promise<LeagueResult[]> => {
@@ -406,7 +439,7 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
           .where('league_id', '==', leagueId)
           .get()
         if (snapshot.empty) return []
-        return snapshot.docs.map((doc: any) => {
+        const rawConfirmations = snapshot.docs.map((doc: any) => {
           const data = doc.data()
           return {
             id: doc.id,
@@ -419,6 +452,19 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
             status: data.status || 'confirmed',
             confirmedAt: formatFirestoreValue(data.confirmed_at) || '',
           }
+        })
+
+        const { teams } = await getTeamsDashboard()
+        return rawConfirmations.filter((c: any) => {
+          const team = teams.find((t) => t.id === c.teamId)
+          if (!team) return false
+          const car = (team.cars || []).find((carObj: any) => {
+            const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
+            const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
+            const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
+            return sameClass && sameDorsal && hasDrivers
+          })
+          return Boolean(car)
         })
       } catch (error) {
         console.error('Failed to get event confirmations from Firestore:', error)
@@ -433,8 +479,19 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
     const cookieStore = await cookies()
     const raw = cookieStore.get('mock_event_confirmations')?.value
     if (raw) {
-      const list = JSON.parse(raw)
-      return list.filter((c: any) => c.leagueId === leagueId)
+      const list = JSON.parse(raw).filter((c: any) => c.leagueId === leagueId)
+      const { teams } = await getTeamsDashboard()
+      return list.filter((c: any) => {
+        const team = teams.find((t) => t.id === c.teamId)
+        if (!team) return false
+        const car = (team.cars || []).find((carObj: any) => {
+          const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
+          const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
+          const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
+          return sameClass && sameDorsal && hasDrivers
+        })
+        return Boolean(car)
+      })
     }
   } catch (e) {
     console.error('Failed to get mock event confirmations:', e)

@@ -197,7 +197,14 @@ async function loadMockTeamsDashboard(currentUserId?: string) {
         logoUrl: cookieStore.get(`mock_team_logo_${t.id}`)?.value || t.logoUrl || null,
         carSkinUrls: t.carSkinUrls || [],
         skinAssignments: t.skinAssignments || [],
-        cars: t.cars || [],
+        cars: (t.cars || []).filter((car: any) => {
+          const drivers = Array.isArray(car.driverUserIds)
+            ? car.driverUserIds.filter(Boolean)
+            : Array.isArray(car.driver_user_ids)
+            ? car.driver_user_ids.filter(Boolean)
+            : []
+          return drivers.length > 0
+        }),
         ownerUserId: ownerId,
         maxSlots: t.maxSlots || 4,
         createdAt: t.createdAt || new Date().toISOString(),
@@ -266,7 +273,14 @@ export const getTeamsDashboard = cache(async (currentUserId?: string) => {
         logoUrl: row.logo_url || null,
         carSkinUrls: parseTextArray(row.car_skin_urls),
         skinAssignments: parseSkinAssignments(row.skin_assignments),
-        cars: Array.isArray(row.cars) ? row.cars : [],
+        cars: (Array.isArray(row.cars) ? row.cars : []).filter((car: any) => {
+          const drivers = Array.isArray(car.driverUserIds)
+            ? car.driverUserIds.filter(Boolean)
+            : Array.isArray(car.driver_user_ids)
+            ? car.driver_user_ids.filter(Boolean)
+            : []
+          return drivers.length > 0
+        }),
         ownerUserId: row.owner_user_id || null,
         maxSlots: row.max_slots ? Number(row.max_slots) : null,
         createdAt: formatFirestoreValue(row.created_at) || '',

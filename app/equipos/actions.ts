@@ -439,10 +439,13 @@ export async function updateTeam(formData: FormData) {
     try {
       const rawCars = JSON.parse(teamCarsJson)
       if (Array.isArray(rawCars)) {
-        teamCars = rawCars.map((car: any) => ({
-          ...car,
-          dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
-        }))
+        teamCars = rawCars
+          .map((car: any) => ({
+            ...car,
+            dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
+            driverUserIds: (car.driverUserIds || car.driver_user_ids || []).filter(Boolean),
+          }))
+          .filter((car: any) => car.driverUserIds.length > 0)
 
         // Validate internal uniqueness of dorsals
         const dorsalsSeen = new Set<string>()
