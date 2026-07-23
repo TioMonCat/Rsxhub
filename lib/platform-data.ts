@@ -68,7 +68,7 @@ export const getLeagues = cache(async (): Promise<League[]> => {
               startsAt: formatFirestoreValue(data.starts_at || data.startsAt) || new Date().toISOString(),
               endsAt: formatFirestoreValue(data.ends_at || data.endsAt) || new Date().toISOString(),
               featured: Boolean(data.is_featured || data.featured),
-              registrationOpen: Boolean(data.registration_open !== false && data.registrationOpen !== false),
+              registrationOpen: (data.status || 'open') === 'open',
               registrationMode: (data.registration_mode || data.registrationMode || 'individual') as League['registrationMode'],
               maxDrivers: data.max_drivers ? Number(data.max_drivers) : (data.maxDrivers ? Number(data.maxDrivers) : null),
               maxDriversPerCar: data.max_drivers_per_car ? Number(data.max_drivers_per_car) : (data.maxDriversPerCar ? Number(data.maxDriversPerCar) : 4),

@@ -22,7 +22,7 @@ export async function createLeagueAction(formData: FormData) {
   const endsAt = String(formData.get('endsAt') || '').trim()
   const maxDrivers = Number(formData.get('maxDrivers') || 30)
   const maxDriversPerCar = formData.get('maxDriversPerCar') ? Number(formData.get('maxDriversPerCar')) : 4
-  const registrationOpen = formData.get('registrationOpen') === 'true'
+  const registrationOpen = formData.has('registrationOpen') ? formData.get('registrationOpen') === 'true' : true
   const bannerUrl = String(formData.get('bannerUrl') || '').trim()
   const logoUrl = String(formData.get('logoUrl') || '').trim()
   const accentColor = String(formData.get('accentColor') || '').trim()
@@ -171,7 +171,7 @@ export async function updateLeagueDetailsAction(formData: FormData) {
   const endsAt = String(formData.get('endsAt') || '').trim()
   const maxDrivers = Number(formData.get('maxDrivers') || 30)
   const maxDriversPerCar = formData.get('maxDriversPerCar') ? Number(formData.get('maxDriversPerCar')) : 4
-  const registrationOpen = formData.get('registrationOpen') === 'true'
+  const registrationOpen = status === 'open'
   const bannerUrl = String(formData.get('bannerUrl') || '').trim()
   const logoUrl = String(formData.get('logoUrl') || '').trim()
   const accentColor = String(formData.get('accentColor') || '').trim()
