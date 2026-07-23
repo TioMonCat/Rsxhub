@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Store } from 'lucide-react'
 import {
   createMarketListing,
   deleteMarketListing,
@@ -152,6 +152,17 @@ export default function MarketPageContent({
 
   return (
     <div className="space-y-6">
+      {/* Main Page Title Header */}
+      <div className="border-b border-shell-line pb-4">
+        <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white italic flex items-center gap-3">
+          <Store className="h-7 w-7 text-cyan-400" />
+          Driver & Team Market
+        </h1>
+        <p className="text-xs md:text-sm text-slate-400 mt-1">
+          Connect with teams looking for drivers or find open driver positions for active championships.
+        </p>
+      </div>
+
       {/* Top Header & Controls */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-shell-line pb-4">
         {/* Tabs */}
