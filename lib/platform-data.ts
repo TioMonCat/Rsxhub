@@ -158,9 +158,16 @@ export const getLeagueEvents = cache(async (leagueId?: string): Promise<LeagueEv
     if (db) {
       try {
         let query = db.collection('league_events')
-        let snapshot;
+        let snapshot: any;
         if (leagueId) {
-          snapshot = await query.where('league_id', '==', leagueId).get()
+          const [snap1, snap2] = await Promise.all([
+            query.where('league_id', '==', leagueId).get().catch(() => ({ docs: [] })),
+            query.where('leagueId', '==', leagueId).get().catch(() => ({ docs: [] }))
+          ])
+          const docMap = new Map()
+          snap1.docs.forEach((d: any) => docMap.set(d.id, d))
+          snap2.docs.forEach((d: any) => docMap.set(d.id, d))
+          snapshot = { docs: Array.from(docMap.values()), empty: docMap.size === 0 }
         } else {
           snapshot = await query.get()
         }
@@ -171,23 +178,23 @@ export const getLeagueEvents = cache(async (leagueId?: string): Promise<LeagueEv
 
         const events = snapshot.docs.map((doc: any) => {
           const data = doc.data()
-          const linkedCircuit = data.circuit_id ? circuitsById.get(data.circuit_id as string) : null
+          const linkedCircuit = data.circuit_id || data.circuitId ? circuitsById.get((data.circuit_id || data.circuitId) as string) : null
           return {
             id: doc.id,
-            leagueId: data.league_id || '',
-            circuitId: data.circuit_id || null,
+            leagueId: data.league_id || data.leagueId || '',
+            circuitId: data.circuit_id || data.circuitId || null,
             title: data.title || null,
-            circuitName: linkedCircuit?.name || data.circuit_name || '',
-            circuitImageUrl: linkedCircuit?.imageUrl || data.circuit_image_url || null,
+            circuitName: linkedCircuit?.name || data.circuit_name || data.circuitName || '',
+            circuitImageUrl: linkedCircuit?.imageUrl || data.circuit_image_url || data.circuitImageUrl || null,
             serverLink: data.server_link || data.serverLink || null,
-            startsAt: formatFirestoreValue(data.starts_at) || '',
-            endsAt: formatFirestoreValue(data.ends_at) || '',
+            startsAt: formatFirestoreValue(data.starts_at || data.startsAt) || '',
+            endsAt: formatFirestoreValue(data.ends_at || data.endsAt) || '',
             status: data.status || 'scheduled',
             eventType: data.event_type || data.eventType || undefined,
             countryCode: data.country_code || data.countryCode || null,
           }
         })
-        return events.sort((a: any, b: any) => a.startsAt.localeCompare(b.startsAt))
+        return events.sort((a: any, b: any) => (a.startsAt || '').localeCompare(b.startsAt || ''))
       } catch (error) {
         console.error('Failed to get league events from Firestore:', error)
         return []
