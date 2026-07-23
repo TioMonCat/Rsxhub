@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Plus, Trash, Users, ShieldAlert, Filter, Trophy, AlertTriangle, Upload, FileArchive } from 'lucide-react'
 
 export type CarEntry = {
@@ -8,7 +8,8 @@ export type CarEntry = {
   category: 'GT3' | 'LMP2' | 'HYPERCAR'
   dorsal: string // String representation: '0', '00', '000', '7', '07', '123'
   skinUrl: string
-  driverUserIds: string[] // Up to 4 userIds
+  driverUserIds: string[] // All assigned drivers across all leagues
+  driverUserIdsByLeague?: Record<string, string[]> // Mapping: leagueId -> driverUserIds[]
   leagueId?: string | null
 }
 
@@ -50,21 +51,29 @@ export function TeamCarsEditor({
 }) {
   const [cars, setCars] = useState<CarEntry[]>(() => {
     if (initialCars && initialCars.length > 0) {
-      return initialCars.map((car) => ({
-        id: car.id || `car_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        category: car.category || 'GT3',
-        dorsal: String(car.dorsal || '').trim(),
-        skinUrl: car.skinUrl || '',
-        driverUserIds: Array.isArray(car.driverUserIds)
-          ? [...car.driverUserIds, '', '', '', ''].slice(0, 4)
-          : ['', '', '', ''],
-        leagueId: car.leagueId || null,
-      }))
+      return initialCars.map((car) => {
+        const byLeague: Record<string, string[]> = car.driverUserIdsByLeague || {}
+        // If byLeague is empty and car has driverUserIds and a leagueId, initialize it
+        if (Object.keys(byLeague).length === 0 && Array.isArray(car.driverUserIds)) {
+          if (car.leagueId) {
+            byLeague[car.leagueId] = [...car.driverUserIds]
+          }
+        }
+        return {
+          id: car.id || `car_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          category: car.category || 'GT3',
+          dorsal: String(car.dorsal || '').trim(),
+          skinUrl: car.skinUrl || '',
+          driverUserIds: Array.isArray(car.driverUserIds) ? car.driverUserIds.filter(Boolean) : [],
+          driverUserIdsByLeague: byLeague,
+          leagueId: car.leagueId || null,
+        }
+      })
     }
     return []
   })
 
-  // Selected Filter Tab: 'all' or league.id
+  // Selected Filter Tab: 'all' or league.id / league.slug
   const [activeTab, setActiveTab] = useState<string>('all')
   const [uploadingCarId, setUploadingCarId] = useState<string | null>(null)
 
@@ -106,18 +115,34 @@ export function TeamCarsEditor({
     }
   }
 
-  // Set of all assigned drivers across ALL cars
+  // Active League Info
+  const activeLeague = useMemo(() => {
+    return leaguesOptions.find((l) => l.id === activeTab || l.slug === activeTab)
+  }, [leaguesOptions, activeTab])
+
+  // Helper to resolve drivers for a specific league tab
+  const getCarDriversForLeague = useCallback((car: CarEntry, leagueKey: string): string[] => {
+    if (!leagueKey || leagueKey === 'all') {
+      return car.driverUserIds || []
+    }
+    const byLeague = car.driverUserIdsByLeague || {}
+    const list = byLeague[leagueKey] || byLeague[activeLeague?.id || ''] || byLeague[activeLeague?.slug || ''] || []
+    return [...list, '', '', '', ''].slice(0, activeLeague?.maxDriversPerCar ?? 4)
+  }, [activeLeague])
+
+  // Set of assigned drivers for the CURRENT active league tab
   const assignedDriverUserIds = useMemo(() => {
     const set = new Set<string>()
     for (const car of cars) {
-      for (const driverId of car.driverUserIds) {
+      const leagueDrivers = getCarDriversForLeague(car, activeTab)
+      for (const driverId of leagueDrivers) {
         if (driverId && driverId.trim() !== '') {
           set.add(driverId.trim())
         }
       }
     }
     return set
-  }, [cars])
+  }, [cars, activeTab, getCarDriversForLeague])
 
   // Dorsal Uniqueness Map and Validation
   const dorsalValidation = useMemo(() => {
@@ -170,9 +195,8 @@ export function TeamCarsEditor({
       category: car.category,
       dorsal: String(car.dorsal || '').trim(),
       skinUrl: String(car.skinUrl || '').trim(),
-      driverUserIds: (car.driverUserIds || [])
-        .map((id) => String(id || '').trim())
-        .slice(0, 4),
+      driverUserIds: (car.driverUserIds || []).map((id) => String(id || '').trim()).filter(Boolean),
+      driverUserIdsByLeague: car.driverUserIdsByLeague || {},
       leagueId: car.leagueId || null,
     }))
     return JSON.stringify(cleaned)
@@ -186,7 +210,8 @@ export function TeamCarsEditor({
         category,
         dorsal: '',
         skinUrl: '',
-        driverUserIds: ['', '', '', ''],
+        driverUserIds: [],
+        driverUserIdsByLeague: {},
         leagueId: defaultLeagueId || (activeTab === 'all' ? null : activeTab),
       },
     ])
@@ -202,13 +227,38 @@ export function TeamCarsEditor({
     )
   }
 
-  const updateCarDriver = (id: string, driverIndex: number, userId: string) => {
+  const updateCarDriver = (id: string, leagueKey: string, driverIndex: number, userId: string) => {
     setCars((prev) =>
       prev.map((car) => {
         if (car.id !== id) return car
-        const updatedDrivers = [...car.driverUserIds]
-        updatedDrivers[driverIndex] = userId
-        return { ...car, driverUserIds: updatedDrivers }
+
+        const currentByLeague = { ...(car.driverUserIdsByLeague || {}) }
+        const targetLeagueKey = (!leagueKey || leagueKey === 'all')
+          ? (activeLeague?.id || activeLeague?.slug || car.leagueId || 'default')
+          : leagueKey
+
+        const maxSlots = activeLeague?.maxDriversPerCar ?? 4
+        const currentList = [...(currentByLeague[targetLeagueKey] || [])]
+        while (currentList.length < maxSlots) currentList.push('')
+
+        currentList[driverIndex] = userId
+        currentByLeague[targetLeagueKey] = currentList
+
+        // Recompute flat union of all assigned drivers across all leagues
+        const allDriversSet = new Set<string>()
+        Object.values(currentByLeague).forEach((arr) => {
+          if (Array.isArray(arr)) {
+            arr.forEach((d) => {
+              if (d && d.trim() !== '') allDriversSet.add(d.trim())
+            })
+          }
+        })
+
+        return {
+          ...car,
+          driverUserIdsByLeague: currentByLeague,
+          driverUserIds: Array.from(allDriversSet),
+        }
       })
     )
   }
@@ -261,9 +311,6 @@ export function TeamCarsEditor({
     }
   }
 
-  // Active League Info
-  const activeLeague = leaguesOptions.find((l) => l.id === activeTab || l.slug === activeTab)
-
   // Filter cars depending on active tab
   const filteredCars = useMemo(() => {
     if (activeTab === 'all') return cars
@@ -298,60 +345,59 @@ export function TeamCarsEditor({
       {/* Tabs Header Container */}
       <div className="bg-[#0f172a]/90 border border-slate-800/80 p-4 rounded-xl shadow-lg space-y-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-cyan-400" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-              Filtrar Vehículos por Liga
-            </span>
-          </div>
-          <span className="text-[11px] font-medium text-cyan-400 bg-cyan-950/50 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-            {cars.length} {cars.length === 1 ? 'Vehículo total' : 'Vehículos totales'}
+          <p className="text-xs uppercase tracking-wider font-extrabold text-cyan-400 flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtrar Vehículos por Liga
+          </p>
+          <span className="text-[11px] text-slate-400 font-mono font-bold">
+            {cars.length} Vehículos totales
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-800/60">
-          {/* Main / All Cars Tab */}
+        {/* League Selection Tabs */}
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {/* Main Tab (All Cars Preview) */}
           <button
             type="button"
             onClick={() => setActiveTab('all')}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer border ${
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
               activeTab === 'all'
-                ? 'border-cyan-400/80 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-200 shadow-[0_0_12px_rgba(6,182,212,0.25)]'
-                : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.25)]'
+                : 'bg-[#131d31]/60 border-slate-700/80 text-slate-400 hover:text-white hover:border-slate-600'
             }`}
           >
-            <Trophy className="h-3.5 w-3.5" />
-            Principal (Todos los coches)
-            <span className="text-[10px] px-1.5 py-0.2 bg-black/50 rounded-md font-mono border border-white/10">
+            <Trophy className="h-3.5 w-3.5 text-amber-400" />
+            <span>Principal (Todos los coches)</span>
+            <span className="ml-1 bg-black/40 text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-mono">
               {cars.length}
             </span>
           </button>
 
-          {/* Per-League Tabs */}
+          {/* Per-League Filter Tabs */}
           {leaguesOptions.map((league) => {
             const count = cars.filter((c) => {
-              if (c.leagueId === league.id || c.leagueId === league.slug) return true
-              if (!c.leagueId && league.classTags) {
-                return league.classTags.some((t) => t.toUpperCase() === c.category.toUpperCase())
+              if (c.leagueId) return c.leagueId === league.id || c.leagueId === league.slug
+              if (league.classTags) {
+                return league.classTags.some((tag) => tag.toUpperCase() === c.category.toUpperCase())
               }
               return false
             }).length
 
-            const isActive = activeTab === league.id || activeTab === league.slug
+            const isSelected = activeTab === league.id || activeTab === league.slug
 
             return (
               <button
                 key={league.id}
                 type="button"
                 onClick={() => setActiveTab(league.id)}
-                className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer border ${
-                  isActive
-                    ? 'border-amber-400/80 bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
-                    : 'border-slate-800 bg-slate-900/60 text-slate-400 hover:border-slate-700 hover:text-slate-200'
+                className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-2 cursor-pointer border ${
+                  isSelected
+                    ? 'bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_15px_rgba(245,158,11,0.25)]'
+                    : 'bg-[#131d31]/60 border-slate-700/80 text-slate-400 hover:text-white hover:border-slate-600'
                 }`}
               >
-                {league.title}
-                <span className="text-[10px] px-1.5 py-0.2 bg-black/50 rounded-md font-mono border border-white/10">
+                <span>{league.title}</span>
+                <span className="ml-1 bg-black/40 text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-mono">
                   {count}
                 </span>
               </button>
@@ -360,68 +406,48 @@ export function TeamCarsEditor({
         </div>
       </div>
 
-      {/* Info Banner for Principal Tab */}
-      {activeTab === 'all' && (
-        <div className="bg-[#0b1320] border border-cyan-500/30 rounded-xl p-3 text-xs text-slate-300 flex items-center gap-3 shadow-md">
-          <Trophy className="h-4 w-4 text-amber-400 shrink-0" />
-          <p className="text-[11px] leading-relaxed">
-            <strong className="text-white">Vista General Preview:</strong> Aquí puedes ver todos los coches registrados y asignar su liga. Para gestionar y asignar los pilotos a cada coche, <span className="text-cyan-300 font-semibold underline">selecciona la pestaña de la liga correspondiente arriba</span>.
-          </p>
-        </div>
-      )}
-
-      {/* Global Validation Warning Banner */}
       {hasErrors && (
-        <div className="border border-rose-500/50 bg-rose-950/40 p-3.5 rounded-xl text-xs text-rose-200 flex items-start gap-3 shadow-md animate-pulse">
+        <div className="bg-rose-950/40 border border-rose-500/50 p-4 rounded-xl flex items-start gap-3">
           <ShieldAlert className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
-          <div className="space-y-0.5">
-            <span className="font-bold text-rose-300 uppercase tracking-wider block">
-              Conflicto en números de vehículos
-            </span>
-            <p className="text-[11px] text-rose-200/90 leading-relaxed">
-              Hay dorsales repetidos o no válidos. Asegúrate de que los números sean únicos (ej: 0, 00, 000, 07, 77) y de máximo 3 dígitos.
-            </p>
+          <div className="space-y-1 text-xs text-rose-200">
+            <p className="font-bold">Hay errores en la configuración de tus vehículos:</p>
+            <ul className="list-disc pl-4 space-y-0.5">
+              {Object.values(dorsalValidation).map((err, idx) => (
+                <li key={idx}>{err}</li>
+              ))}
+            </ul>
           </div>
         </div>
       )}
 
-      {/* Categories & Vehicles */}
+      {/* Render Cars Grouped by Category */}
       {availableCategories.map((category) => {
-        const categoryCars = filteredCars.filter((car) => car.category === category)
-        const theme = categoryThemes[category] || {
-          text: 'text-cyan-400 font-bold',
-          border: 'border-cyan-500/20',
-          focus: 'focus:border-cyan-400',
-          icon: 'text-cyan-400',
-          addBtn: 'border-slate-700 bg-slate-900 hover:bg-slate-800 text-white',
-          headerText: 'text-cyan-400',
-          cardBorder: 'border-slate-800 bg-slate-900/50',
-          glow: 'border-slate-800 bg-slate-950/40',
-          badge: 'border-cyan-500/40 bg-cyan-950/40 text-cyan-300'
-        }
+        const categoryCars = filteredCars.filter((c) => c.category === category)
+        const theme = categoryThemes[category]
 
         return (
-          <div key={category} className="bg-[#0b1120]/90 border border-slate-800/90 rounded-xl p-4 shadow-md space-y-4">
-            {/* Category Header */}
-            <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
-              <div className="flex items-center gap-2.5">
-                <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-md border ${theme.badge}`}>
+          <div key={category} className="space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h3 className={`text-sm ${theme.headerText} flex items-center gap-2`}>
+                <span className={`px-2 py-0.5 rounded text-xs border ${theme.badge}`}>
                   {category} CATEGORY
                 </span>
-              </div>
-              <span className="text-[11px] font-mono text-slate-400 bg-slate-900/80 border border-slate-800 px-2.5 py-1 rounded-md">
-                {categoryCars.length} {categoryCars.length === 1 ? 'vehículo' : 'vehículos'}
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">
+                {categoryCars.length} vehículos
               </span>
             </div>
 
             {categoryCars.length === 0 ? (
-              <p className="text-xs text-slate-500 italic py-2 text-center">
-                No hay vehículos configurados en la categoría <strong className="text-slate-400">{category}</strong> {activeTab !== 'all' ? 'para esta liga' : ''}.
+              <p className="text-xs text-slate-500 italic py-2 pl-2">
+                No hay vehículos de categoría {category} registrados en esta vista.
               </p>
             ) : (
               <div className="space-y-4">
                 {categoryCars.map((car) => {
                   const errorMsg = dorsalValidation[car.id]
+                  const carLeagueDrivers = getCarDriversForLeague(car, activeTab)
+
                   return (
                     <div
                       key={car.id}
@@ -569,13 +595,13 @@ export function TeamCarsEditor({
                             (activeLeague?.maxDriversPerCar ?? 4) > 2 ? 'md:grid-cols-4' : 'md:grid-cols-2'
                           }`}>
                             {Array.from({ length: activeLeague?.maxDriversPerCar ?? 4 }, (_, driverIdx) => {
-                              const currentVal = car.driverUserIds[driverIdx] || ''
+                              const currentVal = carLeagueDrivers[driverIdx] || ''
 
                               return (
                                 <select
                                   key={driverIdx}
                                   value={currentVal}
-                                  onChange={(e) => updateCarDriver(car.id, driverIdx, e.target.value)}
+                                  onChange={(e) => updateCarDriver(car.id, activeTab, driverIdx, e.target.value)}
                                   className="w-full bg-[#131d31] border border-slate-700/70 focus:border-cyan-400 text-slate-200 rounded-md px-2.5 py-1.5 text-xs outline-none cursor-pointer hover:border-slate-600 transition-all"
                                 >
                                   <option value="">-- Vacante --</option>
@@ -618,4 +644,3 @@ export function TeamCarsEditor({
     </div>
   )
 }
-

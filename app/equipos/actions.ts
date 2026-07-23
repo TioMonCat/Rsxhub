@@ -444,8 +444,15 @@ export async function updateTeam(formData: FormData) {
             ...car,
             dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
             driverUserIds: (car.driverUserIds || car.driver_user_ids || []).filter(Boolean),
+            driverUserIdsByLeague: car.driverUserIdsByLeague || car.driver_user_ids_by_league || {},
           }))
-          .filter((car: any) => car.driverUserIds.length > 0)
+          .filter((car: any) => {
+            const hasFlatDrivers = car.driverUserIds && car.driverUserIds.length > 0
+            const hasLeagueDrivers = Object.values(car.driverUserIdsByLeague || {}).some(
+              (arr: any) => Array.isArray(arr) && arr.some(Boolean)
+            )
+            return hasFlatDrivers || hasLeagueDrivers
+          })
 
         // Validate internal uniqueness of dorsals
         const dorsalsSeen = new Set<string>()
@@ -546,9 +553,12 @@ export async function updateTeam(formData: FormData) {
                     }
                   }
 
-                  let carDrivers = Array.isArray(car.driverUserIds) ? car.driverUserIds.filter(Boolean).map(String) : []
-                  if (carDrivers.length === 0) {
-                    carDrivers = [session.userId]
+                  let carDrivers: string[] = []
+                  const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
+                  if (byLeague[leagueId] && Array.isArray(byLeague[leagueId])) {
+                    carDrivers = byLeague[leagueId].filter(Boolean).map(String)
+                  } else if (Array.isArray(car.driverUserIds)) {
+                    carDrivers = car.driverUserIds.filter(Boolean).map(String)
                   }
 
                   for (const userId of carDrivers) {
@@ -718,9 +728,12 @@ export async function updateTeam(formData: FormData) {
                 }
               }
 
-              let carDrivers = Array.isArray(car.driverUserIds) ? car.driverUserIds.filter(Boolean).map(String) : []
-              if (carDrivers.length === 0) {
-                carDrivers = [session.userId]
+              let carDrivers: string[] = []
+              const byLeagueMock = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
+              if (byLeagueMock[leagueId] && Array.isArray(byLeagueMock[leagueId])) {
+                carDrivers = byLeagueMock[leagueId].filter(Boolean).map(String)
+              } else if (Array.isArray(car.driverUserIds)) {
+                carDrivers = car.driverUserIds.filter(Boolean).map(String)
               }
 
               for (const userId of carDrivers) {

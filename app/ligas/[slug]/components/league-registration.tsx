@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, CheckCircle2, ShieldCheck } from 'lucide-react'
+import { Plus, CheckCircle2, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { League, ManagedTeam } from '../hooks/use-league-state'
 
@@ -94,6 +94,36 @@ export function LeagueRegistration({
           <Plus className="h-5 w-5" />
           {registeredCarsCount > 0 ? 'Añadir Vehículos' : 'Inscribir Escudería'}
         </button>
+      )}
+
+      {/* Notice box when user is logged in, NOT a team leader, and has no active team registration */}
+      {!isLeader && session && myRegisteredGroups.length === 0 && (
+        <div className="border border-amber-500/40 bg-gradient-to-r from-amber-950/80 via-black/90 to-amber-950/60 px-4 py-2.5 shadow-[0_0_20px_rgba(245,158,11,0.15)] flex items-center gap-3 rounded-none">
+          <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0" />
+          <div className="text-left space-y-0.5">
+            <span className="text-[10px] font-mono font-extrabold text-amber-400 uppercase tracking-widest block">
+              REQUISITO DE INSCRIPCIÓN
+            </span>
+            <p className="text-xs font-bold text-amber-100">
+              Debes ser líder o creador de una escudería para inscribir vehículos a esta liga.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Notice box when user is NOT logged in */}
+      {!session && (
+        <div className="border border-cyan-500/40 bg-gradient-to-r from-cyan-950/80 via-black/90 to-cyan-950/60 px-4 py-2.5 shadow-[0_0_20px_rgba(6,182,212,0.15)] flex items-center gap-3 rounded-none">
+          <ShieldAlert className="h-5 w-5 text-cyan-400 shrink-0" />
+          <div className="text-left space-y-0.5">
+            <span className="text-[10px] font-mono font-extrabold text-cyan-400 uppercase tracking-widest block">
+              ACCESO REQUERIDO
+            </span>
+            <p className="text-xs font-bold text-cyan-100">
+              Inicia sesión con Steam y sé líder de un equipo para inscribirte.
+            </p>
+          </div>
+        </div>
       )}
     </div>
   )
