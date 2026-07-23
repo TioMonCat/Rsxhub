@@ -143,6 +143,22 @@ export function LeagueCard({
           )}
         </div>
 
+        {/* Top-Left: Title & Next Race Date */}
+        <div className="absolute left-4 top-4 z-10 max-w-[calc(100%-76px)]">
+          <h3 className="text-2xl md:text-3xl font-black uppercase italic leading-[0.95] text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] [letter-spacing:-0.03em]">
+            {league.title}
+          </h3>
+          {league.slogan && (
+            <p className="text-[10px] font-black tracking-wider uppercase mt-0.5 italic drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ color: accentHex }}>
+              {league.slogan}
+            </p>
+          )}
+          <p className="mt-1 text-xs font-semibold text-slate-200 drop-shadow-[0_1px_4px_rgba(0,0,0,0.95)]">
+            Next race <FormattedDate date={league.startsAt} />
+          </p>
+        </div>
+
+        {/* Top-Right: Simulator Badge */}
         <div className="absolute right-3 top-3 z-10 bg-white border-t border-r border-b border-black/10 shadow-[0_4px_12px_rgba(0,0,0,0.4)] flex items-center justify-center" style={{width:'56px',height:'56px', borderLeft: `2.5px solid ${accentHex}`}}>
           <img
             src={badgeSrc}
@@ -151,18 +167,9 @@ export function LeagueCard({
           />
         </div>
 
+        {/* Bottom Bar: Class badges & Registration Status */}
         <div className="absolute inset-x-0 bottom-0 p-4 z-10">
-          <h3 className="max-w-[90%] text-4xl font-black uppercase italic leading-[0.95] text-white drop-shadow-md [letter-spacing:-0.04em]">{league.title}</h3>
-
-          {league.slogan && (
-            <p className="text-[10px] font-black tracking-wider uppercase mt-1 italic" style={{ color: accentHex }}>
-              {league.slogan}
-            </p>
-          )}
-
-          <p className="mt-2 text-sm font-semibold text-slate-300">Next race <FormattedDate date={league.startsAt} /></p>
-
-          <div className="mt-3 flex items-end justify-between gap-3 border-t border-white/15 pt-3 text-xs font-bold">
+          <div className="flex items-end justify-between gap-3 border-t border-white/15 pt-3 text-xs font-bold">
             <div className="flex flex-wrap items-center gap-2">
               {uniqueClasses.map((classTag) => (
                 <ClassBadge key={classTag} classTag={classTag} />
