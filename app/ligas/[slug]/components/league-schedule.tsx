@@ -376,7 +376,7 @@ function ViewEntryListModal({
   isAdmin: boolean
   onClose: () => void
 }) {
-  const [copied, setCopied] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
   // Map all confirmed teams
   const allTeamsInStandings = useMemo(() => {
@@ -462,30 +462,6 @@ function ViewEntryListModal({
 
   const totalConfirmed = confirmations.length
 
-  const handleCopyIDs = () => {
-    let copyText = `--- ENTRY LIST: ${event.title || event.circuitName} ---\n`
-    copyText += `League: ${league.title}\n`
-    copyText += `Date: ${formatDateTime(event.startsAt)}\n\n`
-
-    Object.entries(groupedConfirmations).forEach(([tag, teams]) => {
-      if (teams.length > 0) {
-        copyText += `=== CATEGORY: ${tag} (${teams.length} teams) ===\n`
-        teams.forEach((t) => {
-          const driverStr =
-            t.drivers.length > 0
-              ? t.drivers.map((d) => `${d.name} (${d.steamId})`).join(', ')
-              : 'No registered drivers'
-          copyText += `[#${t.dorsal}] ${t.teamName} | TeamID: ${t.teamId} | Drivers: ${driverStr}\n`
-        })
-        copyText += `\n`
-      }
-    })
-
-    navigator.clipboard.writeText(copyText)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2500)
-  }
-
   return (
     <div className="fixed inset-0 z-[150] overflow-y-auto bg-black/85 backdrop-blur-sm p-4 flex justify-center items-start md:items-center">
       <div className="w-full max-w-2xl bg-[#090d16] border border-shell-line shadow-2xl my-auto relative overflow-hidden">
@@ -505,36 +481,13 @@ function ViewEntryListModal({
             </h2>
           </div>
 
-          <div className="flex items-center gap-2">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleCopyIDs}
-                className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5 cursor-pointer"
-                title="Copiar lista de IDs para el servidor"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-emerald-400" />
-                    <span className="text-emerald-400">¡Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5 text-cyan-400" />
-                    <span>Copiar IDs</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-slate-400 hover:text-white p-1.5 transition-colors cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white p-1.5 transition-colors cursor-pointer"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Content Body */}
@@ -559,43 +512,73 @@ function ViewEntryListModal({
                   </div>
 
                   <div className="grid gap-2">
-                    {teamList.map((t, idx) => (
-                      <div
-                        key={`${t.teamId}_${t.dorsal}_${idx}`}
-                        className="flex flex-wrap items-center justify-between gap-3 bg-black/40 border border-slate-800 p-3 hover:border-cyan-500/30 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 shrink-0">
-                            #{t.dorsal}
-                          </span>
-                          <div>
-                            <h4 className="text-sm font-bold text-white uppercase tracking-wide">
-                              {t.teamName}
-                            </h4>
-                            {t.drivers.length > 0 && (
-                              <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 mt-0.5">
-                                {t.drivers.map((d, dIdx) => (
-                                  <span key={dIdx} className="inline-flex items-center gap-1">
-                                    <span className="text-slate-300 font-medium">{d.name}</span>
-                                    {isAdmin && d.steamId && (
-                                      <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1 border border-slate-800">
-                                        {d.steamId}
-                                      </span>
-                                    )}
-                                  </span>
-                                ))}
-                              </div>
+                    {teamList.map((t, idx) => {
+                      const rowKey = `${tag}_${t.teamId}_${t.dorsal}_${idx}`
+                      return (
+                        <div
+                          key={rowKey}
+                          className="flex flex-wrap items-center justify-between gap-3 bg-black/40 border border-slate-800 p-3 hover:border-cyan-500/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="font-mono text-sm font-black text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-1 shrink-0">
+                              #{t.dorsal}
+                            </span>
+                            <div className="min-w-0">
+                              <h4 className="text-sm font-bold text-white uppercase tracking-wide truncate">
+                                {t.teamName}
+                              </h4>
+                              {t.drivers.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 mt-0.5">
+                                  {t.drivers.map((d, dIdx) => (
+                                    <span key={dIdx} className="inline-flex items-center gap-1">
+                                      <span className="text-slate-300 font-medium">{d.name}</span>
+                                      {isAdmin && d.steamId && (
+                                        <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1 border border-slate-800">
+                                          {d.steamId}
+                                        </span>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const ids = t.drivers.map((d) => d.steamId).filter(Boolean)
+                                  const copyText = ids.length > 0 ? ids.join(', ') : t.teamId
+                                  navigator.clipboard.writeText(copyText)
+                                  setCopiedKey(rowKey)
+                                  setTimeout(() => setCopiedKey(null), 2200)
+                                }}
+                                className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                                title={`Copiar IDs para el dorsal #${t.dorsal}`}
+                              >
+                                {copiedKey === rowKey ? (
+                                  <>
+                                    <Check className="h-3 w-3 text-emerald-400" />
+                                    <span className="text-emerald-400">¡Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="h-3 w-3 text-cyan-400" />
+                                    <span>Copiar IDs</span>
+                                  </>
+                                )}
+                              </button>
                             )}
+
+                            <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase px-2 py-0.5">
+                              CONFIRMED
+                            </span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase px-2 py-0.5">
-                            CONFIRMED
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               )
