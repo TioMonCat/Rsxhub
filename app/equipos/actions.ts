@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
+import { createNotification } from '@/lib/notifications-data'
 
 function parseSkinUrls(value: FormDataEntryValue | null) {
   return String(value || '')
@@ -867,6 +868,10 @@ export async function removeTeamMember(formData: FormData) {
 
   let removedFromFirestore = false
   let redirectUrl: string | null = null
+  let removedDriverName = 'Piloto'
+  let teamName = ''
+  let ownerUserIdToNotify = ''
+  const removedCarsList: string[] = []
 
   if (hasFirebase) {
     const db = getFirestoreDb()
@@ -875,10 +880,64 @@ export async function removeTeamMember(formData: FormData) {
         const teamDoc = await runWithTimeout(db.collection('teams').doc(teamId).get(), 3000)
         if (teamDoc.exists) {
           const team = teamDoc.data()
+          teamName = team?.name || ''
+          ownerUserIdToNotify = team?.owner_user_id || ''
+
           if (team?.owner_user_id === memberUserId) {
             redirectUrl = `${redirectTo}?error=owner-protected`
           } else {
+            // Get member display name before deleting
+            const memberDoc = await db.collection('team_members').doc(`${teamId}_${memberUserId}`).get()
+            if (memberDoc.exists) {
+              removedDriverName = memberDoc.data()?.display_name || removedDriverName
+            }
+
+            // 1. Delete member from team_members collection
             await runWithTimeout(db.collection('team_members').doc(`${teamId}_${memberUserId}`).delete(), 3000)
+
+            // 2. Remove member from league_registrations for this team
+            try {
+              const regSnap = await db
+                .collection('league_registrations')
+                .where('team_id', '==', teamId)
+                .where('user_id', '==', memberUserId)
+                .get()
+
+              if (!regSnap.empty) {
+                const batch = db.batch()
+                regSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+                await batch.commit()
+              }
+            } catch (errReg) {
+              console.error('Failed to remove league registrations for member:', errReg)
+            }
+
+            // 3. Update team.cars: remove driver from slots, and delete car if 0 drivers remaining
+            const currentCars = Array.isArray(team?.cars) ? team.cars : []
+            const updatedCars: any[] = []
+
+            for (const car of currentCars) {
+              const currentDrivers = Array.isArray(car.driverUserIds)
+                ? car.driverUserIds
+                : Array.isArray(car.driver_user_ids)
+                ? car.driver_user_ids
+                : []
+
+              const filteredDrivers = currentDrivers.filter((id: string) => id && id !== memberUserId)
+
+              if (filteredDrivers.length > 0) {
+                updatedCars.push({
+                  ...car,
+                  driverUserIds: filteredDrivers,
+                })
+              } else {
+                // Car has 0 drivers left -> automatically removed!
+                removedCarsList.push(`${car.category || 'Coche'} #${car.dorsal || 'N/A'}`)
+              }
+            }
+
+            await db.collection('teams').doc(teamId).update({ cars: updatedCars })
+
             removedFromFirestore = true
           }
         }
@@ -903,13 +962,50 @@ export async function removeTeamMember(formData: FormData) {
       const teamIdx = teams.findIndex((t: any) => t.id === teamId)
       if (teamIdx !== -1) {
         const team = teams[teamIdx]
+        teamName = team.name || teamName
+        ownerUserIdToNotify = team.ownerUserId || ownerUserIdToNotify
+
         if (team.ownerUserId === memberUserId) {
           redirectUrl = `${redirectTo}?error=owner-protected`
         } else {
+          // Find member name
           if (Array.isArray(team.members)) {
+            const memberObj = team.members.find((m: any) => m.userId === memberUserId)
+            if (memberObj) {
+              removedDriverName = memberObj.displayName || memberObj.name || removedDriverName
+            }
             team.members = team.members.filter((m: any) => m.userId !== memberUserId)
-            cookieStore.set('mock_teams', JSON.stringify(teams), { path: '/', maxAge: 60 * 60 * 24 * 30 })
           }
+
+          // Clean up cars in mock team
+          if (Array.isArray(team.cars)) {
+            const updatedCars: any[] = []
+            for (const car of team.cars) {
+              const filteredDrivers = (car.driverUserIds || []).filter((id: string) => id && id !== memberUserId)
+              if (filteredDrivers.length > 0) {
+                updatedCars.push({
+                  ...car,
+                  driverUserIds: filteredDrivers,
+                })
+              } else {
+                removedCarsList.push(`${car.category || 'Coche'} #${car.dorsal || 'N/A'}`)
+              }
+            }
+            team.cars = updatedCars
+          }
+
+          cookieStore.set('mock_teams', JSON.stringify(teams), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+
+          // Clean up mock registrations
+          try {
+            const mockRegsVal = cookieStore.get('mock_registrations')?.value
+            if (mockRegsVal) {
+              const regs = JSON.parse(mockRegsVal)
+              const updatedRegs = regs.filter((r: any) => !(r.teamId === teamId && r.userId === memberUserId))
+              cookieStore.set('mock_registrations', JSON.stringify(updatedRegs), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+            }
+          } catch {}
+
           mockRemoveSucceeded = true
         }
       }
@@ -926,8 +1022,23 @@ export async function removeTeamMember(formData: FormData) {
     redirect(`${redirectTo}?error=remove-failed`)
   }
 
+  // Create Notification for Team Leader
+  if (ownerUserIdToNotify) {
+    const carNoticeMsg = removedCarsList.length > 0
+      ? ` Además, el/los vehículo(s) ${removedCarsList.join(', ')} fueron eliminados automáticamente al quedarse sin pilotos asignados.`
+      : ''
+
+    await createNotification({
+      userId: ownerUserIdToNotify,
+      title: 'Salida de Piloto y Actualización de Vehículos',
+      message: `El piloto ${removedDriverName} ha dejado de pertenecer al equipo ${teamName}.${carNoticeMsg}`,
+      link: `/equipos/${teamId}`
+    })
+  }
+
   revalidatePath('/equipos')
   revalidatePath(`/equipos/${teamId}`)
+  revalidatePath('/ligas')
   redirect(`${redirectTo}?memberRemoved=1`)
 }
 

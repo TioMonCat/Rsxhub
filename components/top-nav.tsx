@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { SteamLoginButton } from './steam-login-button'
+import { NotificationsNav } from './notifications-nav'
 
 interface TopNavProps {
   signedIn: boolean
@@ -63,6 +64,9 @@ export function TopNav({ signedIn, showAdmin, displayName, avatarUrl }: TopNavPr
       <div className="flex items-center gap-2 justify-self-center md:justify-self-end">
         {signedIn ? (
           <div className="flex items-center gap-2">
+            {/* Notifications Center */}
+            <NotificationsNav />
+
             {/* User Profile Button */}
             <Link
               href="/perfil"
