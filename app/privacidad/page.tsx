@@ -144,7 +144,7 @@ export default function PrivacyPage() {
             <li><strong className="text-slate-200">Restriction:</strong> restrict processing under certain circumstances.</li>
           </ul>
           <p>
-            To exercise any of these rights, write to us at <strong className="text-white">contacto@realsimexperience.com</strong>. If you believe that the processing does not comply with regulations, you can file a complaint with the Spanish Agency for Data Protection (AEPD) at <a href="https://www.aepd.es" className="text-[#1274de] hover:underline" target="_blank" rel="noopener noreferrer">www.aepd.es</a>.
+            To exercise any of these rights, write to us at <strong className="text-white">realsimxperience@gmail.com</strong>. If you believe that the processing does not comply with regulations, you can file a complaint with the Spanish Agency for Data Protection (AEPD) at <a href="https://www.aepd.es" className="text-[#1274de] hover:underline" target="_blank" rel="noopener noreferrer">www.aepd.es</a>.
           </p>
         </section>
 

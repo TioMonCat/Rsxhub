@@ -105,7 +105,7 @@ export default function CookiesPage() {
             5. More Information
           </h2>
           <p>
-            For any questions regarding the use of cookies, you can contact us at <a href="mailto:contacto@realsimexperience.com" className="text-[#1274de] hover:underline">contacto@realsimexperience.com</a>. You can also consult our <a href="/privacidad" className="text-[#1274de] hover:underline">Privacy Policy</a>.
+            For any questions regarding the use of cookies, you can contact us at <a href="mailto:realsimxperience@gmail.com" className="text-[#1274de] hover:underline">realsimxperience@gmail.com</a>. You can also consult our <a href="/privacidad" className="text-[#1274de] hover:underline">Privacy Policy</a>.
           </p>
         </section>
 

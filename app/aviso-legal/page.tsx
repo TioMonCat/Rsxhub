@@ -30,7 +30,7 @@ export default function LegalNoticePage() {
           <ul className="list-disc pl-5 space-y-1 text-slate-400 font-medium">
             <li><strong className="text-slate-300">Name:</strong> RSX Real Sim Experience</li>
             <li><strong className="text-slate-300">Website:</strong> <a href="https://realsimexperience.com" className="text-[#1274de] hover:underline" target="_blank" rel="noopener noreferrer">https://realsimexperience.com</a></li>
-            <li><strong className="text-slate-300">Email:</strong> contacto@realsimexperience.com</li>
+            <li><strong className="text-slate-300">Email:</strong> realsimxperience@gmail.com</li>
           </ul>
         </section>
 

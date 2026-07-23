@@ -117,7 +117,7 @@ export default function TermsPage() {
             7. Suspension and Cancellation of Account
           </h2>
           <p>
-            RSX reserves the right to suspend or cancel user accounts that violate these terms, without prior notice in case of serious infractions. You may request the cancellation of your account at any time by writing to <a href="mailto:contacto@realsimexperience.com" className="text-[#1274de] hover:underline">contacto@realsimexperience.com</a>.
+            RSX reserves the right to suspend or cancel user accounts that violate these terms, without prior notice in case of serious infractions. You may request the cancellation of your account at any time by writing to <a href="mailto:realsimxperience@gmail.com" className="text-[#1274de] hover:underline">realsimxperience@gmail.com</a>.
           </p>
         </section>
 
