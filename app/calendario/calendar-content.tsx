@@ -376,6 +376,17 @@ export default function CalendarContent({
       `}</style>
       {/* 1. Header controls */}
       <section className="shell-panel p-4 md:p-5 rounded-none">
+        {/* Main Page Title Header */}
+        <div className="border-b border-shell-line pb-4 mb-4">
+          <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight text-white italic flex items-center gap-3">
+            <Calendar className="h-7 w-7 text-cyan-400" />
+            Race Calendar
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 mt-1">
+            Schedule of upcoming races, endurance events, and official championship sessions.
+          </p>
+        </div>
+
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Toggle View Mode: Month Grid vs Official Programme */}
           <div className="flex items-center gap-2">

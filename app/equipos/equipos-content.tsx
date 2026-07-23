@@ -6,7 +6,7 @@ import { SectionTitle } from '@/components/section-title'
 import { TeamSkinConfigEditor } from '@/components/team-skin-config-editor'
 import { TeamShowcase } from '@/components/team-showcase'
 import { ImagePicker } from '@/components/image-picker'
-import { Plus, X } from 'lucide-react'
+import { Plus, X, Shield } from 'lucide-react'
 
 type TeamDashboard = {
   id: string
@@ -76,8 +76,9 @@ export default function EquiposContent({
       {/* Header Panel */}
       <section className="shell-panel p-5 rounded-none border border-shell-line bg-zinc-950/40 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
         <SectionTitle
-          title="TEAMS"
+          title="TEAMS & DRIVERS"
           subtitle="Create and manage your team info, registered drivers, and skin download links."
+          icon={<Shield className="h-7 w-7 text-cyan-400 shrink-0" />}
         />
         {session && (
           belongsToTeam ? (

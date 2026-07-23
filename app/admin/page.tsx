@@ -8,6 +8,7 @@ import { simulatorLabel, statusLabel } from '@/lib/utils'
 import { SubmitButton } from '@/components/submit-button'
 import { DeleteLeagueButton } from '@/components/delete-league-button'
 import { AdminGallery } from '@/components/admin-gallery'
+import { ShieldAlert } from 'lucide-react'
 import { createLeague, adminDeleteMarketListing, quickUpdateLeagueStatusAction, quickToggleLeagueRegistrationAction, quickToggleLeagueFeaturedAction, quickUpdateLeagueMaxDriversAction, deleteLeagueAction, resetDatabaseAction } from './actions'
 
 function statusClass(status: string) {
@@ -117,7 +118,10 @@ export default async function AdminPage({
       {/* Overview stats */}
       <section className="shell-panel p-4 md:p-5 rounded-none">
         <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400 font-bold">Quick Access</p>
-        <h1 className="mt-1 text-3xl font-black uppercase italic text-white tracking-tight">LEAGUES</h1>
+        <h1 className="mt-1 text-2xl md:text-3xl font-black uppercase italic text-white tracking-tight flex items-center gap-3">
+          <ShieldAlert className="h-7 w-7 text-cyan-400 shrink-0" />
+          ADMIN CONTROL CENTER
+        </h1>
         <p className="mt-1 text-xs text-slate-400">Operate leagues, teams and market listings from a central control room.</p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-4">

@@ -149,7 +149,7 @@ export default async function PerfilPage({
             )}
             <div>
               <p className="text-xs uppercase tracking-[0.22em] text-slate-400">Driver Profile</p>
-              <h1 className="mt-1 text-3xl font-bold text-white">{profile.displayName}</h1>
+              <h1 className="mt-1 text-2xl md:text-3xl font-black uppercase italic text-white tracking-tight">{profile.displayName}</h1>
               <p className="mt-1 text-slate-300 text-sm whitespace-pre-line">{profile.bio || 'No bio configured yet.'}</p>
             </div>
           </div>
