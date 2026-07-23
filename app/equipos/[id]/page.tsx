@@ -7,6 +7,7 @@ import { CenterModal } from '@/components/center-modal'
 import { ClearStatusQuery } from '@/components/clear-status-query'
 import { TeamCarsEditor } from '@/components/team-cars-editor'
 import { CopyableSteamId } from '@/components/copyable-steam-id'
+import { CopyVehicleDriverIdsButton } from '@/components/copy-vehicle-driver-ids-button'
 import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
 import { getLeagues } from '@/lib/platform-data'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
@@ -1167,55 +1168,66 @@ export default async function TeamProfilePage({
                       <p className="text-xs text-slate-500 italic">No vehicles registered in this category.</p>
                     ) : (
                       <div className="grid gap-4 md:grid-cols-2">
-                        {categoryCars.map((car) => (
-                          <div key={car.id} className={`border bg-black/40 p-4 rounded-none space-y-3 transition-all duration-300 ${theme.carBorder}`}>
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-black text-white uppercase italic tracking-wider">
-                                Car Number: <span className={`font-bold ${theme.carDorsal}`}>#{car.dorsal || 'N/A'}</span>
-                              </span>
-                              {car.skinUrl && (
-                                <a
-                                  href={car.skinUrl}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-none transition-colors ${theme.skinBtn}`}
-                                >
-                                  <Download className="h-3.5 w-3.5" />
-                                  Skin
-                                </a>
-                              )}
-                            </div>
-                            
-                            {/* Drivers slots */}
-                            <div className={`border-t pt-2 ${theme.line}`}>
-                              <div className="grid grid-cols-2 gap-2">
-                                {[0, 1, 2, 3].map((idx) => {
-                                  const driverId = car.driverUserIds?.[idx]
-                                  const driverObj = driverId ? teamMembersOptions.find((m) => m.userId === driverId) : null
-                                  const driverName = driverObj?.name || null
-                                  const steamId = driverObj?.steamId || null
-                                  return (
-                                    <div
-                                      key={idx}
-                                      className={`px-2 py-1.5 text-[10px] rounded-none border flex items-center justify-between gap-1.5 min-w-0 ${
-                                        driverName
-                                          ? `${theme.driverActive} font-semibold`
-                                          : 'border-dashed border-slate-800 bg-transparent text-slate-500 italic'
-                                      }`}
+                        {categoryCars.map((car) => {
+                          const carDriverSteamIds = (car.driverUserIds || [])
+                            .map((dId) => {
+                              const driver = teamMembersOptions.find((m) => m.userId === dId)
+                              return driver?.steamId || driver?.userId?.replace('steam_', '') || ''
+                            })
+                            .filter(Boolean)
+
+                          return (
+                            <div key={car.id} className={`border bg-black/40 p-4 rounded-none space-y-3 transition-all duration-300 ${theme.carBorder}`}>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-black text-white uppercase italic tracking-wider">
+                                  Car Number: <span className={`font-bold ${theme.carDorsal}`}>#{car.dorsal || 'N/A'}</span>
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <CopyVehicleDriverIdsButton
+                                    driverSteamIds={carDriverSteamIds}
+                                    className={theme.skinBtn}
+                                  />
+                                  {car.skinUrl && (
+                                    <a
+                                      href={car.skinUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className={`flex items-center gap-1.5 border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-none transition-colors ${theme.skinBtn}`}
                                     >
-                                      <span className="truncate">
-                                        {driverName ? `${driverName} ${steamId ? `(${steamId})` : ''}` : 'Vacant'}
-                                      </span>
-                                      {driverName && steamId && (
-                                        <CopyableSteamId steamId={steamId} />
-                                      )}
-                                    </div>
-                                  )
-                                })}
+                                      <Download className="h-3.5 w-3.5" />
+                                      Skin
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Drivers slots */}
+                              <div className={`border-t pt-2 ${theme.line}`}>
+                                <div className="grid grid-cols-2 gap-2">
+                                  {[0, 1, 2, 3].map((idx) => {
+                                    const driverId = car.driverUserIds?.[idx]
+                                    const driverObj = driverId ? teamMembersOptions.find((m) => m.userId === driverId) : null
+                                    const driverName = driverObj?.name || null
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={`px-2.5 py-1.5 text-[10px] rounded-none border flex items-center justify-between gap-1.5 min-w-0 ${
+                                          driverName
+                                            ? `${theme.driverActive} font-semibold`
+                                            : 'border-dashed border-slate-800 bg-transparent text-slate-500 italic'
+                                        }`}
+                                      >
+                                        <span className="truncate">
+                                          {driverName || 'Vacant'}
+                                        </span>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </div>
