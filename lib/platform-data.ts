@@ -285,11 +285,17 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
           if (!r.teamId) return true
           const team = teams.find((t) => t.id === r.teamId)
           if (!team) return false
+          const isMember = Array.isArray(team.members) && team.members.some((m: any) => m.userId === r.userId)
+          if (!isMember) return false
           const car = (team.cars || []).find((c: any) => {
             const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
             const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
-            const hasDrivers = Array.isArray(c.driverUserIds) && c.driverUserIds.some((id: string) => Boolean(id))
-            return sameClass && sameDorsal && hasDrivers
+            const drivers = Array.isArray(c.driverUserIds)
+              ? c.driverUserIds
+              : Array.isArray(c.driver_user_ids)
+              ? c.driver_user_ids
+              : []
+            return sameClass && sameDorsal && drivers.includes(r.userId)
           })
           return Boolean(car)
         })
@@ -324,11 +330,17 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
       if (!r.teamId) return true
       const team = teams.find((t) => t.id === r.teamId)
       if (!team) return false
+      const isMember = Array.isArray(team.members) && team.members.some((m: any) => m.userId === r.userId)
+      if (!isMember) return false
       const car = (team.cars || []).find((c: any) => {
         const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
         const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
-        const hasDrivers = Array.isArray(c.driverUserIds) && c.driverUserIds.some((id: string) => Boolean(id))
-        return sameClass && sameDorsal && hasDrivers
+        const drivers = Array.isArray(c.driverUserIds)
+          ? c.driverUserIds
+          : Array.isArray(c.driver_user_ids)
+          ? c.driver_user_ids
+          : []
+        return sameClass && sameDorsal && drivers.includes(r.userId)
       })
       return Boolean(car)
     })
