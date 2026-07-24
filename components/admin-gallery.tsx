@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { Upload, Trash2, Copy, Download, Check, Loader2, Image as ImageIcon } from 'lucide-react'
+import { Upload, Trash2, Copy, Download, Check, Loader2, Image as ImageIcon, HardDrive } from 'lucide-react'
 
 export function AdminGallery() {
   const [images, setImages] = useState<string[]>([])
@@ -30,6 +30,11 @@ export function AdminGallery() {
   useEffect(() => {
     fetchImages()
   }, [])
+
+  // Estimated storage calculation (average image ~180 KB)
+  const estimatedSizeMB = Number(((images.length * 0.18)).toFixed(1))
+  const maxStorageMB = 500
+  const usagePercent = Math.min((estimatedSizeMB / maxStorageMB) * 100, 100)
 
   const handleUpload = async (file: File) => {
     if (!file) return
@@ -138,6 +143,34 @@ export function AdminGallery() {
 
   return (
     <div className="space-y-6">
+      {/* GitHub Repository Storage Progress Bar */}
+      <div className="shell-panel p-4 border border-shell-line bg-black/30 space-y-3">
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <HardDrive className="h-4 w-4 text-cyan-400" />
+            <span className="font-bold uppercase tracking-wider text-white">Almacenamiento del Repositorio (GitHub Free Tier)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/60 text-emerald-300">
+              ● Estado: Saludable
+            </span>
+            <span className="font-mono text-cyan-400 font-bold">
+              {estimatedSizeMB} MB / 500 MB ({usagePercent.toFixed(1)}% Usado)
+            </span>
+          </div>
+        </div>
+        <div className="w-full bg-slate-900 h-2.5 overflow-hidden border border-slate-800">
+          <div
+            className="h-full bg-gradient-to-r from-[#1274de] via-cyan-400 to-emerald-400 transition-all duration-500"
+            style={{ width: `${Math.max(usagePercent, 2)}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono">
+          <span>{images.length} archivos multimedia guardados</span>
+          <span>Límite recomendado: 500 MB (Git Repo LFS)</span>
+        </div>
+      </div>
+
       {/* Upload Zone */}
       <div
         id="gallery-drop-zone"
