@@ -1,17 +1,13 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, X, Store } from 'lucide-react'
+import { Plus, X, Store, Send, Shield, User, Check, AlertCircle } from 'lucide-react'
 import {
   createMarketListing,
   deleteMarketListing,
   applyToTeamListingAction,
   withdrawApplicationAction,
-  hireDriverFromApplicationAction,
-  declineApplicationAction,
   inviteDriverFromListingAction,
-  acceptInviteFromMarketAction,
-  declineInviteFromMarketAction
 } from './actions'
 import { MarketDriverCards, Listing, ManagedTeam } from './components/market-driver-cards'
 import { MarketTeamOffers, MarketApplication } from './components/market-team-offers'
@@ -56,18 +52,28 @@ export default function MarketPageContent({
   const [classFilter, setClassFilter] = useState<string>('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
 
+  const hasOwnedTeam = myTeams.length > 0
+
   // Form states
   const [formType, setFormType] = useState<'team_seeking_driver' | 'driver_seeking_team'>(
-    myTeams.length > 0 ? 'team_seeking_driver' : 'driver_seeking_team'
+    hasOwnedTeam ? 'team_seeking_driver' : 'driver_seeking_team'
   )
+
+  useEffect(() => {
+    setFormType(hasOwnedTeam ? 'team_seeking_driver' : 'driver_seeking_team')
+  }, [hasOwnedTeam])
+
   const [formSim, setFormSim] = useState<'ac' | 'lmu'>('ac')
   const [selectedClasses, setSelectedClasses] = useState<string[]>(['GT3'])
   const [formTeamId, setFormTeamId] = useState(myTeams[0]?.id || '')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  // Application & Invite modal states
   const [applyingListingId, setApplyingListingId] = useState<string | null>(null)
   const [applyMessage, setApplyMessage] = useState('')
   const [activeInviteListingId, setActiveInviteListingId] = useState<string | null>(null)
+  const [inviteMessage, setInviteMessage] = useState('')
 
   const handleClassToggle = (tag: string) => {
     setSelectedClasses((prev) => {
@@ -107,7 +113,7 @@ export default function MarketPageContent({
     formData.set('mainSim', formSim)
     formData.set('classTag', selectedClasses.join(','))
     if (formType === 'team_seeking_driver') {
-      formData.set('teamId', formTeamId)
+      formData.set('teamId', formTeamId || myTeams[0]?.id || '')
     }
 
     try {
@@ -130,13 +136,33 @@ export default function MarketPageContent({
     }
   }
 
-  const handleApplySubmit = async (listingId: string) => {
+  const handleApplySubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!applyingListingId) return
+    setIsSubmitting(true)
     try {
-      await applyToTeamListingAction(listingId, applyMessage)
+      await applyToTeamListingAction(applyingListingId, applyMessage)
       setApplyingListingId(null)
       setApplyMessage('')
-    } catch (err) {
-      alert('Error applying to team')
+    } catch (err: any) {
+      alert(err.message || 'Error applying to team')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleInviteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeInviteListingId || myTeams.length === 0) return
+    setIsSubmitting(true)
+    try {
+      await inviteDriverFromListingAction(activeInviteListingId, myTeams[0].id, inviteMessage)
+      setActiveInviteListingId(null)
+      setInviteMessage('')
+    } catch (err: any) {
+      alert(err.message || 'Error sending invite')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -189,15 +215,25 @@ export default function MarketPageContent({
           </button>
         </div>
 
-        {/* Action Button */}
+        {/* Action Button based on User Role */}
         {currentUser && (
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-shell-accent hover:bg-red-700 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5"
-          >
-            <Plus className="h-4 w-4" />
-            Create Market Listing
-          </button>
+          belongsToTeam && !hasOwnedTeam ? (
+            <button
+              disabled
+              title="You cannot create market listings while belonging to a team as a driver."
+              className="bg-slate-800 border border-slate-700 text-slate-400 px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none cursor-not-allowed"
+            >
+              Already in a Team
+            </button>
+          ) : (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-shell-accent hover:bg-red-700 text-white px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              {hasOwnedTeam ? 'Post Team Listing' : 'Post Driver Listing'}
+            </button>
+          )
         )}
       </div>
 
@@ -265,64 +301,241 @@ export default function MarketPageContent({
 
       {/* Create Listing Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 animate-fade-in">
-          <div className="shell-panel border border-shell-line bg-zinc-950 max-w-lg w-full p-5 text-white rounded-none relative">
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-              <X className="h-4 w-4" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-lg w-full p-6 text-white rounded-none relative shadow-2xl">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
+              <X className="h-5 w-5" />
             </button>
-            <h2 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Create Market Listing</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Listing Type</label>
-                <select
-                  value={formType}
-                  onChange={(e) => setFormType(e.target.value as any)}
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none font-bold"
-                >
-                  {myTeams.length > 0 && <option value="team_seeking_driver">Team Seeking Driver</option>}
-                  <option value="driver_seeking_team">Driver Seeking Team</option>
-                </select>
+
+            <div className="flex items-center gap-2 border-b border-shell-line pb-3 mb-4">
+              {hasOwnedTeam ? (
+                <Shield className="h-5 w-5 text-cyan-400" />
+              ) : (
+                <User className="h-5 w-5 text-cyan-400" />
+              )}
+              <h2 className="text-lg font-black uppercase italic tracking-tight text-white">
+                {hasOwnedTeam ? 'Publicar Oferta de Equipo' : 'Publicar Postulación de Piloto'}
+              </h2>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 bg-rose-500/10 border border-rose-500/30 p-3 text-xs text-rose-400 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{errorMessage}</span>
               </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {hasOwnedTeam && myTeams.length > 0 && (
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Equipo Propietario</label>
+                  <select
+                    value={formTeamId}
+                    onChange={(e) => setFormTeamId(e.target.value)}
+                    className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none font-bold"
+                  >
+                    {myTeams.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Title</label>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Título de la Publicación</label>
                 <input
                   type="text"
                   name="title"
                   required
-                  placeholder="e.g. Looking for GT3 Driver for 24h Endurance"
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
+                  placeholder={
+                    hasOwnedTeam
+                      ? 'ej. Buscamos Piloto GT3 para Campeonato 6 Hours of Le Mans'
+                      : 'ej. Piloto GT3 buscando equipo competitivo'
+                  }
+                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Description</label>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Simulador Principal</label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="simRadio"
+                      checked={formSim === 'ac'}
+                      onChange={() => setFormSim('ac')}
+                      className="accent-cyan-500"
+                    />
+                    Assetto Corsa (AC)
+                  </label>
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="simRadio"
+                      checked={formSim === 'lmu'}
+                      onChange={() => setFormSim('lmu')}
+                      className="accent-cyan-500"
+                    />
+                    Le Mans Ultimate (LMU)
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Categorías</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {['GT3', 'HYPERCAR', 'FORMULA', 'LMP2'].map((tag) => (
+                    <button
+                      type="button"
+                      key={tag}
+                      onClick={() => handleClassToggle(tag)}
+                      className={`px-3 py-1 text-xs font-bold uppercase transition-colors cursor-pointer border ${
+                        selectedClasses.includes(tag)
+                          ? 'bg-cyan-500 text-black border-cyan-400 font-extrabold'
+                          : 'bg-black/40 text-slate-400 border-white/10 hover:text-white'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Biografía / Descripción</label>
                 <textarea
                   name="description"
                   required
                   rows={3}
-                  placeholder="Describe your requirements, pace, or schedule expectations..."
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none"
+                  placeholder={
+                    hasOwnedTeam
+                      ? 'Describe los requisitos del equipo, ritmo esperado, disponibilidad y objetivos...'
+                      : 'Describe tu experiencia, ritmos en pista, disponibilidad y lo que buscas en un equipo...'
+                  }
+                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Contact Info (Discord / Email)</label>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Contacto de Discord</label>
                 <input
                   type="text"
                   name="contactInfo"
                   required
-                  placeholder="e.g. Discord: driver#1234"
-                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none rounded-none font-mono"
+                  placeholder="ej. Discord: @usuario_discord"
+                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none font-mono focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-shell-line/50">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="border border-shell-line px-4 py-2 text-xs font-bold uppercase hover:bg-white/5 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-5 py-2 text-xs uppercase transition-colors cursor-pointer"
+                >
+                  {isSubmitting ? 'Publicando...' : 'Publicar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Apply Modal */}
+      {applyingListingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-md w-full p-5 text-white rounded-none relative shadow-2xl space-y-4">
+            <button onClick={() => setApplyingListingId(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-base font-black uppercase italic text-white flex items-center gap-2">
+              <Send className="h-4 w-4 text-cyan-400" />
+              Postularse a la Oferta del Equipo
+            </h3>
+
+            <form onSubmit={handleApplySubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Mensaje para el Líder del Equipo</label>
+                <textarea
+                  value={applyMessage}
+                  onChange={(e) => setApplyMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Escribe un mensaje presentándote y detallando tu ritmo o disponibilidad..."
+                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
                 />
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-shell-line/50">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="border border-shell-line px-4 py-2 text-xs font-bold uppercase">
-                  Cancel
+                <button
+                  type="button"
+                  onClick={() => setApplyingListingId(null)}
+                  className="border border-shell-line px-3 py-1.5 text-xs font-bold uppercase hover:bg-white/5 cursor-pointer"
+                >
+                  Cancelar
                 </button>
-                <button type="submit" disabled={isSubmitting} className="bg-shell-accent px-5 py-2 text-xs font-bold uppercase text-white">
-                  {isSubmitting ? 'Posting...' : 'Post Listing'}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-4 py-1.5 text-xs uppercase cursor-pointer"
+                >
+                  {isSubmitting ? 'Enviando...' : 'Enviar Postulación'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Modal */}
+      {activeInviteListingId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="shell-panel border border-shell-line bg-[#090d16] max-w-md w-full p-5 text-white rounded-none relative shadow-2xl space-y-4">
+            <button onClick={() => setActiveInviteListingId(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white cursor-pointer">
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-base font-black uppercase italic text-white flex items-center gap-2">
+              <Shield className="h-4 w-4 text-cyan-400" />
+              Invitar Piloto a tu Equipo
+            </h3>
+
+            <form onSubmit={handleInviteSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Mensaje de Invitación</label>
+                <textarea
+                  value={inviteMessage}
+                  onChange={(e) => setInviteMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Escribe un mensaje para el piloto invitándolo a unirse a tu equipo..."
+                  className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none focus:border-cyan-400"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-shell-line/50">
+                <button
+                  type="button"
+                  onClick={() => setActiveInviteListingId(null)}
+                  className="border border-shell-line px-3 py-1.5 text-xs font-bold uppercase hover:bg-white/5 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-4 py-1.5 text-xs uppercase cursor-pointer"
+                >
+                  {isSubmitting ? 'Enviando...' : 'Enviar Invitación'}
                 </button>
               </div>
             </form>

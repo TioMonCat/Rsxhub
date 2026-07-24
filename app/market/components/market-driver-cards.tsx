@@ -127,14 +127,14 @@ export function MarketDriverCards({
                 <div>
                   {myTeamInvite ? (
                     <span className="text-[10px] font-bold uppercase text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 px-2 py-1">
-                      Invited ({myTeamInvite.teamName})
+                      ✓ Invitado ({myTeamInvite.teamName})
                     </span>
                   ) : (
                     <button
                       onClick={() => onInviteClick(item.id)}
-                      className="bg-cyan-500 hover:bg-cyan-400 text-black px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider transition-colors cursor-pointer"
                     >
-                      Invite to Team
+                      Invitar Piloto
                     </button>
                   )}
                 </div>

@@ -57,7 +57,6 @@ export async function createMarketListing(formData: FormData) {
           }
 
           // Delete any existing market listings for same team
-          // Query only by team_id to avoid Firestore composite index requirement, filter in memory
           const oldSnap = await runWithTimeout(db.collection('market_listings')
             .where('team_id', '==', teamId)
             .get())
@@ -67,6 +66,25 @@ export async function createMarketListing(formData: FormData) {
             oldSnap.docs.forEach((doc: any) => {
               const d = doc.data()
               if (d.type === 'team_seeking_driver') {
+                deleteBatch.delete(doc.ref)
+                count++
+              }
+            })
+            if (count > 0) {
+              await runWithTimeout(deleteBatch.commit())
+            }
+          }
+        } else if (type === 'driver_seeking_team') {
+          // Delete any existing driver market listings for this user to avoid duplicates and bump to top
+          const oldSnap = await runWithTimeout(db.collection('market_listings')
+            .where('user_id', '==', session.userId)
+            .get())
+          if (!oldSnap.empty) {
+            const deleteBatch = db.batch()
+            let count = 0
+            oldSnap.docs.forEach((doc: any) => {
+              const d = doc.data()
+              if (d.type === 'driver_seeking_team') {
                 deleteBatch.delete(doc.ref)
                 count++
               }
@@ -118,6 +136,8 @@ export async function createMarketListing(formData: FormData) {
       teamName = `Mock Team ${teamId.slice(0, 4).toUpperCase()}`
       // Remove existing listings for same team
       listings = listings.filter((l: any) => !(l.team_id === teamId && l.type === 'team_seeking_driver'))
+    } else if (type === 'driver_seeking_team') {
+      listings = listings.filter((l: any) => !(l.user_id === session.userId && l.type === 'driver_seeking_team'))
     }
 
     const newListing = {
@@ -238,6 +258,26 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
           message: message || '',
           created_at: new Date(),
         }))
+
+        // Send notification ONLY to team leader/owner
+        const teamIdVal = listingDoc.data()?.team_id
+        if (teamIdVal) {
+          const teamDoc = await runWithTimeout(db.collection('teams').doc(teamIdVal).get())
+          const leaderId = teamDoc.exists ? teamDoc.data()?.owner_user_id : listingDoc.data()?.user_id
+          if (leaderId) {
+            const notifRef = db.collection('notifications').doc()
+            await runWithTimeout(notifRef.set({
+              id: notifRef.id,
+              user_id: leaderId,
+              type: 'market_application',
+              title: 'Nueva postulación de piloto',
+              message: `El piloto ${userName} se ha postulado para unirse a ${teamDoc.data()?.name || 'tu equipo'}.`,
+              link: '/equipos',
+              read: false,
+              created_at: new Date(),
+            }))
+          }
+        }
         revalidatePath('/market')
         return
       } catch (err) {
@@ -475,7 +515,7 @@ export async function declineApplicationAction(applicationId: string) {
   revalidatePath('/market')
 }
 
-export async function inviteDriverFromListingAction(driverListingId: string, teamId: string) {
+export async function inviteDriverFromListingAction(driverListingId: string, teamId: string, customMessage?: string) {
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
@@ -510,11 +550,26 @@ export async function inviteDriverFromListingAction(driverListingId: string, tea
           invited_by_user_id: session.userId,
           invited_user_id: listingData?.user_id,
           invited_steam_id: '',
-          message: 'Oferta de incorporación desde Driver Market',
+          message: customMessage || 'Oferta de incorporación desde Driver Market',
           status: 'pending',
           created_at: new Date(),
           listing_id: driverListingId,
         }))
+
+        // Send notification to invited driver
+        if (listingData?.user_id) {
+          const notifRef = db.collection('notifications').doc()
+          await runWithTimeout(notifRef.set({
+            id: notifRef.id,
+            user_id: listingData.user_id,
+            type: 'team_invite',
+            title: 'Invitación de equipo',
+            message: `El equipo ${teamDoc.data()?.name || 'un equipo'} te ha enviado una invitación: "${customMessage || 'Únete a nuestro equipo para los próximos campeonatos.'}"`,
+            link: '/perfil',
+            read: false,
+            created_at: new Date(),
+          }))
+        }
         revalidatePath('/market')
         return
       } catch (err) {

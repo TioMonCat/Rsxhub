@@ -21,6 +21,7 @@ interface MarketTeamOffersProps {
   listings: Listing[]
   currentUserId?: string
   applications: MarketApplication[]
+  belongsToTeam?: boolean
   onDeleteListing: (id: string) => void
   onApplyClick: (listingId: string) => void
   onWithdrawApplication: (listingId: string) => void
@@ -30,6 +31,7 @@ export function MarketTeamOffers({
   listings,
   currentUserId,
   applications,
+  belongsToTeam = false,
   onDeleteListing,
   onApplyClick,
   onWithdrawApplication,
@@ -111,17 +113,21 @@ export function MarketTeamOffers({
 
               {!isOwner && currentUserId && (
                 <div>
-                  {myApplication ? (
+                  {belongsToTeam ? (
+                    <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-900 border border-slate-800 px-2.5 py-1">
+                      En un equipo
+                    </span>
+                  ) : myApplication ? (
                     myApplication.status === 'pending' ? (
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold uppercase text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-1">
-                          Applied
+                          Enviado
                         </span>
                         <button
                           onClick={() => onWithdrawApplication(item.id)}
-                          className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline"
+                          className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline cursor-pointer"
                         >
-                          Withdraw
+                          Cancelar
                         </button>
                       </div>
                     ) : (
@@ -132,9 +138,9 @@ export function MarketTeamOffers({
                   ) : (
                     <button
                       onClick={() => onApplyClick(item.id)}
-                      className="bg-shell-accent hover:bg-red-700 text-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-3 py-1 text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
                     >
-                      Apply Now
+                      Postularme
                     </button>
                   )}
                 </div>
