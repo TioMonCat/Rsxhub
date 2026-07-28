@@ -32,7 +32,7 @@ export function Footer() {
             <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Platform</h4>
             <ul className="space-y-2.5 text-xs md:text-sm">
               <li>
-                <Link href="/" className="hover:text-white transition-colors">Home</Link>
+                <Link href="/calendario" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li>
                 <Link href="/calendario" className="hover:text-white transition-colors">Calendar</Link>

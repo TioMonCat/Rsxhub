@@ -211,17 +211,21 @@ export default function EquiposContent({
                       Competing Categories
                     </label>
                     <div className="flex flex-wrap gap-3">
-                      {['GT3', 'LMP2', 'HYPERCAR'].map((tag) => {
+                      {([
+                        { tag: 'GT3',      active: 'border-emerald-500 bg-emerald-500/20 text-emerald-300 shadow-[0_0_8px_rgba(16,185,129,0.3)]' },
+                        { tag: 'LMP2',     active: 'border-[#1274de] bg-[#1274de]/20 text-blue-300 shadow-[0_0_8px_rgba(18,116,222,0.3)]' },
+                        { tag: 'HYPERCAR', active: 'border-shell-accent bg-shell-accent/20 text-red-300 shadow-[0_0_8px_rgba(220,38,38,0.3)]' },
+                      ] as const).map(({ tag, active }) => {
                         const isSelected = selectedTags.includes(tag)
                         return (
                           <button
                             key={tag}
                             type="button"
                             onClick={() => handleTagToggle(tag)}
-                            className={`border px-4 py-1.5 text-xs font-bold tracking-wider uppercase transition-colors rounded-none cursor-pointer ${
+                            className={`border px-5 py-2 text-xs font-black tracking-widest uppercase transition-all rounded-none cursor-pointer ${
                               isSelected
-                                ? 'border-shell-accent bg-shell-accent/20 text-white'
-                                : 'border-shell-line bg-white/5 hover:bg-white/10 text-slate-300'
+                                ? active
+                                : 'border-white/10 bg-white/5 hover:bg-white/10 text-slate-500'
                             }`}
                           >
                             {tag}

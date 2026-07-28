@@ -101,19 +101,12 @@ export default function CalendarContent({
   const expandedSessions = useMemo(() => {
     const list: LeagueEvent[] = []
     events.forEach((ev) => {
-      const hasQualy = ev.hasQualy === true
-      if (hasQualy) {
-        list.push({
-          ...ev,
-          id: `${ev.id}_qualy`,
-          eventType: 'qualifying',
-          startsAt: ev.qualyStartsAt || ev.startsAt,
-          endsAt: ev.qualyEndsAt || ev.endsAt,
-        })
-      }
+      // Solo agregar race y time_attack — las qualifying no aparecen en el Programme
+      const type = ev.eventType || 'race'
+      if (type === 'qualifying') return
       list.push({
         ...ev,
-        eventType: ev.eventType || 'race',
+        eventType: type,
         startsAt: ev.startsAt,
         endsAt: ev.endsAt,
       })
@@ -153,7 +146,7 @@ export default function CalendarContent({
   const [formCountryCode, setFormCountryCode] = useState('ESP')
 
   // Programme filter state
-  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'qualifying' | 'time_attack'>('all')
+  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'time_attack'>('all')
 
   function pad(value: number) {
     return String(value).padStart(2, '0')
@@ -487,7 +480,7 @@ export default function CalendarContent({
               </h2>
             </div>
 
-            {/* Event Format Filter Tabs: ALL, RACES, QUALIFYING, TIME ATTACK */}
+            {/* Event Format Filter Tabs: ALL, RACES, TIME ATTACK */}
             <div className="flex items-center gap-1 bg-black/40 p-1 border border-white/10 self-start md:self-auto flex-wrap">
               <button
                 type="button"
@@ -509,15 +502,6 @@ export default function CalendarContent({
               </button>
               <button
                 type="button"
-                onClick={() => setProgrammeFilter('qualifying')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  programmeFilter === 'qualifying' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                ⚡ QUALIFYING ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) === 'QUALIFYING').length})
-              </button>
-              <button
-                type="button"
                 onClick={() => setProgrammeFilter('time_attack')}
                 className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
                   programmeFilter === 'time_attack' ? 'bg-amber-500 text-black font-black' : 'text-slate-400 hover:text-white'
@@ -535,7 +519,6 @@ export default function CalendarContent({
                 .filter((event) => {
                   const type = getEventType(event, leagueById.get(event.leagueId))
                   if (programmeFilter === 'race') return type === 'RACE'
-                  if (programmeFilter === 'qualifying') return type === 'QUALIFYING'
                   if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
                   return true
                 })
