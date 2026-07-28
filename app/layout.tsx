@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { Roboto } from 'next/font/google'
 import { AppShell } from '@/components/app-shell'
-import { DevRoleSimulator } from '@/components/dev-role-simulator'
+
 import { Suspense } from 'react'
 import { GlobalLoader } from '@/components/global-loader'
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <Suspense fallback={null}>
           <GlobalLoader />
         </Suspense>
-        <DevRoleSimulator />
+
       </body>
     </html>
   )
