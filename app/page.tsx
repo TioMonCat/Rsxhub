@@ -1,325 +1,238 @@
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
-import { getCurrentUser } from '@/lib/auth'
-import { getRegistrations, getLeagues } from '@/lib/platform-data'
+import { getLeagues, getLeagueEvents, getAllRegisteredDrivers, getRegistrations } from '@/lib/platform-data'
 import { getTeamsDashboard } from '@/lib/team-data'
-import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
-import { simulatorLabel } from '@/lib/utils'
-import { respondTeamInvite } from './perfil/actions'
-import { SteamLoginButton } from '@/components/steam-login-button'
-import { getCountryName, getCountryFlag } from '@/lib/countries'
-import { ClassBadge } from '@/components/class-badge'
+import { HeroSection } from '@/components/hero-section'
+import { LeagueCard } from '@/components/league-card'
+import { SectionTitle } from '@/components/section-title'
+import { FormattedDate } from '@/components/formatted-date'
+import { Trophy, Calendar, Shield, Flag, Users, Zap, ArrowRight } from 'lucide-react'
 
-export default async function PerfilPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ invite?: string }>
-}) {
-  const session = await getCurrentUser()
-  const qs = await searchParams
-
-  if (!session) {
-    return (
-      <div className="shell-panel p-6 rounded-none text-white">
-        <h1 className="text-2xl font-bold text-white">Sign in required</h1>
-        <p className="mt-2 text-slate-400">Use Steam login to access your profile and registrations.</p>
-        <SteamLoginButton className="mt-4 inline-flex px-4 py-2 text-sm font-bold text-white bg-shell-accent rounded-none cursor-pointer hover:opacity-90 transition-opacity">
-          Sign in with Steam
-        </SteamLoginButton>
-      </div>
-    )
-  }
-
-  let profile = {
-    id: '',
-    displayName: session.steamDisplayName,
-    countryCode: 'ES',
-    bio: '',
-    mainSim: 'ac' as const,
-    avatarUrl: session.avatarUrl ?? null,
-    steamId: session.steamId,
-    steamDisplayName: session.steamDisplayName,
-    preferredCategories: [] as string[],
-  }
-  let pendingInvites: Array<{ id: string; teamName: string; teamLogoUrl: string | null; invitedBy: string; message: string | null }> = []
-
-  const db = getFirestoreDb()
-  if (hasFirebase && db) {
-    try {
-      const doc = await db.collection('profiles').doc(session.userId).get()
-      if (doc.exists) {
-        const data = doc.data()
-        profile = {
-          id: doc.id,
-          displayName: data.display_name || session.steamDisplayName,
-          countryCode: data.country_code || 'ES',
-          bio: data.bio || '',
-          mainSim: data.main_sim || 'ac',
-          avatarUrl: data.avatar_url || session.avatarUrl || null,
-          steamId: session.steamId,
-          steamDisplayName: session.steamDisplayName,
-          preferredCategories: data.preferred_categories || [],
-        }
-      }
-
-      const invitesSnapshot = await db
-        .collection('team_invites')
-        .where('status', '==', 'pending')
-        .get()
-
-      const matchingInvites = invitesSnapshot.docs
-        .map((doc: any) => ({ id: doc.id, ...doc.data() }))
-        .filter((item: any) => item.invited_user_id === session.userId || String(item.invited_steam_id || '') === session.steamId)
-
-      const teamIds = Array.from(new Set(matchingInvites.map((item: any) => item.team_id)))
-      const inviterIds = Array.from(new Set(matchingInvites.map((item: any) => item.invited_by_user_id)))
-
-      let teamDocs: any[] = []
-      let profileDocs: any[] = []
-      let steamDocs: any[] = []
-
-      if (teamIds.length > 0) {
-        const snaps = await Promise.all(teamIds.map((id: any) => db.collection('teams').doc(id).get()))
-        teamDocs = snaps.filter((s: any) => s.exists).map((s: any) => ({ id: s.id, ...s.data() }))
-      }
-      if (inviterIds.length > 0) {
-        const pSnaps = await Promise.all(inviterIds.map((id: any) => db.collection('profiles').doc(id).get()))
-        profileDocs = pSnaps.filter((s: any) => s.exists).map((s: any) => ({ id: s.id, ...s.data() }))
-
-        const sSnaps = await Promise.all(inviterIds.map((id: any) => db.collection('steam_accounts').doc(id).get()))
-        steamDocs = sSnaps.filter((s: any) => s.exists).map((s: any) => ({ id: s.id, ...s.data() }))
-      }
-
-      const teamById = new Map(teamDocs.map((t: any) => [t.id, { name: t.name || '', logoUrl: t.logo_url || t.logoUrl || null }]))
-      const inviterNameByUserId = new Map(profileDocs.map((p: any) => [p.user_id, p.display_name || '']))
-      steamDocs.forEach((s: any) => {
-        if (!inviterNameByUserId.get(s.user_id)) {
-          inviterNameByUserId.set(s.user_id, s.steam_display_name || '')
-        }
-      })
-
-      pendingInvites = matchingInvites.map((item: any) => {
-        const teamInfo = teamById.get(item.team_id)
-        return {
-          id: item.id,
-          teamName: teamInfo?.name || 'Team',
-          teamLogoUrl: teamInfo?.logoUrl || null,
-          invitedBy: inviterNameByUserId.get(item.invited_by_user_id) || 'User',
-          message: item.message,
-        }
-      })
-    } catch (e) {
-      console.error('Failed to load profile details from Firestore:', e)
-    }
-  }
-
-  // Load mock invites if pendingInvites is empty
-  if (pendingInvites.length === 0) {
-    try {
-      const { cookies } = await import('next/headers')
-      const cookieStore = await cookies()
-      const mockProfile = cookieStore.get(`mock_profile_${session.userId}`)?.value || cookieStore.get('mock_profile')?.value
-      if (mockProfile) {
-        const parsed = JSON.parse(mockProfile)
-        if (!parsed.user_id || parsed.user_id === session.userId) {
-          profile.displayName = parsed.display_name || profile.displayName
-          profile.countryCode = parsed.country_code || profile.countryCode
-          profile.bio = parsed.bio || profile.bio
-          profile.mainSim = parsed.main_sim || profile.mainSim
-          profile.avatarUrl = parsed.avatar_url || profile.avatarUrl
-          profile.preferredCategories = parsed.preferred_categories || profile.preferredCategories
-        }
-      }
-
-      const mockInvitesVal = cookieStore.get('mock_invites')?.value
-      const mockMarketInvitesVal = cookieStore.get('mock_market_invites')?.value
-      const mockInvites = mockInvitesVal ? JSON.parse(mockInvitesVal) : []
-      const mockMarketInvites = mockMarketInvitesVal ? JSON.parse(mockMarketInvitesVal) : []
-      const dashboard = await getTeamsDashboard(session.userId)
-      const teamMap = new Map(dashboard.teams.map((t) => [t.id, t]))
-
-      const combinedMock = [...mockInvites, ...mockMarketInvites]
-      combinedMock.forEach((inv: any) => {
-        const targetUserId = inv.invited_user_id || inv.invitedUserId
-        const targetSteamId = String(inv.invited_steam_id || inv.invitedSteamId || '')
-        const isTarget = (targetUserId && targetUserId === session.userId) || (targetSteamId && targetSteamId === session.steamId)
-        const isPending = inv.status === 'pending'
-        if (isTarget && isPending) {
-          const team = teamMap.get(inv.team_id || inv.teamId)
-          const teamLogoUrl = inv.teamLogo || team?.logoUrl || cookieStore.get(`mock_team_logo_${inv.team_id || inv.teamId}`)?.value || null
-          pendingInvites.push({
-            id: inv.id,
-            teamName: team?.name || inv.teamName || 'Team',
-            teamLogoUrl,
-            invitedBy: inv.invitedBy || 'Team Admin',
-            message: inv.message || null,
-          })
-        }
-      })
-    } catch (e) {
-      console.error('Failed to read mock_profile or invites cookie:', e)
-    }
-  }
-
-  const registrations = (await getRegistrations()).filter((item) => item.userId === session.userId)
+export default async function HomePage() {
+  // Fetch platform data
   const leagues = await getLeagues()
+  const events = await getLeagueEvents()
+  const drivers = await getAllRegisteredDrivers()
+  const { teams } = await getTeamsDashboard()
+
+  // Compute registered counts for leagues
+  const regsPromises = leagues.map((league) => getRegistrations(league.id))
+  const regsLists = await Promise.all(regsPromises)
+  const allRegistrations = regsLists.flat()
+
+  const registeredByLeague: Record<string, number> = {}
+  const countedKeysByLeague = new Map<string, Set<string>>()
+
+  for (const registration of allRegistrations) {
+    if (registration.status === 'rejected') continue
+    const leagueId = registration.leagueId
+    if (!countedKeysByLeague.has(leagueId)) {
+      countedKeysByLeague.set(leagueId, new Set<string>())
+    }
+    const countedKeys = countedKeysByLeague.get(leagueId)!
+    const key = `${registration.teamId || registration.userId}_${registration.classTag || 'default'}`
+    if (!countedKeys.has(key)) {
+      countedKeys.add(key)
+      registeredByLeague[leagueId] = (registeredByLeague[leagueId] || 0) + 1
+    }
+  }
+
+  // Next upcoming race event
+  const now = new Date().toISOString()
+  const upcomingEvents = events
+    .filter((ev) => ev.startsAt && ev.startsAt >= now)
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+  const nextEvent = upcomingEvents[0] || events[0] || null
+  const nextEventLeague = nextEvent ? leagues.find((l) => l.id === nextEvent.leagueId) : null
+
+  // Stats calculation
+  const driversCount = Math.max(drivers.length, 12)
+  const leaguesCount = leagues.length
+  const simulatorsCount = 2
+  const racesCount = events.length || 8
+
+  // Featured leagues
+  const featuredLeagues = leagues.slice(0, 6)
 
   return (
-    <div className="space-y-4 text-white">
-      <div className="shell-panel p-5 md:p-6 rounded-none">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-start md:items-center gap-4">
-            {profile.avatarUrl ? (
-              <img
-                src={profile.avatarUrl}
-                alt={profile.displayName}
-                width={64}
-                height={64}
-                className="h-16 w-16 rounded-full object-cover ring-2 ring-white/10 flex-shrink-0"
-              />
-            ) : (
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-shell-accent/20 text-xl font-bold text-shell-accent border border-shell-accent/30 flex-shrink-0">
-                {profile.displayName.slice(0, 2).toUpperCase()}
-              </div>
-            )}
+    <div className="space-y-12 text-white">
+      {/* 1. Hero Carousel Banner */}
+      <HeroSection
+        driversCount={driversCount}
+        leaguesCount={leaguesCount}
+        simulatorsCount={simulatorsCount}
+        racesCount={racesCount}
+      />
 
-            <div>
+      {/* 2. Upcoming Race Banner */}
+      {nextEvent && (
+        <section className="shell-panel relative overflow-hidden border border-cyan-500/30 bg-gradient-to-r from-black/80 via-[#070e1b] to-black/80 p-6 md:p-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between relative z-10">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="text-xl">{getCountryFlag(profile.countryCode)}</span>
-                <h1 className="text-2xl font-bold tracking-tight text-white">{profile.displayName}</h1>
+                <span className="inline-flex items-center gap-1.5 bg-red-600/30 border border-red-500/40 text-red-300 text-[10px] font-black uppercase tracking-widest px-2.5 py-1">
+                  <Zap className="h-3 w-3 text-red-400 animate-pulse" /> NEXT RACE ON PROGRAMME
+                </span>
+                {nextEventLeague && (
+                  <span className="text-xs font-mono text-cyan-400 font-bold uppercase">
+                    {nextEventLeague.title}
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 font-mono">
-                Steam ID: {session.steamId} · {getCountryName(profile.countryCode)} · {simulatorLabel(profile.mainSim)}
-              </p>
-              {profile.bio ? <p className="mt-2 text-sm text-slate-300 max-w-xl">{profile.bio}</p> : null}
+              <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tight text-white">
+                {nextEvent.circuitName || nextEvent.title || 'Official Grand Prix Event'}
+              </h2>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-mono">
+                <span className="flex items-center gap-1.5 text-slate-200">
+                  <Calendar className="h-4 w-4 text-cyan-400" />
+                  <FormattedDate date={nextEvent.startsAt} />
+                </span>
+                {nextEvent.circuitName && (
+                  <span className="text-slate-400">
+                    Circuit: <strong className="text-white">{nextEvent.circuitName}</strong>
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <Link
+                href="/calendario?view=programme"
+                className="bg-[#1274de] hover:bg-[#1f82ee] text-white px-6 py-3 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-2 shadow-[0_0_15px_rgba(18,116,222,0.4)]"
+              >
+                View Full Calendar <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* 3. Championships & Active Leagues */}
+      <section className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-shell-line pb-4 gap-4">
+          <SectionTitle
+            title="ACTIVE CHAMPIONSHIPS"
+            subtitle="Browse available leagues, choose your class, and sign up with your team or as an independent driver."
+            icon={<Trophy className="h-7 w-7 text-cyan-400 shrink-0" />}
+          />
           <Link
-            href="/perfil/editar"
-            className="self-start md:self-center border border-shell-line bg-black/40 hover:bg-slate-800 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-200 rounded-none transition-colors"
+            href="/ligas"
+            className="border border-white/20 bg-white/5 hover:bg-white/10 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white transition-colors self-start md:self-auto shrink-0"
           >
-            Edit Profile
+            Explore All Leagues →
           </Link>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="shell-panel p-5 rounded-none">
-          <h2 className="text-lg font-bold text-white">General Data</h2>
-          <dl className="mt-3 space-y-2 text-sm text-slate-300">
-            <div>
-              <dt className="text-xs text-slate-400 font-mono uppercase">Steam</dt>
-              <dd className="font-semibold text-white">{profile.steamDisplayName}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400 font-mono uppercase">Steam ID</dt>
-              <dd className="font-mono text-slate-300">{profile.steamId}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400 font-mono uppercase">Country</dt>
-              <dd>{getCountryFlag(profile.countryCode)} {getCountryName(profile.countryCode)} ({profile.countryCode})</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-slate-400 font-mono uppercase">Main Sim</dt>
-              <dd>{simulatorLabel(profile.mainSim)}</dd>
-            </div>
-          </dl>
-        </div>
+        {featuredLeagues.length === 0 ? (
+          <div className="shell-panel p-8 text-center border border-shell-line bg-zinc-950/40">
+            <p className="text-slate-400 text-sm">No active leagues at the moment. Check back soon!</p>
+          </div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+            {featuredLeagues.map((league) => (
+              <LeagueCard
+                key={league.id}
+                league={league}
+                registeredCount={registeredByLeague[league.id] || 0}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
-        <div className="shell-panel p-5 rounded-none">
-          <h2 className="text-lg font-bold text-white">My Registrations</h2>
-          <div className="mt-3 space-y-2 text-sm">
-            {registrations.length === 0 ? (
-              <p className="text-slate-400">No league registrations yet.</p>
-            ) : (
-              registrations.map((registration) => {
-                const league = leagues.find((item) => item.id === registration.leagueId)
-                return (
-                  <div key={registration.id} className="border border-shell-line bg-black/20 p-3 rounded-none">
-                    <p className="font-semibold text-white">{league?.title ?? 'League'}</p>
-                    <p className="text-xs text-slate-400">
-                      Status: {registration.status}
-                      {registration.classTag ? ` · ${registration.classTag}` : ''}
-                      {registration.assignedNumber ? ` · #${registration.assignedNumber}` : ''}
-                    </p>
-                  </div>
-                )
-              })
-            )}
+      {/* 4. Why RSX / Value Proposition */}
+      <section className="space-y-6">
+        <SectionTitle
+          title="THE RSX ADVANTAGE"
+          subtitle="Built by sim racers for sim racers. Everything you need for a professional league experience."
+          icon={<Shield className="h-7 w-7 text-cyan-400 shrink-0" />}
+        />
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Card 1 */}
+          <div className="border border-white/10 bg-[#090d16]/60 p-6 space-y-3 rounded-none">
+            <div className="h-10 w-10 bg-slate-900 border border-white/10 flex items-center justify-center text-cyan-400">
+              <Trophy className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-white">
+              Official Championships
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Sprint & endurance series across GT3, LMP2, Hypercar, and multiclass categories.
+            </p>
+          </div>
+
+          {/* Card 2 */}
+          <div className="border border-white/10 bg-[#090d16]/60 p-6 space-y-3 rounded-none">
+            <div className="h-10 w-10 bg-slate-900 border border-white/10 flex items-center justify-center text-cyan-400">
+              <Shield className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-white">
+              Stewards & Race Control
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Clean racing guaranteed with active stewards, clear rulebooks, and transparent penalty logs.
+            </p>
+          </div>
+
+          {/* Card 3 */}
+          <div className="border border-white/10 bg-[#090d16]/60 p-6 space-y-3 rounded-none">
+            <div className="h-10 w-10 bg-slate-900 border border-white/10 flex items-center justify-center text-cyan-400">
+              <Users className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-white">
+              Teams & Drivers
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Register custom teams, assign car skin URLs, manage rosters, and recruit through the Driver Market.
+            </p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="border border-white/10 bg-[#090d16]/60 p-6 space-y-3 rounded-none">
+            <div className="h-10 w-10 bg-slate-900 border border-white/10 flex items-center justify-center text-cyan-400">
+              <Flag className="h-5 w-5" />
+            </div>
+            <h3 className="text-sm font-extrabold uppercase tracking-wide text-white">
+              Live Standings
+            </h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Automatic result tracking, points tables, and driver statistics updated right after every round.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {qs.invite === 'accepted' ? <div className="border border-emerald-300/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-100 rounded-none">Invitation accepted.</div> : null}
-      {qs.invite === 'rejected' ? <div className="border border-amber-300/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100 rounded-none">Invitation rejected.</div> : null}
-      {qs.invite === 'error' ? <div className="border border-rose-300/30 bg-rose-500/10 px-3 py-2 text-sm text-rose-100 rounded-none">Could not accept the invitation.</div> : null}
-      {qs.invite === 'multi-team-schema' ? <div className="border border-amber-300/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-100 rounded-none">Your database only allows one team per user. Run the migration to allow multiple teams.</div> : null}
-
-      <div className="shell-panel p-5 rounded-none">
-        <h2 className="text-lg font-bold text-white uppercase tracking-tight">Team Invitations</h2>
-        <div className="mt-3 space-y-3">
-          {pendingInvites.length === 0 ? (
-            <p className="text-sm text-slate-400">You have no pending invitations.</p>
-          ) : (
-            pendingInvites.map((invite) => (
-              <div key={invite.id} className="border border-shell-line bg-black/40 p-4 rounded-none flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3.5">
-                  {invite.teamLogoUrl ? (
-                    <img
-                      src={invite.teamLogoUrl}
-                      alt={invite.teamName}
-                      className="h-12 w-12 object-contain border border-white/10 bg-black/60 p-1 flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-black text-base flex-shrink-0">
-                      {invite.teamName.substring(0, 2).toUpperCase()}
-                    </div>
-                  )}
-
-                  <div>
-                    <h4 className="font-bold text-white uppercase text-sm tracking-wide">{invite.teamName}</h4>
-                    <p className="text-xs text-slate-400">Invited by: <span className="text-slate-200 font-semibold">{invite.invitedBy}</span></p>
-                    {invite.message && (
-                      <p className="mt-1 text-xs text-slate-300 italic bg-black/30 px-2.5 py-0.5 border-l-2 border-cyan-400">
-                        "{invite.message}"
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-center">
-                  <form action={respondTeamInvite}>
-                    <input type="hidden" name="inviteId" value={invite.id} />
-                    <input type="hidden" name="decision" value="accepted" />
-                    <button type="submit" className="border border-emerald-500/50 bg-emerald-950/80 hover:bg-emerald-500/20 text-emerald-300 px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                      Accept
-                    </button>
-                  </form>
-                  <form action={respondTeamInvite}>
-                    <input type="hidden" name="inviteId" value={invite.id} />
-                    <input type="hidden" name="decision" value="rejected" />
-                    <button type="submit" className="border border-rose-500/50 bg-rose-950/80 hover:bg-rose-500/20 text-rose-300 px-4 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer">
-                      Reject
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ))
-          )}
+      {/* 5. Call To Action Banner */}
+      <section className="border border-white/10 bg-gradient-to-r from-[#0a1424] via-[#070e1a] to-[#040810] p-8 md:p-12 text-center space-y-6 rounded-none shadow-2xl">
+        <h2 className="text-3xl md:text-4xl font-black uppercase italic tracking-tight text-white">
+          Ready to <span className="text-[#1274de]">Take the Grid?</span>
+        </h2>
+        <p className="text-xs md:text-sm text-slate-400 max-w-lg mx-auto leading-relaxed">
+          Create your team profile, explore available championships, and join the competitive sim racing community.
+        </p>
+        <div className="flex flex-wrap justify-center gap-4 pt-2">
+          <Link
+            href="/ligas"
+            className="bg-[#1274de] hover:bg-[#1f82ee] text-white px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer shadow-[0_0_15px_rgba(18,116,222,0.3)]"
+          >
+            Browse Leagues
+          </Link>
+          <Link
+            href="/equipos"
+            className="border border-white/20 bg-white/5 hover:bg-white/10 text-white px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer"
+          >
+            Manage Teams
+          </Link>
+          <Link
+            href="/perfil"
+            className="border border-white/20 bg-transparent hover:bg-white/5 text-slate-300 px-7 py-3 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer"
+          >
+            Driver Profile
+          </Link>
         </div>
-      </div>
-
-      <div className="shell-panel p-5 rounded-none">
-        <h2 className="text-lg font-bold text-white">Category Preferences</h2>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {profile.preferredCategories.length === 0 ? (
-            <p className="text-sm text-slate-400">No category preferences set yet.</p>
-          ) : (
-            profile.preferredCategories.map((category) => (
-              <ClassBadge key={category} classTag={category} className="px-3.5 py-1.5 text-xs font-black shadow-md" />
-            ))
-          )}
-        </div>
-      </div>
+      </section>
     </div>
   )
 }
