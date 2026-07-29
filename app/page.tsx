@@ -157,9 +157,9 @@ export default async function HomePage() {
       <section className="max-w-[1400px] mx-auto px-4 md:px-6">
         <div className="border border-white/10 bg-gradient-to-r from-[#040814] via-[#070e1e] to-[#040814] p-10 md:p-16 space-y-6 rounded-none shadow-2xl">
           <div className="space-y-3 max-w-xl">
-            <h2 className="text-4xl md:text-5xl font-black uppercase italic tracking-tight text-white">
+            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tight text-white leading-tight">
               JOIN <br />
-              <span className="text-[#1274de]">RSX</span>
+              <span className="text-[#1274de]">REAL SIM EXPERIENCE</span>
             </h2>
             <p className="text-sm md:text-base text-slate-400 font-medium leading-relaxed">
               Create your profile, join a team, and start racing. No pay-to-win, no shortcuts.

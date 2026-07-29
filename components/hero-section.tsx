@@ -44,23 +44,11 @@ export function HeroSection({ driversCount, leaguesCount, simulatorsCount, races
     return () => clearInterval(timer)
   }, [])
 
-  const prevSlide = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrent((prev) => (prev - 1 + SLIDES.length) % SLIDES.length)
-  }
-
-  const nextSlide = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setCurrent((prev) => (prev + 1) % SLIDES.length)
-  }
-
   return (
-    <div className="w-full">
-      {/* Banner de Hero Carousel - Altura completa del Viewport */}
-      <section className="relative h-[calc(100vh-76px)] min-h-[620px] w-full overflow-hidden">
-        {/* Contenedor de las Slides (Efecto de Cross-fade) */}
+    <div className="-mx-10 -mt-4 md:-mx-20 md:-mt-6 w-auto overflow-hidden">
+      {/* Banner de Hero Carousel - Altura completa y ancho de pantalla */}
+      <section className="relative h-[calc(100vh-65px)] min-h-[600px] w-full overflow-hidden">
+        {/* Contenedor de las Slides (Cross-fade) */}
         <div className="absolute inset-0">
           {SLIDES.map((slide, index) => (
             <div
@@ -80,54 +68,32 @@ export function HeroSection({ driversCount, leaguesCount, simulatorsCount, races
           ))}
         </div>
 
-        {/* Gradiente Oscuro continuo que se funde en la base con #030508 */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/55 to-[#030508]" style={{ zIndex: 2 }} />
+        {/* Gradiente Oscuro continuo que se funde arriba, centro y base */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-[#030508]" style={{ zIndex: 2 }} />
 
-        {/* Flechas de Navegación del Carousel */}
-        <button
-          onClick={prevSlide}
-          className="absolute left-6 top-1/2 -translate-y-1/2 bg-black/40 p-2.5 text-white hover:bg-black/60 transition-colors rounded-none"
-          style={{ zIndex: 10 }}
-          aria-label="Previous slide"
-        >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button
-          onClick={nextSlide}
-          className="absolute right-6 top-1/2 -translate-y-1/2 bg-black/40 p-2.5 text-white hover:bg-black/60 transition-colors rounded-none"
-          style={{ zIndex: 10 }}
-          aria-label="Next slide"
-        >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-
-        {/* Contenido Superpuesto en el Banner - Flexbox vertical para ubicar textos en el centro y stats en la base */}
-        <div className="relative mx-auto flex flex-col justify-between h-full max-w-[1400px] px-6 md:px-12 pt-20 pb-14 md:pb-20" style={{ zIndex: 5 }}>
-          {/* Sección de Textos y CTA (Centrado Verticalmente en el espacio superior/medio disponible) */}
+        {/* Contenido Superpuesto */}
+        <div className="relative mx-auto flex flex-col justify-between h-full max-w-[1400px] px-6 md:px-12 pt-16 pb-12 md:pb-16" style={{ zIndex: 5 }}>
+          {/* Sección de Textos y CTA */}
           <div className="my-auto max-w-2xl text-left space-y-6 md:space-y-8">
             <div className="w-fit">
               <Image src="/branding/rsx-logo.png" alt="RSX Logo" width={440} height={130} priority className="h-auto w-[260px] md:w-[360px]" />
             </div>
-            
+
             <p className="text-lg md:text-xl text-slate-150 leading-relaxed font-semibold transition-all duration-500 max-w-xl">
               {SLIDES[current].subtitle}
             </p>
 
             <div className="flex flex-wrap gap-4 pt-2">
-              <Link href="/ligas" className="inline-flex bg-[#1274de] hover:bg-[#1f82ee] px-7 py-3 text-xs md:text-sm font-bold uppercase tracking-wider text-white transition-colors rounded-none">
+              <Link href="/ligas" className="inline-flex bg-[#1274de] hover:bg-[#1f82ee] px-7 py-3 text-xs md:text-sm font-bold uppercase tracking-wider text-white transition-colors rounded-none shadow-[0_0_15px_rgba(18,116,222,0.4)]">
                 View leagues
               </Link>
-              <Link href="#about" className="inline-flex border border-white/20 bg-white/5 hover:bg-white/10 px-7 py-3 text-xs md:text-sm font-bold uppercase tracking-wider text-white transition-colors rounded-none">
+              <Link href="/about" className="inline-flex border border-white/20 bg-black/40 hover:bg-white/10 px-7 py-3 text-xs md:text-sm font-bold uppercase tracking-wider text-white transition-colors rounded-none">
                 About RSX
               </Link>
             </div>
           </div>
 
-          {/* Sección de Indicadores (Dots) y Barra de Estadísticas - Fijos en el fondo del Viewport */}
+          {/* Sección de Indicadores (Dots) y Barra de Estadísticas */}
           <div className="w-full space-y-6">
             {/* Puntos del carrusel */}
             <div className="flex justify-center gap-2">
