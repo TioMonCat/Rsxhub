@@ -181,9 +181,9 @@ export default function PerfilContent({
                   {copiedSteam && <span className="text-emerald-400 font-bold text-[10px] ml-1">COPIED!</span>}
                 </button>
 
-                <span className="flex items-center gap-1 bg-white/5 border border-white/10 px-2.5 py-1 text-slate-200">
-                  <Globe className="h-3 w-3 text-cyan-400" />
-                  {getCountryName(profile.countryCode)} ({profile.countryCode})
+                <span className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2.5 py-1 text-slate-200">
+                  <span className="text-sm">{getCountryFlag(profile.countryCode)}</span>
+                  <span>{getCountryName(profile.countryCode)} ({profile.countryCode})</span>
                 </span>
 
                 <span className="flex items-center gap-1 bg-white/5 border border-white/10 px-2.5 py-1 text-slate-200">
@@ -454,7 +454,7 @@ export default function PerfilContent({
                     >
                       {COUNTRIES.map((country) => (
                         <option key={country.code} value={country.code} className="bg-neutral-900 text-white">
-                          {country.name} ({country.code})
+                          {getCountryFlag(country.code)} {country.name} ({country.code})
                         </option>
                       ))}
                     </select>
