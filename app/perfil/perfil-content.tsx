@@ -41,8 +41,8 @@ type RegistrationItem = {
   id: string
   leagueId: string
   status: string
-  classTag?: string
-  assignedNumber?: number | string
+  classTag?: string | null
+  assignedNumber?: number | string | null
 }
 
 type LeagueItem = {
