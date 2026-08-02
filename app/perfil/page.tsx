@@ -32,7 +32,7 @@ export default async function PerfilPage({
     displayName: session.steamDisplayName,
     countryCode: 'ES',
     bio: '',
-    mainSim: 'ac' as const,
+    mainSim: 'ac' as 'ac' | 'lmu',
     avatarUrl: session.avatarUrl ?? null,
     steamId: session.steamId,
     steamDisplayName: session.steamDisplayName,
