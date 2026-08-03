@@ -151,7 +151,6 @@ export default function PerfilContent({
                   {profile.displayName.slice(0, 2).toUpperCase()}
                 </div>
               )}
-              <span className="absolute bottom-0 right-0 h-5 w-5 rounded-full bg-emerald-500 border-2 border-[#091122]" title="Active Driver" />
             </div>
 
             {/* Driver Identity */}
@@ -235,7 +234,7 @@ export default function PerfilContent({
             </h2>
           </div>
 
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <dl className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div className="bg-black/30 p-3 border border-white/5 space-y-1">
               <dt className="text-[10px] text-slate-400 font-mono uppercase font-bold">Steam Name</dt>
               <dd className="font-bold text-white text-sm truncate">{profile.steamDisplayName}</dd>
@@ -244,14 +243,6 @@ export default function PerfilContent({
             <div className="bg-black/30 p-3 border border-white/5 space-y-1">
               <dt className="text-[10px] text-slate-400 font-mono uppercase font-bold">Steam 64 ID</dt>
               <dd className="font-mono text-slate-300 font-semibold truncate">{profile.steamId}</dd>
-            </div>
-
-            <div className="bg-black/30 p-3 border border-white/5 space-y-1">
-              <dt className="text-[10px] text-slate-400 font-mono uppercase font-bold">Country / Region</dt>
-              <dd className="font-semibold text-white flex items-center gap-1.5">
-                <span>{getCountryFlag(profile.countryCode)}</span>
-                <span>{getCountryName(profile.countryCode)}</span>
-              </dd>
             </div>
 
             <div className="bg-black/30 p-3 border border-white/5 space-y-1">
