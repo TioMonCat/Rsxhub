@@ -171,7 +171,10 @@ export default async function TeamProfilePage({
       let teamRegRows: Array<{ leagueId: string; userId: string; status: string; classTag: string; assignedNumber: number }> = []
 
       try {
-        const teamRegsSnapshot = await db.collection('league_registrations').where('team_id', '==', team.id).get()
+        const teamRegsSnapshot = await runWithTimeout(
+          db.collection('league_registrations').where('team_id', '==', team.id).get(),
+          3000
+        )
         if (!teamRegsSnapshot.empty) {
           teamRegRows = teamRegsSnapshot.docs.map((doc: any) => {
             const data = doc.data()
@@ -233,9 +236,14 @@ export default async function TeamProfilePage({
       }
 
       if (memberUserIds.length > 0 && leagueIds.length > 0) {
+        try {
         const chunks = []
         for (let i = 0; i < memberUserIds.length; i += 10) chunks.push(memberUserIds.slice(i, i + 10))
-        const snaps = await Promise.all(chunks.map((chunk: any) => db.collection('league_results').where('user_id', 'in', chunk).get()))
+        const snaps = await Promise.all(
+          chunks.map((chunk: any) =>
+            runWithTimeout(db.collection('league_results').where('user_id', 'in', chunk).get(), 3000).catch(() => ({ docs: [] }))
+          )
+        )
         const allResults = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })))
         const filteredResults = allResults.filter((row: any) => leagueIds.includes(row.league_id || ''))
 
@@ -297,6 +305,9 @@ export default async function TeamProfilePage({
           stats.dnf = filteredResults.filter((r: any) => r.is_dnf || r.status === 'DNF' || r.position === 990 || r.position > 100).length
           stats.dsq = filteredResults.filter((r: any) => r.is_dsq || r.status === 'DSQ' || r.position === 991).length
           stats.racesRun = uniqueRaceIds.size
+        }
+        } catch (err) {
+          console.error('Failed to fetch league results for team:', err)
         }
       }
 
