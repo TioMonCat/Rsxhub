@@ -264,6 +264,7 @@ export const getTeamsDashboard = cache(async (currentUserId?: string) => {
           category: String(car.category || 'GT3').toUpperCase(),
           dorsal: String(car.dorsal || '').trim(),
           skinUrl: car.skinUrl || car.skin_url || '',
+          skinName: car.skinName || car.skin_name || '',
           driverUserIds: Array.isArray(car.driverUserIds)
             ? car.driverUserIds.filter(Boolean)
             : Array.isArray(car.driver_user_ids)

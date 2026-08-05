@@ -323,6 +323,7 @@ export async function updateTeam(formData: FormData) {
               category: String(car.category || 'GT3').toUpperCase(),
               dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
               skinUrl,
+              skinName: car.skinName || car.skin_name || '',
               driverUserIds: (car.driverUserIds || car.driver_user_ids || []).map((d: any) => String(d || '').trim()),
               driverUserIdsByLeague: car.driverUserIdsByLeague || car.driver_user_ids_by_league || {},
               leagueId: car.leagueId || car.league_id || null,

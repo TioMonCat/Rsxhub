@@ -42,6 +42,7 @@ export function TeamCarsEditor({
           category: car.category || 'GT3',
           dorsal: String(car.dorsal || '').trim(),
           skinUrl: car.skinUrl || (car as any).skin_url || '',
+          skinName: car.skinName || (car as any).skin_name || '',
           driverUserIds: Array.isArray(car.driverUserIds) ? car.driverUserIds.filter(Boolean) : [],
           driverUserIdsByLeague: byLeague,
           leagueId: carLeagueId,
@@ -145,7 +146,9 @@ export function TeamCarsEditor({
       }
 
       if (finalSkinUrl) {
-        updateCarField(carId, 'skinUrl', finalSkinUrl)
+        setCars((prev) =>
+          prev.map((c) => (c.id === carId ? { ...c, skinUrl: finalSkinUrl, skinName: file.name } : c))
+        )
       } else {
         alert('Could not upload skin file directly. Please paste a Google Drive, Mega, or MediaFire download link in the field below.')
       }
@@ -256,6 +259,7 @@ export function TeamCarsEditor({
       category: car.category,
       dorsal: String(car.dorsal || '').trim(),
       skinUrl: String(car.skinUrl || '').trim(),
+      skinName: String(car.skinName || '').trim(),
       driverUserIds: (car.driverUserIds || []).map((id) => String(id || '').trim()).filter(Boolean),
       driverUserIdsByLeague: car.driverUserIdsByLeague || {},
       leagueId: car.leagueId || null,
@@ -608,12 +612,16 @@ export function TeamCarsEditor({
                           {car.skinUrl ? (
                             <div className="flex items-center gap-2 bg-[#0a0f1d] border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-emerald-300 min-w-0">
                               <FileArchive className="h-4 w-4 shrink-0 text-emerald-400" />
-                              <span className="truncate flex-1 font-mono text-[11px]" title={getSkinFileName(car.skinUrl)}>
-                                {getSkinFileName(car.skinUrl)}
+                              <span className="truncate flex-1 font-mono text-[11px]" title={getSkinFileName(car.skinUrl, car.skinName)}>
+                                {getSkinFileName(car.skinUrl, car.skinName)}
                               </span>
                               <button
                                 type="button"
-                                onClick={() => updateCarField(car.id, 'skinUrl', '')}
+                                onClick={() => {
+                                  setCars((prev) =>
+                                    prev.map((c) => (c.id === car.id ? { ...c, skinUrl: '', skinName: '' } : c))
+                                  )
+                                }}
                                 className="text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer shrink-0 ml-1"
                               >
                                 Delete

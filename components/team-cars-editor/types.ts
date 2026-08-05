@@ -3,6 +3,7 @@ export type CarEntry = {
   category: 'GT3' | 'LMP2' | 'HYPERCAR'
   dorsal: string // String representation: '0', '00', '000', '7', '07', '123'
   skinUrl: string
+  skinName?: string
   driverUserIds: string[] // All assigned drivers across all leagues
   driverUserIdsByLeague?: Record<string, string[]> // Mapping: leagueId -> driverUserIds[]
   leagueId?: string | null
@@ -30,7 +31,8 @@ export type LeagueOption = {
   maxDriversPerCar?: number
 }
 
-export function getSkinFileName(url: string): string {
+export function getSkinFileName(url: string, skinName?: string): string {
+  if (skinName && skinName.trim()) return skinName.trim()
   if (!url) return 'skin.zip'
   if (url.startsWith('data:')) {
     const match = url.match(/name=([^;]+)/)
