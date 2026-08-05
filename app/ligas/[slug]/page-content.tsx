@@ -189,8 +189,8 @@ export default function LeagueDetailPageContent({
       formData.set('maxDriversPerCar', String(formMaxDriversPerCar))
       formData.set('slogan', formSlogan)
       formData.set('accentColor', formAccentColor)
-      formData.set('bannerUrl', formBannerUrl)
-      formData.set('logoUrl', formLogoUrl)
+      formData.set('bannerUrl', String(formData.get('bannerUrl') || formBannerUrl))
+      formData.set('logoUrl', String(formData.get('logoUrl') || formLogoUrl))
 
       await updateLeagueDetailsAction(formData)
       setIsEditLeagueOpen(false)
@@ -688,6 +688,7 @@ export default function LeagueDetailPageContent({
                   <ImagePicker
                     name="bannerUrl"
                     defaultValue={formBannerUrl}
+                    onChange={setFormBannerUrl}
                     label="League Banner Image (Main Header)"
                   />
                 </div>

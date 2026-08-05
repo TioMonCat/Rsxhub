@@ -123,6 +123,77 @@ async function removeDeletedAsset(url: string) {
   }
 }
 
+const globalGalleryUploads = new Set<string>()
+
+async function getGalleryUploads(): Promise<string[]> {
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const doc = await db.collection('settings').doc('gallery_uploads').get()
+        if (doc.exists) {
+          const data = doc.data()
+          if (data && Array.isArray(data.urls)) {
+            return data.urls
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch gallery uploads from Firestore:', err)
+      }
+    }
+  }
+
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const cookieVal = cookieStore.get('gallery_uploads')?.value
+    if (cookieVal) {
+      return JSON.parse(cookieVal)
+    }
+  } catch (err) {}
+
+  return Array.from(globalGalleryUploads)
+}
+
+async function addGalleryUpload(url: string) {
+  globalGalleryUploads.add(url)
+
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const docRef = db.collection('settings').doc('gallery_uploads')
+        const doc = await docRef.get()
+        let urls = [url]
+        if (doc.exists) {
+          const data = doc.data()
+          if (data && Array.isArray(data.urls)) {
+            urls = Array.from(new Set([url, ...data.urls]))
+          }
+        }
+        await docRef.set({ urls, updated_at: new Date() }, { merge: true })
+        return
+      } catch (err) {
+        console.error('Failed to save gallery upload to Firestore:', err)
+      }
+    }
+  }
+
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const cookieVal = cookieStore.get('gallery_uploads')?.value
+    let urls = [url]
+    if (cookieVal) {
+      urls = Array.from(new Set([url, ...JSON.parse(cookieVal)]))
+    }
+    cookieStore.set('gallery_uploads', JSON.stringify(urls), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365,
+    })
+  } catch (err) {}
+}
+
 export async function GET() {
   try {
     // Ensure uploads folder exists
@@ -130,7 +201,7 @@ export async function GET() {
 
     const IMAGE_EXT = /\.(png|jpe?g|gif|svg|webp)$/i
 
-    // Read user uploads
+    // Read user uploads from disk
     const uploadFiles = await fs.readdir(UPLOADS_DIR)
     const uploadImages = uploadFiles
       .filter((f) => IMAGE_EXT.test(f))
@@ -145,7 +216,8 @@ export async function GET() {
         .map((f) => `/branding/${f}`)
     } catch {}
 
-    const images = [...uploadImages, ...brandingImages]
+    const galleryUploads = await getGalleryUploads()
+    const images = Array.from(new Set([...galleryUploads, ...uploadImages, ...brandingImages]))
 
     // Filter out any assets that have been soft-deleted
     const deletedList = await getDeletedAssets()
@@ -239,11 +311,13 @@ export async function POST(req: Request) {
           await fs.writeFile(targetPath, compressed)
           const finalUrl = `/uploads/${safeName}`
           await removeDeletedAsset(finalUrl)
+          await addGalleryUpload(finalUrl)
           return NextResponse.json({ url: finalUrl })
         } catch (fsErr) {
           console.warn('Writing file to disk failed (expected on Vercel/serverless environments). Falling back to Base64:', fsErr)
           const base64 = compressed.toString('base64')
           const finalUrl = `data:image/webp;base64,${base64}`
+          await addGalleryUpload(finalUrl)
           return NextResponse.json({ url: finalUrl })
         }
       } catch (sharpErr) {
@@ -260,12 +334,14 @@ export async function POST(req: Request) {
       await fs.writeFile(targetPath, inputBuffer)
       const finalUrl = `/uploads/${safeName}`
       await removeDeletedAsset(finalUrl)
+      await addGalleryUpload(finalUrl)
       return NextResponse.json({ url: finalUrl })
     } catch (fsErr) {
       console.warn('Writing original file to disk failed, falling back to base64:', fsErr)
       const mimeType = file.type || 'image/png'
       const base64 = inputBuffer.toString('base64')
       const finalUrl = `data:${mimeType};base64,${base64}`
+      await addGalleryUpload(finalUrl)
       return NextResponse.json({ url: finalUrl })
     }
   } catch (err: any) {

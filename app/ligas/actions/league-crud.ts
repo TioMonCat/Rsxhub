@@ -5,6 +5,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { getCurrentUser, getAdminAccessContext, getLeagueRole, canManageLeague } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
+import { invalidateCache } from '@/lib/ttl-cache'
 
 export async function createLeagueAction(formData: FormData) {
   const session = await getCurrentUser()
@@ -137,6 +138,7 @@ export async function createLeagueAction(formData: FormData) {
     }
   }
 
+  invalidateCache(['platform_leagues', 'leagues', 'teams_dashboard'])
   revalidatePath('/ligas')
 }
 
@@ -275,6 +277,7 @@ export async function updateLeagueDetailsAction(formData: FormData) {
     }
   }
 
+  invalidateCache(['platform_leagues', 'leagues', 'teams_dashboard'])
   revalidatePath('/ligas')
   if (slug) {
     revalidatePath(`/ligas/${slug}`)

@@ -8,14 +8,24 @@ interface ImagePickerProps {
   defaultValue?: string
   label?: string
   hideGallery?: boolean
+  onChange?: (value: string) => void
 }
 
-export function ImagePicker({ name, defaultValue = '', label = 'League Banner Image', hideGallery = false }: ImagePickerProps) {
+export function ImagePicker({ name, defaultValue = '', label = 'League Banner Image', hideGallery = false, onChange }: ImagePickerProps) {
   const [images, setImages] = useState<string[]>([])
   const [selected, setSelected] = useState<string>(defaultValue)
   const [loadingList, setLoadingList] = useState(true)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    setSelected(defaultValue)
+  }, [defaultValue])
+
+  const handleSelect = (url: string) => {
+    setSelected(url)
+    onChange?.(url)
+  }
 
   // Fetch all images from API
   const fetchImages = async () => {
@@ -64,7 +74,7 @@ export function ImagePicker({ name, defaultValue = '', label = 'League Banner Im
             if (prev.includes(data.url)) return prev
             return [data.url, ...prev]
           })
-          setSelected(data.url)
+          handleSelect(data.url)
         }
       } else {
         const errData = await res.json()
@@ -165,7 +175,7 @@ export function ImagePicker({ name, defaultValue = '', label = 'League Banner Im
                 return (
                   <div
                     key={url}
-                    onClick={() => setSelected(url)}
+                    onClick={() => handleSelect(url)}
                     className={`relative aspect-[3/2] cursor-pointer border transition-all group overflow-hidden ${
                       isSelected
                         ? 'border-[#1274de] ring-1 ring-[#1274de]'
