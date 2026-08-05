@@ -260,25 +260,29 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
           created_at: new Date(),
         }))
 
-        // Send notification ONLY to team leader/owner
+        // Send notification to team leader/owner
         const teamIdVal = listingDoc.data()?.team_id
-        if (teamIdVal) {
-          const teamDoc = await runWithTimeout(db.collection('teams').doc(teamIdVal).get())
-          const leaderId = teamDoc.exists ? teamDoc.data()?.owner_user_id : listingDoc.data()?.user_id
-          if (leaderId) {
-            const notifRef = db.collection('notifications').doc()
-            await runWithTimeout(notifRef.set({
-              id: notifRef.id,
-              user_id: leaderId,
-              type: 'market_application',
-              title: 'Nueva postulación de piloto',
-              message: `El piloto ${userName} se ha postulado para unirse a ${teamDoc.data()?.name || 'tu equipo'}.`,
-              link: '/equipos',
-              read: false,
-              created_at: new Date(),
-            }))
-          }
+        const teamDoc = teamIdVal ? await runWithTimeout(db.collection('teams').doc(teamIdVal).get()) : null
+        const teamName = teamDoc?.exists ? (teamDoc.data()?.name || 'tu equipo') : (listingDoc.data()?.team_name || 'tu equipo')
+        const leaderId = teamDoc?.exists ? teamDoc.data()?.owner_user_id : listingDoc.data()?.user_id
+
+        if (leaderId) {
+          await createNotification({
+            userId: leaderId,
+            title: 'Nueva postulación de piloto',
+            message: `El piloto ${userName} se ha postulado para unirse a ${teamName}.`,
+            link: teamIdVal ? `/equipos/${teamIdVal}` : '/equipos',
+          })
         }
+
+        // Send confirmation notification to the driver applicant
+        await createNotification({
+          userId: session.userId,
+          title: 'Postulación enviada',
+          message: `Tu postulación para unirte al equipo ${teamName} ha sido enviada con éxito al líder del equipo.`,
+          link: '/market',
+        })
+
         revalidatePath('/market')
         return
       } catch (err) {
@@ -303,6 +307,7 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
     const listingsVal = cookieStore.get('mock_market_listings')?.value
     const listings = listingsVal ? JSON.parse(listingsVal) : []
     const listing = listings.find((l: any) => l.id === listingId)
+    const teamName = listing?.team_name || listing?.teamName || 'equipo'
 
     const newApp = {
       id: `mock_app_${Date.now()}`,
@@ -320,6 +325,22 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
     cookieStore.set('mock_market_applications', JSON.stringify(apps), {
       path: '/',
       maxAge: 60 * 60 * 24 * 7,
+    })
+
+    if (listing?.user_id) {
+      await createNotification({
+        userId: listing.user_id,
+        title: 'Nueva postulación de piloto',
+        message: `El piloto ${session.steamDisplayName || 'Driver'} se ha postulado para unirse a ${teamName}.`,
+        link: '/equipos',
+      })
+    }
+
+    await createNotification({
+      userId: session.userId,
+      title: 'Postulación enviada',
+      message: `Tu postulación para unirte al equipo ${teamName} ha sido enviada con éxito al líder del equipo.`,
+      link: '/market',
     })
   } catch (e) {
     console.error(e)
