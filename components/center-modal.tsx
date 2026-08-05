@@ -69,7 +69,7 @@ export function CenterModal({ title, triggerLabel, triggerClassName, widthClassN
             <div className="fixed inset-0 z-[120] overflow-y-auto bg-black/70 backdrop-blur-[1px] p-4 flex justify-center items-start md:items-center">
               <button
                 type="button"
-                aria-label="Cerrar"
+                aria-label="Close"
                 className="fixed inset-0 cursor-default bg-transparent w-full h-full"
                 onClick={closeModal}
               />
@@ -81,7 +81,7 @@ export function CenterModal({ title, triggerLabel, triggerClassName, widthClassN
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <h3 className="text-xl font-black uppercase italic text-white">{title}</h3>
                   <button type="button" onClick={closeModal} className="rounded-md border border-shell-line bg-white/10 px-3 py-1 text-xs font-bold uppercase text-white transition-colors hover:bg-white/20 cursor-pointer">
-                    Cerrar
+                    Close
                   </button>
                 </div>
                 {children}

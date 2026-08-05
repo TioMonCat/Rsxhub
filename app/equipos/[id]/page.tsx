@@ -757,7 +757,7 @@ export default async function TeamProfilePage({
             {canManage ? (
               <div className="relative">
                 <CenterModal
-                  title="Gestión de Pilotos"
+                  title="Driver Management"
                   triggerLabel="Manage drivers"
                   triggerClassName="inline-flex items-center gap-1.5 border border-cyan-500 bg-cyan-950/40 hover:bg-cyan-500/20 px-4 py-2.5 text-xs font-bold uppercase italic text-cyan-300 rounded-none transition-colors cursor-pointer shrink-0"
                   widthClassName="w-[min(920px,94vw)]"
@@ -768,15 +768,15 @@ export default async function TeamProfilePage({
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                           <Users className="h-4 w-4 text-cyan-400" />
-                          Pilotos e Integrantes del Equipo
+                          Team Drivers & Members
                         </h3>
                         <span className="text-[11px] font-mono text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full">
-                          {team.members.length} {team.members.length === 1 ? 'Miembro' : 'Miembros'}
+                          {team.members.length} {team.members.length === 1 ? 'Member' : 'Members'}
                         </span>
                       </div>
 
                       {team.members.length === 0 ? (
-                        <p className="text-xs text-slate-500 italic">No hay miembros registrados.</p>
+                        <p className="text-xs text-slate-500 italic">No registered members.</p>
                       ) : (
                         <div className="space-y-2.5">
                           {team.members.map((member) => {
@@ -815,16 +815,16 @@ export default async function TeamProfilePage({
                                         defaultValue={member.role}
                                         className="bg-[#141d31] border border-slate-700 focus:border-cyan-400 text-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 outline-none cursor-pointer"
                                       >
-                                        <option value="driver">Piloto (Driver)</option>
+                                        <option value="driver">Driver</option>
                                         <option value="manager">Manager</option>
                                       </select>
                                       <button className="bg-cyan-950/60 border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/20 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                                        Guardar Rol
+                                        Save Role
                                       </button>
                                     </form>
                                   ) : (
                                     <span className="bg-amber-500/10 border border-amber-500/40 text-amber-300 px-3 py-1 text-xs font-black uppercase tracking-wider rounded-lg">
-                                      OWNER / LÍDER
+                                      OWNER / LEADER
                                     </span>
                                   )}
 
@@ -834,7 +834,7 @@ export default async function TeamProfilePage({
                                       <input type="hidden" name="memberUserId" value={member.userId} />
                                       <input type="hidden" name="redirectTo" value={`/equipos/${team.id}`} />
                                       <button className="bg-rose-950/40 border border-rose-500/40 text-rose-300 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer">
-                                        Expulsar
+                                        Kick
                                       </button>
                                     </form>
                                   )}
@@ -851,17 +851,17 @@ export default async function TeamProfilePage({
                       <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                         <h3 className="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
                           <MessageSquare className="h-4 w-4 text-amber-400" />
-                          Solicitudes Pendientes (Mercado de Fichajes)
+                          Pending Applications (Driver Market)
                         </h3>
                         {pendingApplications.length > 0 && (
                           <span className="text-[10px] font-black bg-amber-500 text-black px-2.5 py-0.5 rounded-full uppercase">
-                            {pendingApplications.length} Solicitud{pendingApplications.length > 1 ? 'es' : ''}
+                            {pendingApplications.length} Application{pendingApplications.length > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
 
                       {pendingApplications.length === 0 ? (
-                        <p className="text-xs text-slate-500 italic">No hay solicitudes pendientes del mercado.</p>
+                        <p className="text-xs text-slate-500 italic">No pending market applications.</p>
                       ) : (
                         <div className="space-y-2.5">
                           {pendingApplications.map((app) => (
@@ -876,10 +876,10 @@ export default async function TeamProfilePage({
                                 )}
                                 <div>
                                   <p className="text-sm font-bold text-white leading-tight">{app.userName}</p>
-                                  <p className="text-xs text-slate-400 mt-0.5">Contacto: <span className="text-cyan-400 font-semibold">{app.contactInfo}</span></p>
+                                  <p className="text-xs text-slate-400 mt-0.5">Contact: <span className="text-cyan-400 font-semibold">{app.contactInfo}</span></p>
                                   {app.message && (
                                     <div className="mt-1.5 p-2 bg-[#0a0f1d] border border-slate-800 text-[11px] text-slate-300 rounded-md max-w-md">
-                                      <span className="text-slate-500 font-semibold text-[9px] uppercase tracking-wider block mb-0.5">Mensaje del Piloto:</span>
+                                      <span className="text-slate-500 font-semibold text-[9px] uppercase tracking-wider block mb-0.5">Driver Message:</span>
                                       "{app.message}"
                                     </div>
                                   )}
@@ -890,14 +890,14 @@ export default async function TeamProfilePage({
                                   <input type="hidden" name="teamId" value={team.id} />
                                   <input type="hidden" name="applicationId" value={app.id} />
                                   <button className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg uppercase tracking-wider transition-all cursor-pointer shadow-sm">
-                                    Aceptar / Fichar
+                                    ACCEPT / HIRE
                                   </button>
                                 </form>
                                 <form action={declineDriverApplicationAction}>
                                   <input type="hidden" name="teamId" value={team.id} />
                                   <input type="hidden" name="applicationId" value={app.id} />
                                   <button className="border border-slate-700 hover:border-slate-600 bg-slate-800/50 text-slate-300 font-semibold text-xs px-3.5 py-1.5 rounded-lg transition-all cursor-pointer">
-                                    Rechazar
+                                    DECLINE
                                   </button>
                                 </form>
                               </div>
@@ -926,10 +926,10 @@ export default async function TeamProfilePage({
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                   </span>
-                  ¡Nueva solicitud de piloto pendiente!
+                  NEW DRIVER APPLICATION PENDING!
                 </div>
                 <span className="text-[10px] font-black bg-amber-500 text-black px-2 py-0.5 uppercase tracking-wider">
-                  {pendingApplications.length} Solicitud{pendingApplications.length > 1 ? 'es' : ''}
+                  {pendingApplications.length} Application{pendingApplications.length > 1 ? 's' : ''}
                 </span>
               </div>
               
@@ -944,10 +944,10 @@ export default async function TeamProfilePage({
                       )}
                       <div>
                         <p className="text-sm font-black text-white leading-tight">{app.userName}</p>
-                        <p className="text-xs text-slate-400 mt-1">Contacto: <span className="text-cyan-400 font-semibold">{app.contactInfo}</span></p>
+                        <p className="text-xs text-slate-400 mt-1">Contact: <span className="text-cyan-400 font-semibold">{app.contactInfo}</span></p>
                         {app.message && (
                           <div className="mt-1.5 p-1.5 bg-zinc-950/50 border border-shell-line/40 text-xxs text-slate-300 rounded-none max-w-md">
-                            <span className="text-slate-500 font-semibold uppercase block tracking-wider text-[9px] mb-0.5">Mensaje del Piloto:</span>
+                            <span className="text-slate-500 font-semibold uppercase block tracking-wider text-[9px] mb-0.5">Driver Message:</span>
                             "{app.message}"
                           </div>
                         )}
@@ -958,14 +958,14 @@ export default async function TeamProfilePage({
                         <input type="hidden" name="teamId" value={team.id} />
                         <input type="hidden" name="applicationId" value={app.id} />
                         <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] px-3 py-1.5 uppercase tracking-wider rounded-none cursor-pointer transition-colors">
-                          Aceptar / Contratar
+                          ACCEPT / HIRE
                         </button>
                       </form>
                       <form action={declineDriverApplicationAction}>
                         <input type="hidden" name="teamId" value={team.id} />
                         <input type="hidden" name="applicationId" value={app.id} />
                         <button className="border border-shell-line hover:bg-white/5 text-slate-300 font-bold text-[10px] px-3 py-1.5 uppercase tracking-wider rounded-none cursor-pointer transition-colors">
-                          Rechazar
+                          DECLINE
                         </button>
                       </form>
                     </div>
