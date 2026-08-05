@@ -271,7 +271,9 @@ export async function POST(req: Request) {
       }
 
       const SKINS_DIR = path.join(process.cwd(), 'public', 'uploads', 'skins')
-      const safeSkinName = `${safeBase}-${Date.now()}${ext.toLowerCase()}`
+      const ext = path.extname(file.name)
+      const rawBase = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_\-\.\s]/g, '_')
+      const safeSkinName = `${rawBase}${ext.toLowerCase()}`
       const skinTargetPath = path.join(SKINS_DIR, safeSkinName)
 
       try {
@@ -283,7 +285,7 @@ export async function POST(req: Request) {
         console.warn('Writing compressed skin to disk failed (serverless environment). Falling back to Data URL base64:', fsErr)
         const mimeType = file.type || 'application/zip'
         const base64 = inputBuffer.toString('base64')
-        const finalUrl = `data:${mimeType};base64,${base64}`
+        const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
         return NextResponse.json({ url: finalUrl, name: file.name })
       }
     }

@@ -269,8 +269,8 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
         if (leaderId) {
           await createNotification({
             userId: leaderId,
-            title: 'Nueva postulación de piloto',
-            message: `El piloto ${userName} se ha postulado para unirse a ${teamName}.`,
+            title: 'New Driver Application',
+            message: `Driver ${userName} has applied to join ${teamName}.`,
             link: teamIdVal ? `/equipos/${teamIdVal}` : '/equipos',
           })
         }
@@ -278,8 +278,8 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
         // Send confirmation notification to the driver applicant
         await createNotification({
           userId: session.userId,
-          title: 'Postulación enviada',
-          message: `Tu postulación para unirte al equipo ${teamName} ha sido enviada con éxito al líder del equipo.`,
+          title: 'Application Sent',
+          message: `Your application to join ${teamName} has been successfully sent to the team leader.`,
           link: '/market',
         })
 

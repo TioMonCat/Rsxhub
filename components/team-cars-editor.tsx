@@ -28,6 +28,27 @@ export type TakenDorsal = {
   leagueId?: string | null
 }
 
+function getSkinFileName(url: string): string {
+  if (!url) return 'skin.zip'
+  if (url.startsWith('data:')) {
+    const match = url.match(/name=([^;]+)/)
+    if (match && match[1]) {
+      try {
+        return decodeURIComponent(match[1])
+      } catch {
+        return match[1]
+      }
+    }
+    return 'skin.zip'
+  }
+  const cleanName = url.split('/').pop()?.split('?')[0] || 'skin.zip'
+  try {
+    return decodeURIComponent(cleanName)
+  } catch {
+    return cleanName
+  }
+}
+
 export type LeagueOption = {
   id: string
   slug: string
@@ -571,10 +592,8 @@ export function TeamCarsEditor({
                           {car.skinUrl ? (
                             <div className="flex items-center gap-2 bg-[#0a0f1d] border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-emerald-300 min-w-0">
                               <FileArchive className="h-4 w-4 shrink-0 text-emerald-400" />
-                              <span className="truncate flex-1 font-mono text-[11px]" title={car.skinUrl}>
-                                {car.skinUrl.startsWith('data:')
-                                  ? 'skin_comprimido.zip'
-                                  : car.skinUrl.split('/').pop() || 'skin.zip'}
+                              <span className="truncate flex-1 font-mono text-[11px]" title={getSkinFileName(car.skinUrl)}>
+                                {getSkinFileName(car.skinUrl)}
                               </span>
                               <button
                                 type="button"

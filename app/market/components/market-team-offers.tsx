@@ -65,10 +65,9 @@ export function MarketTeamOffers({
                     )}
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white truncate max-w-[140px]">
+                    <h4 className="text-xs font-bold text-white truncate max-w-[180px]">
                       {item.team_name || 'Oferta de Equipo'}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-mono">Por {item.user_name}</span>
                   </div>
                 </div>
 

@@ -74,12 +74,12 @@ export function NotificationsNav({
       const diffHours = Math.floor(diffMin / 60)
       const diffDays = Math.floor(diffHours / 24)
 
-      if (diffSec < 60) return 'Hace un momento'
-      if (diffMin < 60) return `Hace ${diffMin} min`
-      if (diffHours < 24) return `Hace ${diffHours} h`
-      return `Hace ${diffDays} d`
+      if (diffSec < 60) return 'Just now'
+      if (diffMin < 60) return `${diffMin}m ago`
+      if (diffHours < 24) return `${diffHours}h ago`
+      return `${diffDays}d ago`
     } catch {
-      return 'Reciente'
+      return 'Recent'
     }
   }
 
@@ -96,8 +96,8 @@ export function NotificationsNav({
             ? 'bg-[#1274de]/25 border-2 border-[#1274de] text-[#1274de] animate-rsx-breath shadow-[0_0_18px_rgba(18,116,222,0.8)]'
             : 'border border-white/20 bg-white/5 hover:bg-white/10 text-slate-200 hover:text-white'
         }`}
-        title="Centro de Notificaciones"
-        aria-label="Centro de Notificaciones"
+        title="Notification Center"
+        aria-label="Notification Center"
       >
         <Bell className={`h-4 w-4 transition-colors ${hasUnread ? 'text-cyan-300 drop-shadow-[0_0_8px_rgba(0,240,255,0.9)]' : 'text-cyan-400'}`} />
         {hasUnread && (
@@ -118,11 +118,11 @@ export function NotificationsNav({
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-cyan-400" />
               <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                Notificaciones
+                Notifications
               </h3>
               {unreadCount > 0 && (
                 <span className="text-[10px] font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
-                  {unreadCount} nuevas
+                  {unreadCount} new
                 </span>
               )}
             </div>
@@ -131,10 +131,10 @@ export function NotificationsNav({
                 type="button"
                 onClick={clearAll}
                 className="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/50 hover:border-rose-400 text-rose-300 px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-md transition-all flex items-center gap-1.5 cursor-pointer shadow-sm active:scale-95 shrink-0"
-                title="Limpiar todas las notificaciones"
+                title="Clear all notifications"
               >
                 <Trash2 className="h-3.5 w-3.5 text-rose-400" />
-                <span>Limpiar</span>
+                <span>Clear</span>
               </button>
             )}
           </div>
@@ -144,7 +144,7 @@ export function NotificationsNav({
             {notifications.length === 0 ? (
               <div className="py-8 px-4 text-center space-y-2">
                 <Info className="h-8 w-8 text-slate-600 mx-auto" />
-                <p className="text-xs text-slate-400 font-medium">No tienes notificaciones pendientes.</p>
+                <p className="text-xs text-slate-400 font-medium">No pending notifications.</p>
               </div>
             ) : (
               notifications.map((item) => (
@@ -158,7 +158,7 @@ export function NotificationsNav({
                   }`}
                 >
                   <div className="mt-0.5 shrink-0">
-                    {item.title.toLowerCase().includes('eliminado') || item.title.toLowerCase().includes('salida') ? (
+                    {item.title.toLowerCase().includes('removed') || item.title.toLowerCase().includes('left') || item.title.toLowerCase().includes('rejected') ? (
                       <div className="p-1.5 bg-rose-950/40 border border-rose-500/30 rounded-lg text-rose-400">
                         <AlertTriangle className="h-4 w-4" />
                       </div>
@@ -190,7 +190,7 @@ export function NotificationsNav({
                         }}
                         className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
                       >
-                        Ver detalles <ExternalLink className="h-3 w-3" />
+                        View details <ExternalLink className="h-3 w-3" />
                       </Link>
                     )}
                   </div>
