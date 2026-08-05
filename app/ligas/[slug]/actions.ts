@@ -6,11 +6,30 @@ import { getLeagueBySlug } from '@/lib/platform-data'
 import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 
-import { parseDesiredNumber } from './actions/league-number-management'
-import { parseClassTag, upsertLeagueRegistration } from './actions/league-registration-upsert'
+import {
+  getPreferredNumbers as _getPreferredNumbers,
+  pickAssignedNumber as _pickAssignedNumber,
+  isNumberAvailable as _isNumberAvailable,
+} from './actions/league-number-management'
+import {
+  upsertLeagueRegistration as _upsertLeagueRegistration,
+} from './actions/league-registration-upsert'
 
-export { getPreferredNumbers, pickAssignedNumber, isNumberAvailable } from './actions/league-number-management'
-export { upsertLeagueRegistration } from './actions/league-registration-upsert'
+export async function getPreferredNumbers(params: Parameters<typeof _getPreferredNumbers>[0]) {
+  return _getPreferredNumbers(params)
+}
+
+export async function pickAssignedNumber(params: Parameters<typeof _pickAssignedNumber>[0]) {
+  return _pickAssignedNumber(params)
+}
+
+export async function isNumberAvailable(params: Parameters<typeof _isNumberAvailable>[0]) {
+  return _isNumberAvailable(params)
+}
+
+export async function upsertLeagueRegistration(params: Parameters<typeof _upsertLeagueRegistration>[0]) {
+  return _upsertLeagueRegistration(params)
+}
 
 export async function registerForLeague(formData: FormData) {
   const slug = String(formData.get('slug') || '')

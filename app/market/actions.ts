@@ -1,5 +1,3 @@
-'use server'
-
 /**
  * app/market/actions.ts — Barrel re-export
  *
