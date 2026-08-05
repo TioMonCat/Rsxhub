@@ -388,20 +388,33 @@ export default function MarketPageContent({
               <div>
                 <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Categories</label>
                 <div className="flex flex-wrap gap-1.5">
-                  {['GT3', 'HYPERCAR', 'FORMULA', 'LMP2'].map((tag) => (
-                    <button
-                      type="button"
-                      key={tag}
-                      onClick={() => handleClassToggle(tag)}
-                      className={`px-3 py-1 text-xs font-bold uppercase transition-colors cursor-pointer border ${
-                        selectedClasses.includes(tag)
-                          ? 'bg-cyan-500 text-black border-cyan-400 font-extrabold'
-                          : 'bg-black/40 text-slate-400 border-white/10 hover:text-white'
-                      }`}
-                    >
-                      {tag}
-                    </button>
-                  ))}
+                  {['GT3', 'HYPERCAR', 'FORMULA', 'LMP2'].map((tag) => {
+                    const isSelected = selectedClasses.includes(tag)
+                    let style = 'bg-black/40 text-slate-400 border-white/10 hover:text-white'
+                    
+                    if (isSelected) {
+                      if (tag === 'GT3') style = 'bg-[#009f00] text-white border-green-400 font-extrabold italic shadow-[0_0_12px_rgba(0,159,0,0.35)]'
+                      else if (tag === 'HYPERCAR') style = 'bg-[#e10600] text-white border-red-500 font-extrabold italic shadow-[0_0_12px_rgba(225,6,0,0.35)]'
+                      else if (tag === 'FORMULA') style = 'bg-[#9333ea] text-white border-purple-400 font-extrabold italic shadow-[0_0_12px_rgba(147,51,234,0.35)]'
+                      else if (tag === 'LMP2') style = 'bg-[#0072f0] text-white border-blue-400 font-extrabold italic shadow-[0_0_12px_rgba(0,114,240,0.35)]'
+                    } else {
+                      if (tag === 'GT3') style = 'bg-black/50 text-slate-400 border-emerald-500/30 hover:border-emerald-500 hover:text-emerald-400'
+                      else if (tag === 'HYPERCAR') style = 'bg-black/50 text-slate-400 border-red-500/30 hover:border-red-500 hover:text-red-400'
+                      else if (tag === 'FORMULA') style = 'bg-black/50 text-slate-400 border-purple-500/30 hover:border-purple-500 hover:text-purple-400'
+                      else if (tag === 'LMP2') style = 'bg-black/50 text-slate-400 border-blue-500/30 hover:border-blue-500 hover:text-blue-400'
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        key={tag}
+                        onClick={() => handleClassToggle(tag)}
+                        className={`px-3.5 py-1.5 text-xs uppercase tracking-wider transition-all cursor-pointer border ${style}`}
+                      >
+                        {tag}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

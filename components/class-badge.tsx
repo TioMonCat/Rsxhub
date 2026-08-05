@@ -19,6 +19,9 @@ export function ClassBadge({ classTag, className = '' }: ClassBadgeProps) {
   } else if (tag.includes('HYPERCAR') || tag === 'HC' || tag.includes('LMH') || tag.includes('LMDH')) {
     // Pure WEC Hypercar red
     bgClass = 'bg-[#e10600] text-white font-black italic border border-red-500/20'
+  } else if (tag.includes('FORMULA') || tag.includes('F1') || tag.includes('F2') || tag === 'FORM') {
+    // Formula purple
+    bgClass = 'bg-[#9333ea] text-white font-black italic border border-purple-400/20'
   }
 
   return (
