@@ -327,8 +327,8 @@ export async function withdrawApplicationAction(listingId: string, applicationId
   const sessUserClean = String(session.userId || '').replace(/^steam_/, '')
   const sessSteamClean = String(session.steamId || '').replace(/^steam_/, '')
 
-  const isUserMatch = (uId: any) => {
-    if (!uId) return true
+  const isMyUser = (uId: any) => {
+    if (!uId) return false
     const clean = String(uId).replace(/^steam_/, '')
     return clean === sessUserClean || clean === sessSteamClean
   }
@@ -338,47 +338,34 @@ export async function withdrawApplicationAction(listingId: string, applicationId
     const db = getFirestoreDb()
     if (db) {
       try {
+        // Delete by direct applicationId first (fastest path)
         if (applicationId) {
-          await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000).catch(() => null)
-        }
-
-        const [snapListing, snapUser1, snapUser2, snapAll] = await Promise.all([
-          runWithTimeout(db.collection('market_applications').where('listing_id', '==', listingId).get(), 3000).catch(() => null),
-          runWithTimeout(db.collection('market_applications').where('user_id', '==', session.userId).get(), 3000).catch(() => null),
-          session.steamId ? runWithTimeout(db.collection('market_applications').where('user_id', '==', session.steamId).get(), 3000).catch(() => null) : null,
-          runWithTimeout(db.collection('market_applications').get(), 3000).catch(() => null),
-        ])
-
-        const docsMap = new Map<string, any>()
-        if (snapListing) snapListing.docs.forEach((d: any) => docsMap.set(d.id, d))
-        if (snapUser1) snapUser1.docs.forEach((d: any) => docsMap.set(d.id, d))
-        if (snapUser2) snapUser2.docs.forEach((d: any) => docsMap.set(d.id, d))
-        if (snapAll) {
-          snapAll.docs.forEach((d: any) => {
-            const data = d.data()
-            if (d.id === applicationId || d.id === listingId || data.listing_id === listingId || data.team_id === listingId) {
-              docsMap.set(d.id, d)
+          try {
+            const appDoc = await runWithTimeout(db.collection('market_applications').doc(applicationId).get(), 2000)
+            if (appDoc.exists && isMyUser(appDoc.data()?.user_id)) {
+              await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000)
             }
-          })
+          } catch { /* fallback below */ }
         }
 
-        const toDelete = Array.from(docsMap.values()).filter((doc: any) => {
-          const d = doc.data()
-          const myUser = isUserMatch(d.user_id || d.userId)
-          const targetListing = doc.id === applicationId || doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
-          return myUser && targetListing
-        })
-
-        for (const doc of toDelete) {
-          await runWithTimeout(doc.ref.delete()).catch(() => null)
-        }
+        // Also clean up any remaining docs for this listing by this user
+        try {
+          const snapListing = await runWithTimeout(
+            db.collection('market_applications').where('listing_id', '==', listingId).get(),
+            3000
+          )
+          const toDelete = snapListing.docs.filter((doc: any) => isMyUser(doc.data()?.user_id))
+          for (const doc of toDelete) {
+            await runWithTimeout(doc.ref.delete(), 2000).catch(() => null)
+          }
+        } catch { /* non-fatal */ }
       } catch (err) {
         console.error('Failed to withdraw application in Firestore:', err)
       }
     }
   }
 
-  // 2. Delete from Mock Cookies (Always executed as safety fallback)
+  // 2. Delete from Mock Cookies
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
@@ -388,8 +375,8 @@ export async function withdrawApplicationAction(listingId: string, applicationId
       if (Array.isArray(apps)) {
         apps = apps.filter((a: any) => !(
           (applicationId && a.id === applicationId) ||
-          (isUserMatch(a.userId || a.user_id) &&
-           (a.listingId === listingId || a.teamId === listingId || a.id === listingId || a.listing_id === listingId))
+          (isMyUser(a.userId || a.user_id) &&
+           (a.listingId === listingId || a.listing_id === listingId))
         ))
         cookieStore.set('mock_market_applications', JSON.stringify(apps), {
           path: '/',

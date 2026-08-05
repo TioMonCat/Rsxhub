@@ -242,6 +242,8 @@ export default async function MarketPage() {
     if (db) {
       try {
         const appsSnap = await runWithTimeout(db.collection('market_applications').get(), 3000)
+        const sessUserClean = session ? String(session.userId || '').replace(/^steam_/, '') : ''
+        const sessSteamClean = session ? String(session.steamId || '').replace(/^steam_/, '') : ''
         applications = appsSnap.docs.map((doc: any) => {
           const d = doc.data()
           return {
@@ -256,6 +258,11 @@ export default async function MarketPage() {
             message: d.message || '',
             createdAt: serializeDate(d.created_at),
           }
+        }).filter((app: any) => {
+          // Only return applications relevant to current user
+          if (!sessUserClean) return false
+          const appUserClean = String(app.userId || '').replace(/^steam_/, '')
+          return appUserClean === sessUserClean || appUserClean === sessSteamClean
         })
 
         const invitesSnap = await runWithTimeout(db.collection('team_invites').where('status', '==', 'pending').get(), 3000)

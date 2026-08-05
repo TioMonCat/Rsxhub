@@ -103,38 +103,45 @@ export default async function TeamProfilePage({
 
   if (hasFirebase && db) {
     try {
-      const steamSnapshot = await runWithTimeout(db.collection('steam_accounts').get(), 3000)
-      const steamAccounts = steamSnapshot.docs.map((doc: any) => {
-        const data = doc.data()
-        return {
-          user_id: data.user_id || '',
-          steam_id: data.steam_id || '',
-          steam_display_name: data.steam_display_name || '',
-          steam_avatar_url: data.steam_avatar_url || null,
-        }
-      })
+      // Only fetch steam accounts for actual team members (not all users)
+      let memberSteamRows: any[] = []
+      const steamByUserId = new Map<string, any>()
 
-      const steamByUserId = new Map(steamAccounts.map((row: any) => [row.user_id, row]))
-      const memberSteamRows = steamAccounts.filter((row: any) => existingMemberUserIds.has(row.user_id))
-      const nonMemberSteamRows = steamAccounts.filter((row: any) => !existingMemberUserIds.has(row.user_id))
-
-      const candidateUserIds = nonMemberSteamRows.map((row: any) => row.user_id).filter(Boolean)
-      let profileRows: any[] = []
-      if (candidateUserIds.length > 0) {
+      if (memberUserIds.length > 0) {
         try {
-          const chunks = []
-          for (let i = 0; i < candidateUserIds.length; i += 10) chunks.push(candidateUserIds.slice(i, i + 10))
-          const snaps = await Promise.all(chunks.map((chunk: any) => runWithTimeout(db.collection('profiles').where('user_id', 'in', chunk).get(), 3000)))
-          profileRows = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
+          const steamChunks: string[][] = []
+          for (let i = 0; i < memberUserIds.length; i += 10) steamChunks.push(memberUserIds.slice(i, i + 10))
+          const steamSnaps = await Promise.all(
+            steamChunks.map((chunk) => runWithTimeout(db.collection('steam_accounts').where('user_id', 'in', chunk).get(), 3000))
+          )
+          memberSteamRows = steamSnaps.flatMap((snap: any) => snap.docs.map((doc: any) => {
+            const data = doc.data()
+            return {
+              user_id: data.user_id || '',
+              steam_id: data.steam_id || '',
+              steam_display_name: data.steam_display_name || '',
+              steam_avatar_url: data.steam_avatar_url || null,
+            }
+          }))
+          memberSteamRows.forEach((row: any) => steamByUserId.set(row.user_id, row))
         } catch (err) {
-          console.error('Failed to fetch candidate profiles:', err)
+          console.error('Failed to fetch member steam accounts:', err)
         }
       }
 
-      const profileByUserId = new Map(profileRows.map((row: any) => [row.user_id, row.display_name]))
-      for (const row of nonMemberSteamRows) {
-        const displayName = profileByUserId.get(row.user_id) || row.steam_display_name || row.steam_id
-        inviteCandidates.push({ userId: row.user_id, label: `${displayName} (${row.steam_id})` })
+      // Build inviteCandidates from profiles only (skip steam_accounts full scan)
+      try {
+        const allProfilesSnap = await runWithTimeout(db.collection('steam_accounts').limit(200).get(), 3000)
+        const existingMemberSet = new Set(memberUserIds)
+        allProfilesSnap.docs.forEach((doc: any) => {
+          const data = doc.data()
+          if (!existingMemberSet.has(data.user_id)) {
+            const displayName = data.steam_display_name || data.user_id || 'Driver'
+            inviteCandidates.push({ userId: data.user_id, label: `${displayName} (${data.steam_id || data.user_id})` })
+          }
+        })
+      } catch {
+        // inviteCandidates stays empty - non-critical
       }
 
       if (memberUserIds.length > 0) {
@@ -147,7 +154,7 @@ export default async function TeamProfilePage({
 
           for (const member of team.members) {
             const profile = memberProfileByUserId.get(member.userId)
-            const steam = memberSteamRows.find((item: any) => item.user_id === member.userId) || steamByUserId.get(member.userId)
+            const steam = steamByUserId.get(member.userId)
             teamPilots.push({
               userId: member.userId,
               role: member.role,
