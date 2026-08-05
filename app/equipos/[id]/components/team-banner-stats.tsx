@@ -4,7 +4,7 @@ import { ImagePicker } from '@/components/image-picker'
 import { DeleteTeamButton } from '@/components/delete-team-button'
 import { FormattedDate } from '@/components/formatted-date'
 import { Sparkles, Youtube, MessageSquare } from 'lucide-react'
-import { updateTeam, deleteTeamAction } from '../actions'
+import { updateTeam, deleteTeamAction } from '@/app/equipos/actions'
 import type { TeamStats, TeamPilot } from '../team-utils'
 
 type TeamBannerStatsProps = {

@@ -21,6 +21,7 @@ import {
   resetDatabaseAction,
   updateUserRoleAction,
   deleteUserAccountAction,
+} from './actions'
 import { deleteTeamAction } from '@/app/equipos/actions'
 import { AdminLeaguesTab } from './components/admin-leagues-tab'
 import { AdminTeamsTab } from './components/admin-teams-tab'

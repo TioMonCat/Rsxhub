@@ -2,7 +2,7 @@ import { CenterModal } from '@/components/center-modal'
 import { CopyVehicleDriverIdsButton } from '@/components/copy-vehicle-driver-ids-button'
 import { TeamCarsEditor, SaveTeamCarsButton } from '@/components/team-cars-editor'
 import { Download } from 'lucide-react'
-import { updateTeam } from '../actions'
+import { updateTeam } from '@/app/equipos/actions'
 import type { LeagueOption } from '@/components/team-cars-editor'
 import type { TeamMemberOption } from '@/components/team-cars-editor'
 
