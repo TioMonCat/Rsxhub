@@ -21,18 +21,10 @@ export function TeamLeaguesSection({ leagueParticipation, recentResults, accentH
               <article key={league.leagueId} className="border border-shell-line bg-[#0a101a] p-3 rounded-none">
                 <h3 className="text-xl font-black uppercase italic text-white">{league.title}</h3>
                 <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-400">{league.simulator}</p>
-                <div className="mt-3 grid grid-cols-3 gap-2">
+                <div className="mt-3 grid grid-cols-1 gap-2 max-w-[140px]">
                   <div className="border border-shell-line bg-black/20 p-2 text-center rounded-none">
                     <p className="text-[10px] uppercase text-slate-400">Drivers</p>
                     <p className="text-lg font-black text-white">{league.teamDriversInLeague}</p>
-                  </div>
-                  <div className="border border-shell-line bg-black/20 p-2 text-center rounded-none">
-                    <p className="text-[10px] uppercase text-slate-400">Approved</p>
-                    <p className="text-lg font-black text-white">{league.approvedEntries}</p>
-                  </div>
-                  <div className="border border-shell-line bg-black/20 p-2 text-center rounded-none">
-                    <p className="text-[10px] uppercase text-slate-400">Pending</p>
-                    <p className="text-lg font-black text-white">{league.pendingEntries}</p>
                   </div>
                 </div>
                 <p className="mt-2 text-sm text-slate-300">{league.nextEventAt ? <FormattedDate date={league.nextEventAt} /> : 'No scheduled races.'}</p>

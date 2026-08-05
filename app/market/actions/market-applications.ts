@@ -324,6 +324,15 @@ export async function withdrawApplicationAction(listingId: string, applicationId
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
+  const sessUserClean = String(session.userId || '').replace(/^steam_/, '')
+  const sessSteamClean = String(session.steamId || '').replace(/^steam_/, '')
+
+  const isUserMatch = (uId: any) => {
+    if (!uId) return true
+    const clean = String(uId).replace(/^steam_/, '')
+    return clean === sessUserClean || clean === sessSteamClean
+  }
+
   // 1. Delete from Firestore
   if (hasFirebase) {
     const db = getFirestoreDb()
@@ -333,15 +342,17 @@ export async function withdrawApplicationAction(listingId: string, applicationId
           await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000).catch(() => null)
         }
 
-        const [snapListing, snapUser, snapAll] = await Promise.all([
+        const [snapListing, snapUser1, snapUser2, snapAll] = await Promise.all([
           runWithTimeout(db.collection('market_applications').where('listing_id', '==', listingId).get(), 3000).catch(() => null),
           runWithTimeout(db.collection('market_applications').where('user_id', '==', session.userId).get(), 3000).catch(() => null),
+          session.steamId ? runWithTimeout(db.collection('market_applications').where('user_id', '==', session.steamId).get(), 3000).catch(() => null) : null,
           runWithTimeout(db.collection('market_applications').get(), 3000).catch(() => null),
         ])
 
         const docsMap = new Map<string, any>()
         if (snapListing) snapListing.docs.forEach((d: any) => docsMap.set(d.id, d))
-        if (snapUser) snapUser.docs.forEach((d: any) => docsMap.set(d.id, d))
+        if (snapUser1) snapUser1.docs.forEach((d: any) => docsMap.set(d.id, d))
+        if (snapUser2) snapUser2.docs.forEach((d: any) => docsMap.set(d.id, d))
         if (snapAll) {
           snapAll.docs.forEach((d: any) => {
             const data = d.data()
@@ -353,9 +364,9 @@ export async function withdrawApplicationAction(listingId: string, applicationId
 
         const toDelete = Array.from(docsMap.values()).filter((doc: any) => {
           const d = doc.data()
-          const isMyUser = !d.user_id || d.user_id === session.userId || session.userId === ''
-          const isTargetListing = doc.id === applicationId || doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
-          return isMyUser && isTargetListing
+          const myUser = isUserMatch(d.user_id || d.userId)
+          const targetListing = doc.id === applicationId || doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
+          return myUser && targetListing
         })
 
         for (const doc of toDelete) {
@@ -377,7 +388,7 @@ export async function withdrawApplicationAction(listingId: string, applicationId
       if (Array.isArray(apps)) {
         apps = apps.filter((a: any) => !(
           (applicationId && a.id === applicationId) ||
-          ((a.userId === session.userId || a.user_id === session.userId || !a.userId) &&
+          (isUserMatch(a.userId || a.user_id) &&
            (a.listingId === listingId || a.teamId === listingId || a.id === listingId || a.listing_id === listingId))
         ))
         cookieStore.set('mock_market_applications', JSON.stringify(apps), {

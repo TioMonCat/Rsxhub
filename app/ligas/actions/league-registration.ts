@@ -332,54 +332,75 @@ export async function unregisterTeamAction(formData: FormData) {
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
-  const slug = String(formData.get('slug') || '')
+  let slug = String(formData.get('slug') || '')
   const leagueId = String(formData.get('leagueId') || '')
   const teamId = String(formData.get('teamId') || '')
   const classTag = String(formData.get('classTag') || '')
 
-  if (!leagueId || !teamId || !classTag) {
-    throw new Error('League ID, Team ID and Class Tag are required.')
+  if (!leagueId || !teamId) {
+    throw new Error('League ID and Team ID are required.')
   }
 
   if (hasFirebase) {
     const db = getFirestoreDb()
     if (db) {
+      if (!slug) {
+        try {
+          const lDoc = await db.collection('leagues').doc(leagueId).get()
+          if (lDoc.exists) slug = lDoc.data()?.slug || ''
+        } catch {}
+      }
+
       const snapshot = await db
         .collection('league_registrations')
         .where('league_id', '==', leagueId)
         .where('team_id', '==', teamId)
-        .where('class_tag', '==', classTag)
         .get()
 
       const batch = db.batch()
-      snapshot.docs.forEach((doc: any) => batch.delete(doc.ref))
-      await batch.commit()
-    }
-  } else {
-    // Mock Mode
-    try {
-      const cookieStore = await cookies()
-      const existing = cookieStore.get('mock_registrations')?.value
-      
-      let list = []
-      if (existing) {
-        list = JSON.parse(existing)
-      } else {
-        const { mockRegistrations: defaultRegs } = await import('@/data/mock')
-        list = [...defaultRegs]
-      }
-
-      list = list.filter((r: any) => !(r.leagueId === leagueId && r.teamId === teamId && r.classTag === classTag))
-
-      cookieStore.set('mock_registrations', JSON.stringify(list), {
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30, // 30 days
+      snapshot.docs.forEach((doc: any) => {
+        const c = String(doc.data()?.class_tag || doc.data()?.classTag || '').toUpperCase()
+        if (!classTag || c === classTag.toUpperCase()) {
+          batch.delete(doc.ref)
+        }
       })
-    } catch (e) {
-      console.error('Failed to delete mock registration:', e)
+      await batch.commit()
     }
   }
 
-  revalidatePath(`/ligas/${slug}`)
+  // Mock Mode Fallback
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const existing = cookieStore.get('mock_registrations')?.value
+    
+    let list = []
+    if (existing) {
+      list = JSON.parse(existing)
+    } else {
+      const { mockRegistrations: defaultRegs } = await import('@/data/mock')
+      list = [...defaultRegs]
+    }
+
+    list = list.filter(
+      (r: any) =>
+        !(
+          (r.leagueId === leagueId || r.league_id === leagueId) &&
+          (r.teamId === teamId || r.team_id === teamId) &&
+          (!classTag || String(r.classTag || r.class_tag || '').toUpperCase() === classTag.toUpperCase())
+        )
+    )
+
+    cookieStore.set('mock_registrations', JSON.stringify(list), {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+    })
+  } catch (e) {
+    console.error('Failed to delete mock registration:', e)
+  }
+
+  revalidatePath('/ligas')
+  if (slug) revalidatePath(`/ligas/${slug}`)
+  revalidatePath('/equipos')
 }
 

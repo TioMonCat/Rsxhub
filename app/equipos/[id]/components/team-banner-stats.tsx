@@ -289,12 +289,10 @@ export function TeamBannerStats({
       </div>
 
       {/* Top stats row */}
-      <div className="grid gap-[1px] bg-shell-line md:grid-cols-5">
+      <div className="grid gap-[1px] bg-shell-line md:grid-cols-3">
         {[
           { label: 'Leagues', value: stats.leagues },
           { label: 'Active', value: stats.activeLeagues },
-          { label: 'Approved', value: stats.approvedEntries },
-          { label: 'Pending', value: stats.pendingEntries },
           { label: 'Upcoming events', value: stats.upcomingEvents },
         ].map((item) => (
           <div key={item.label} className="bg-[#0b1320] p-3 rounded-none">

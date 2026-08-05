@@ -45,7 +45,16 @@ export function MarketTeamOffers({
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
         const myApplication = currentUserId
-          ? applications.find((app) => app.listingId === item.id && app.userId === currentUserId)
+          ? applications.find((app) => {
+              const appUserClean = String(app.userId || '').replace(/^steam_/, '')
+              const currUserClean = String(currentUserId || '').replace(/^steam_/, '')
+              const userMatches = !app.userId || appUserClean === currUserClean
+              const listingMatches =
+                app.listingId === item.id ||
+                app.id === item.id ||
+                (Boolean(item.team_id) && app.teamId === item.team_id)
+              return userMatches && listingMatches
+            })
           : null
 
         return (

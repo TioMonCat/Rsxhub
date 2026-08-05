@@ -327,6 +327,7 @@ export default function LeagueDetailPageContent({
     if (!confirm(`Are you sure you want to withdraw ${classTag} registration?`)) return
     try {
       const formData = new FormData()
+      formData.set('slug', league.slug || '')
       formData.set('leagueId', league.id)
       formData.set('teamId', teamId)
       formData.set('classTag', classTag)
