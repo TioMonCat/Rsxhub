@@ -70,9 +70,6 @@ export default function CalendarContent({
   const leagueById = new Map(leagues.map((league) => [league.id, league]))
 
   function getLeagueGradient(leagueTitle?: string, leagueSlug?: string, accentColor?: string | null, sessionType?: string) {
-    if (sessionType === 'QUALIFYING') {
-      return 'linear-gradient(to right, #0284c7 0%, #0369a1 55%, #0f172a 100%)'
-    }
     if (accentColor && accentColor.startsWith('#')) {
       return `linear-gradient(to right, ${accentColor} 0%, ${accentColor}dd 55%, ${accentColor}bb 100%)`
     }
@@ -108,7 +105,7 @@ export default function CalendarContent({
         list.push({
           ...ev,
           id: `${ev.id}_qualy`,
-          title: ev.title ? `${ev.title} (Qualy)` : `Round: ${ev.circuitName} (Qualy)`,
+          title: ev.title ? ev.title : (ev.circuitName ? ev.circuitName : 'Round Session'),
           eventType: 'qualifying',
           startsAt: ev.qualyStartsAt || ev.startsAt,
           endsAt: ev.qualyEndsAt || ev.qualyStartsAt || ev.startsAt,
@@ -501,7 +498,7 @@ export default function CalendarContent({
                   programmeFilter === 'all' ? 'bg-[#1274de] text-white' : 'text-slate-400 hover:text-white'
                 }`}
               >
-                ALL ({expandedSessions.length})
+                ALL ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) !== 'QUALIFYING').length})
               </button>
               <button
                 type="button"
@@ -511,15 +508,6 @@ export default function CalendarContent({
                 }`}
               >
                 🏁 RACES ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) === 'RACE').length})
-              </button>
-              <button
-                type="button"
-                onClick={() => setProgrammeFilter('qualifying')}
-                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
-                  programmeFilter === 'qualifying' ? 'bg-cyan-500 text-black font-black' : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                ⚡ QUALIFYING ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) === 'QUALIFYING').length})
               </button>
               <button
                 type="button"
@@ -539,8 +527,8 @@ export default function CalendarContent({
               const filteredEvents = [...expandedSessions]
                 .filter((event) => {
                   const type = getEventType(event, leagueById.get(event.leagueId))
+                  if (type === 'QUALIFYING') return false // El programme solo muestra RACES y TIME ATTACK
                   if (programmeFilter === 'race') return type === 'RACE'
-                  if (programmeFilter === 'qualifying') return type === 'QUALIFYING'
                   if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
                   return true
                 })
@@ -549,7 +537,7 @@ export default function CalendarContent({
               if (filteredEvents.length === 0) {
                 return (
                   <div className="p-12 text-center text-slate-500 italic text-sm border border-dashed border-white/10">
-                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : programmeFilter === 'qualifying' ? 'qualifying sessions' : 'time attack sessions'} in the programme.
+                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : 'time attack sessions'} in the programme.
                   </div>
                 )
               }
