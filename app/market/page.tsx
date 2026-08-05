@@ -69,7 +69,22 @@ export default async function MarketPage() {
           } catch {}
         }
 
-        listings = rawListings.map((data: any) => {
+        const existingTeamIds = new Set(teamsSnap.docs.map((d: any) => d.id))
+
+        // Filter out listings of deleted teams and delete orphaned listing docs from Firestore
+        const validRawListings = rawListings.filter((data: any) => {
+          if (data.type === 'team_seeking_driver' && data.team_id) {
+            const exists = existingTeamIds.has(data.team_id)
+            if (!exists && data.id) {
+              // Delete orphaned listing doc asynchronously
+              db.collection('market_listings').doc(data.id).delete().catch(() => null)
+            }
+            return exists
+          }
+          return true
+        })
+
+        listings = validRawListings.map((data: any) => {
           const createdAtVal = serializeDate(data.created_at)
           return {
             id: data.id,
@@ -123,10 +138,20 @@ export default async function MarketPage() {
       }
 
       if (mockListingsVal) {
-        listings = JSON.parse(mockListingsVal).map((item: any) => ({
-          ...item,
-          team_color: item.team_id ? teamsColors.get(item.team_id) || null : null,
-        }))
+        const rawMockListings = JSON.parse(mockListingsVal)
+        const mockTeamIds = new Set(teamsColors.keys())
+
+        listings = rawMockListings
+          .filter((item: any) => {
+            if (item.type === 'team_seeking_driver' && item.team_id) {
+              return mockTeamIds.has(item.team_id)
+            }
+            return true
+          })
+          .map((item: any) => ({
+            ...item,
+            team_color: item.team_id ? teamsColors.get(item.team_id) || null : null,
+          }))
         // Sort descending by date
         listings.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       } else {

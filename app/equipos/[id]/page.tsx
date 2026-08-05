@@ -293,26 +293,34 @@ export default async function TeamProfilePage({
         }
       }
 
-      // Fetch pending driver applications
+      // Fetch pending driver applications safely
       try {
-        const appsSnap = await runWithTimeout(
-          db.collection('market_applications')
-            .where('team_id', '==', team.id)
-            .get(),
-          3000
-        )
-        pendingApplications = appsSnap.docs
-          .filter((doc: any) => doc.data()?.status === 'pending')
+        let docs: any[] = []
+        try {
+          const snap = await runWithTimeout(db.collection('market_applications').where('team_id', '==', team.id).get(), 2500)
+          docs = snap.docs
+        } catch {
+          const snapAll = await runWithTimeout(db.collection('market_applications').get(), 2500)
+          docs = snapAll.docs
+        }
+
+        pendingApplications = docs
+          .filter((doc: any) => {
+            const data = doc.data()
+            const matchesTeam = data?.team_id === team.id || data?.teamId === team.id
+            const isPending = data?.status === 'pending'
+            return matchesTeam && isPending
+          })
           .map((doc: any) => {
             const data = doc.data()
             return {
               id: String(doc.id),
-              userId: String(data.user_id || ''),
-              userName: String(data.user_name || 'Driver'),
-              userAvatar: data.user_avatar ? String(data.user_avatar) : null,
-              contactInfo: String(data.contact_info || 'Discord / Steam'),
-              message: String(data.message || ''),
-              createdAt: formatFirestoreValue(data.created_at) || new Date().toISOString(),
+              userId: String(data?.user_id || data?.userId || ''),
+              userName: String(data?.user_name || data?.userName || 'Driver'),
+              userAvatar: data?.user_avatar || data?.userAvatar ? String(data.user_avatar || data.userAvatar) : null,
+              contactInfo: String(data?.contact_info || data?.contactInfo || 'Discord / Steam'),
+              message: String(data?.message || ''),
+              createdAt: formatFirestoreValue(data?.created_at || data?.createdAt) || new Date().toISOString(),
             }
           })
       } catch (err) {

@@ -41,26 +41,32 @@ export async function acceptDriverApplicationAction(formData: FormData) {
         // Update application status
         await appRef.update({ status: 'accepted' })
 
-        // Cleanup: Delete hired driver's listings from market
-        const listingsSnap = await db.collection('market_listings').where('user_id', '==', hiredUserId).get()
-        const batch = db.batch()
-        listingsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+        // Cleanup: Delete hired driver's listings, applications, and invites
+        try {
+          const listingsSnap = await db.collection('market_listings').where('user_id', '==', hiredUserId).get()
+          const b1 = db.batch()
+          listingsSnap.docs.forEach((doc: any) => b1.delete(doc.ref))
+          await b1.commit()
+        } catch {}
 
-        // Cleanup: Delete pending applications of the driver
-        const appsSnap = await db.collection('market_applications')
-          .where('user_id', '==', hiredUserId)
-          .where('status', '==', 'pending')
-          .get()
-        appsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+        try {
+          const appsSnap = await db.collection('market_applications').where('user_id', '==', hiredUserId).get()
+          const b2 = db.batch()
+          appsSnap.docs.forEach((doc: any) => {
+            if (doc.data()?.status === 'pending') b2.delete(doc.ref)
+          })
+          await b2.commit()
+        } catch {}
 
-        // Cleanup: Delete pending invites of the driver (from team_invites too)
-        const invitesSnap = await db.collection('team_invites')
-          .where('invited_user_id', '==', hiredUserId)
-          .where('status', '==', 'pending')
-          .get()
-        invitesSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+        try {
+          const invitesSnap = await db.collection('team_invites').where('invited_user_id', '==', hiredUserId).get()
+          const b3 = db.batch()
+          invitesSnap.docs.forEach((doc: any) => {
+            if (doc.data()?.status === 'pending') b3.delete(doc.ref)
+          })
+          await b3.commit()
+        } catch {}
 
-        await batch.commit()
         await cleanupDriverMarketDataOnTeamJoin(hiredUserId)
 
         // Send notifications

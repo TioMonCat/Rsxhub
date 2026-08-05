@@ -701,6 +701,14 @@ export async function deleteTeamAction(teamId: string) {
             const pilotRegsSnap = await runWithTimeout(db.collection('league_registrations').where('team_id', '==', teamId).get(), 3000)
             pilotRegsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
+            // 3.2. Delete team market listings
+            const mListingsSnap = await runWithTimeout(db.collection('market_listings').where('team_id', '==', teamId).get(), 3000).catch(() => null)
+            if (mListingsSnap) mListingsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+
+            // 3.3. Delete team market applications
+            const mAppsSnap = await runWithTimeout(db.collection('market_applications').where('team_id', '==', teamId).get(), 3000).catch(() => null)
+            if (mAppsSnap) mAppsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+
             // 4. Delete team itself
             batch.delete(db.collection('teams').doc(teamId))
 
@@ -751,6 +759,27 @@ export async function deleteTeamAction(teamId: string) {
               cookieStore.set('mock_registrations', JSON.stringify(regs), { path: '/', maxAge: 60 * 60 * 24 * 30 })
             }
           }
+
+          // Clean up mock market listings associated with this team
+          const mockListingsVal = cookieStore.get('mock_market_listings')?.value
+          if (mockListingsVal) {
+            let mListings = JSON.parse(mockListingsVal)
+            if (Array.isArray(mListings)) {
+              mListings = mListings.filter((l: any) => l.team_id !== teamId && l.teamId !== teamId)
+              cookieStore.set('mock_market_listings', JSON.stringify(mListings), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+            }
+          }
+
+          // Clean up mock market applications associated with this team
+          const mockAppsVal = cookieStore.get('mock_market_applications')?.value
+          if (mockAppsVal) {
+            let mApps = JSON.parse(mockAppsVal)
+            if (Array.isArray(mApps)) {
+              mApps = mApps.filter((a: any) => a.teamId !== teamId && a.team_id !== teamId)
+              cookieStore.set('mock_market_applications', JSON.stringify(mApps), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+            }
+          }
+
           mockDeleteSucceeded = true
         }
       }
