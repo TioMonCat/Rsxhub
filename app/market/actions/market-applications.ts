@@ -320,7 +320,7 @@ export async function declineApplicationAction(applicationId: string) {
   revalidatePath('/market')
 }
 
-export async function withdrawApplicationAction(listingId: string) {
+export async function withdrawApplicationAction(listingId: string, applicationId?: string) {
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
@@ -329,19 +329,32 @@ export async function withdrawApplicationAction(listingId: string) {
     const db = getFirestoreDb()
     if (db) {
       try {
-        const [snapListing, snapUser] = await Promise.all([
+        if (applicationId) {
+          await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000).catch(() => null)
+        }
+
+        const [snapListing, snapUser, snapAll] = await Promise.all([
           runWithTimeout(db.collection('market_applications').where('listing_id', '==', listingId).get(), 3000).catch(() => null),
           runWithTimeout(db.collection('market_applications').where('user_id', '==', session.userId).get(), 3000).catch(() => null),
+          runWithTimeout(db.collection('market_applications').get(), 3000).catch(() => null),
         ])
 
         const docsMap = new Map<string, any>()
         if (snapListing) snapListing.docs.forEach((d: any) => docsMap.set(d.id, d))
         if (snapUser) snapUser.docs.forEach((d: any) => docsMap.set(d.id, d))
+        if (snapAll) {
+          snapAll.docs.forEach((d: any) => {
+            const data = d.data()
+            if (d.id === applicationId || d.id === listingId || data.listing_id === listingId || data.team_id === listingId) {
+              docsMap.set(d.id, d)
+            }
+          })
+        }
 
         const toDelete = Array.from(docsMap.values()).filter((doc: any) => {
           const d = doc.data()
-          const isMyUser = d.user_id === session.userId
-          const isTargetListing = doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
+          const isMyUser = !d.user_id || d.user_id === session.userId || session.userId === ''
+          const isTargetListing = doc.id === applicationId || doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
           return isMyUser && isTargetListing
         })
 
@@ -363,8 +376,9 @@ export async function withdrawApplicationAction(listingId: string) {
       let apps = JSON.parse(existingApps)
       if (Array.isArray(apps)) {
         apps = apps.filter((a: any) => !(
-          (a.userId === session.userId || a.user_id === session.userId) &&
-          (a.listingId === listingId || a.teamId === listingId || a.id === listingId || a.listing_id === listingId)
+          (applicationId && a.id === applicationId) ||
+          ((a.userId === session.userId || a.user_id === session.userId || !a.userId) &&
+           (a.listingId === listingId || a.teamId === listingId || a.id === listingId || a.listing_id === listingId))
         ))
         cookieStore.set('mock_market_applications', JSON.stringify(apps), {
           path: '/',

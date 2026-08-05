@@ -24,7 +24,7 @@ interface MarketTeamOffersProps {
   belongsToTeam?: boolean
   onDeleteListing: (id: string) => void
   onApplyClick: (listingId: string) => void
-  onWithdrawApplication: (listingId: string) => void
+  onWithdrawApplication: (listingId: string, applicationId?: string) => void
 }
 
 export function MarketTeamOffers({
@@ -125,7 +125,7 @@ export function MarketTeamOffers({
                       </span>
                       <button
                         type="button"
-                        onClick={() => onWithdrawApplication(item.id)}
+                        onClick={() => onWithdrawApplication(item.id, myApplication?.id)}
                         className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline cursor-pointer"
                       >
                         Withdraw

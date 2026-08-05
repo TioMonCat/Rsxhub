@@ -173,20 +173,20 @@ export default function MarketPageContent({
     }
   }
 
-  const handleWithdrawApplication = async (listingId: string) => {
+  const handleWithdrawApplication = async (listingId: string, applicationId?: string) => {
     if (confirm('Are you sure you want to withdraw your application?')) {
       // Optimistic client update
       setMyApps((prev) =>
         prev.filter(
           (a) =>
             !(
-              (a.userId === currentUser?.userId || !a.userId) &&
+              (applicationId && a.id === applicationId) ||
               (a.listingId === listingId || a.teamId === listingId || a.id === listingId)
             )
         )
       )
       try {
-        await withdrawApplicationAction(listingId)
+        await withdrawApplicationAction(listingId, applicationId)
         router.refresh()
       } catch (err) {
         console.error('Failed to withdraw application:', err)
