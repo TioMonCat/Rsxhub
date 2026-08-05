@@ -102,7 +102,7 @@ export function LeagueSchedule({
                     </h3>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 pt-1 font-mono">
-                      {ev.hasQualy === true && (
+                      {(ev.hasQualy === true || String(ev.hasQualy) === 'true' || Boolean(ev.hasQualy)) && (
                         <div className="flex items-center gap-1.5 bg-black/60 border border-cyan-500/30 px-2 py-0.5">
                           <Clock className="h-3 w-3 text-cyan-400" />
                           <span className="text-[10px] text-cyan-300 font-bold uppercase">QUALY:</span>
@@ -145,38 +145,35 @@ export function LeagueSchedule({
                       </button>
                     )}
 
-                    <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
-                      {/* View Confirmed Entry List */}
-                      <button
-                        type="button"
-                        onClick={() => setViewingEntryListEvent(ev)}
-                        title="View Confirmed Entry List"
-                        className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
-                      >
-                        <Users className="h-3.5 w-3.5" />
-                      </button>
-
-                      {isAdmin && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => onOpenEventModal(ev)}
-                            title="Edit Round"
-                            className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onDeleteEvent(ev.id)}
-                            title="Delete Round"
-                            className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </>
-                      )}
-                    </div>
+                    {/* ADMIN ACTIONS ONLY */}
+                    {isAdmin && (
+                      <div className="flex items-center gap-1 border-l border-shell-line/40 pl-2">
+                        <button
+                          type="button"
+                          onClick={() => setViewingEntryListEvent(ev)}
+                          title="View Confirmed Entry List"
+                          className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onOpenEventModal(ev)}
+                          title="Edit Round"
+                          className="p-2 text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDeleteEvent(ev.id)}
+                          title="Delete Round"
+                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-white/5 transition-colors rounded-none cursor-pointer"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

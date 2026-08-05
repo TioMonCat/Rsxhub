@@ -101,12 +101,24 @@ export default function CalendarContent({
   const expandedSessions = useMemo(() => {
     const list: LeagueEvent[] = []
     events.forEach((ev) => {
-      // Solo agregar race y time_attack — las qualifying no aparecen en el Programme
-      const type = ev.eventType || 'race'
-      if (type === 'qualifying') return
+      const isQualyEnabled = ev.hasQualy === true || String(ev.hasQualy) === 'true' || Boolean(ev.hasQualy)
+
+      // Add Qualy session if enabled
+      if (isQualyEnabled && (ev.qualyStartsAt || ev.startsAt)) {
+        list.push({
+          ...ev,
+          id: `${ev.id}_qualy`,
+          title: ev.title ? `${ev.title} (Qualy)` : `Round: ${ev.circuitName} (Qualy)`,
+          eventType: 'qualifying',
+          startsAt: ev.qualyStartsAt || ev.startsAt,
+          endsAt: ev.qualyEndsAt || ev.qualyStartsAt || ev.startsAt,
+        })
+      }
+
+      // Add Main Race / Session
       list.push({
         ...ev,
-        eventType: type,
+        eventType: ev.eventType || 'race',
         startsAt: ev.startsAt,
         endsAt: ev.endsAt,
       })
@@ -499,6 +511,15 @@ export default function CalendarContent({
                 }`}
               >
                 🏁 RACES ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) === 'RACE').length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setProgrammeFilter('qualifying')}
+                className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider transition-colors rounded-none flex items-center gap-1.5 ${
+                  programmeFilter === 'qualifying' ? 'bg-cyan-500 text-black font-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                ⚡ QUALIFYING ({expandedSessions.filter(s => getEventType(s, leagueById.get(s.leagueId)) === 'QUALIFYING').length})
               </button>
               <button
                 type="button"
