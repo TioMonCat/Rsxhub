@@ -118,13 +118,17 @@ export default async function TeamProfilePage({
       const memberSteamRows = steamAccounts.filter((row: any) => existingMemberUserIds.has(row.user_id))
       const nonMemberSteamRows = steamAccounts.filter((row: any) => !existingMemberUserIds.has(row.user_id))
 
-      const candidateUserIds = nonMemberSteamRows.map((row: any) => row.user_id)
+      const candidateUserIds = nonMemberSteamRows.map((row: any) => row.user_id).filter(Boolean)
       let profileRows: any[] = []
       if (candidateUserIds.length > 0) {
-        const chunks = []
-        for (let i = 0; i < candidateUserIds.length; i += 10) chunks.push(candidateUserIds.slice(i, i + 10))
-        const snaps = await Promise.all(chunks.map((chunk: any) => db.collection('profiles').where('user_id', 'in', chunk).get()))
-        profileRows = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
+        try {
+          const chunks = []
+          for (let i = 0; i < candidateUserIds.length; i += 10) chunks.push(candidateUserIds.slice(i, i + 10))
+          const snaps = await Promise.all(chunks.map((chunk: any) => runWithTimeout(db.collection('profiles').where('user_id', 'in', chunk).get(), 3000)))
+          profileRows = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
+        } catch (err) {
+          console.error('Failed to fetch candidate profiles:', err)
+        }
       }
 
       const profileByUserId = new Map(profileRows.map((row: any) => [row.user_id, row.display_name]))
@@ -134,22 +138,26 @@ export default async function TeamProfilePage({
       }
 
       if (memberUserIds.length > 0) {
-        const chunks = []
-        for (let i = 0; i < memberUserIds.length; i += 10) chunks.push(memberUserIds.slice(i, i + 10))
-        const snaps = await Promise.all(chunks.map((chunk: any) => db.collection('profiles').where('user_id', 'in', chunk).get()))
-        const memberProfiles = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
-        const memberProfileByUserId = new Map(memberProfiles.map((row: any) => [row.user_id, row]))
+        try {
+          const chunks = []
+          for (let i = 0; i < memberUserIds.length; i += 10) chunks.push(memberUserIds.slice(i, i + 10))
+          const snaps = await Promise.all(chunks.map((chunk: any) => runWithTimeout(db.collection('profiles').where('user_id', 'in', chunk).get(), 3000)))
+          const memberProfiles = snaps.flatMap((snap: any) => snap.docs.map((doc: any) => doc.data()))
+          const memberProfileByUserId = new Map(memberProfiles.map((row: any) => [row.user_id, row]))
 
-        for (const member of team.members) {
-          const profile = memberProfileByUserId.get(member.userId)
-          const steam = memberSteamRows.find((item: any) => item.user_id === member.userId) || steamByUserId.get(member.userId)
-          teamPilots.push({
-            userId: member.userId,
-            role: member.role,
-            name: profile?.display_name || steam?.steam_display_name || member.displayName || member.steamDisplayName || member.steamId || member.userId,
-            avatarUrl: profile?.avatar_url || steam?.steam_avatar_url || (member as any).avatarUrl || null,
-            steamId: steam?.steam_id || member.steamId || '',
-          })
+          for (const member of team.members) {
+            const profile = memberProfileByUserId.get(member.userId)
+            const steam = memberSteamRows.find((item: any) => item.user_id === member.userId) || steamByUserId.get(member.userId)
+            teamPilots.push({
+              userId: member.userId,
+              role: member.role,
+              name: profile?.display_name || steam?.steam_display_name || member.displayName || member.steamDisplayName || member.steamId || member.userId || 'Driver',
+              avatarUrl: profile?.avatar_url || steam?.steam_avatar_url || (member as any).avatarUrl || null,
+              steamId: steam?.steam_id || member.steamId || '',
+            })
+          }
+        } catch (err) {
+          console.error('Failed to fetch member profiles:', err)
         }
       }
 

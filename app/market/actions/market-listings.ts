@@ -37,6 +37,10 @@ export async function createMarketListing(formData: FormData) {
     if (isAlreadyInTeam) {
       throw new Error('You cannot post a driver listing if you already belong to a team.')
     }
+    const cleanContact = (contactInfo || '').trim()
+    if (!cleanContact || cleanContact.length < 3) {
+      throw new Error('El usuario o contacto de Discord es obligatorio para los pilotos que buscan equipo.')
+    }
   }
 
   let userName = session.steamDisplayName || 'Driver'

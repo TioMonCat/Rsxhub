@@ -2,6 +2,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 import { createNotification } from '@/lib/notifications-data'
+import { cleanupDriverMarketDataOnTeamJoin } from '@/lib/market-cleanup'
 import { guardSession, canManageTeam } from './team-parsers'
 
 export async function acceptDriverApplicationAction(formData: FormData) {
@@ -60,6 +61,7 @@ export async function acceptDriverApplicationAction(formData: FormData) {
         invitesSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
         await batch.commit()
+        await cleanupDriverMarketDataOnTeamJoin(hiredUserId)
 
         // Send notifications
         if (hiredUserId) {

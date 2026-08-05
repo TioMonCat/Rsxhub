@@ -458,14 +458,21 @@ export default function MarketPageContent({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Discord Contact</label>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">
+                  Discord Tag / Contact {!hasOwnedTeam && <span className="text-cyan-400 font-extrabold">* (Obligatorio)</span>}
+                </label>
                 <input
                   type="text"
                   name="contactInfo"
                   required
-                  placeholder="e.g. Discord: @discord_username"
+                  placeholder="e.g. Discord: @usuario_discord"
                   className="w-full border border-shell-line bg-black/40 px-3 py-2 text-xs text-white outline-none font-mono focus:border-cyan-400"
                 />
+                {!hasOwnedTeam && (
+                  <p className="mt-1 text-[10px] text-amber-400 font-medium">
+                    * El contacto de Discord es obligatorio para los pilotos para garantizar el contacto directo con los equipos.
+                  </p>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-shell-line/50">

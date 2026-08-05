@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { notifyTeamInvitation } from '@/lib/notifications-data'
+import { cleanupDriverMarketDataOnTeamJoin } from '@/lib/market-cleanup'
 
 export async function inviteDriverFromListingAction(driverListingId: string, teamId: string, customMessage?: string) {
   const session = await getCurrentUser()
@@ -162,6 +163,7 @@ export async function acceptInviteFromMarketAction(inviteId: string) {
         })
 
         await runWithTimeout(batch.commit())
+        await cleanupDriverMarketDataOnTeamJoin(session.userId)
         revalidatePath('/market')
         revalidatePath('/equipos')
         return

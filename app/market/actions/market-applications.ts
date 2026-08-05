@@ -11,6 +11,7 @@ import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { notifyDriverHired, createNotification } from '@/lib/notifications-data'
 import { invalidateCache } from '@/lib/ttl-cache'
+import { cleanupDriverMarketDataOnTeamJoin } from '@/lib/market-cleanup'
 
 export async function applyToTeamListingAction(listingId: string, message?: string) {
   const session = await getCurrentUser()
@@ -190,6 +191,7 @@ export async function hireDriverFromApplicationAction(applicationId: string) {
         })
 
         await runWithTimeout(batch.commit())
+        await cleanupDriverMarketDataOnTeamJoin(hiredUserId)
         await notifyDriverHired({
           userId: hiredUserId,
           teamName: teamDoc.data()?.name || 'a team',

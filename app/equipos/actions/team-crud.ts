@@ -6,6 +6,7 @@ import { getAdminAccessContext } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
 import { invalidateCache } from '@/lib/ttl-cache'
+import { cleanupDriverMarketDataOnTeamJoin } from '@/lib/market-cleanup'
 import { guardSession, canManageTeam, cleanPilotName, parseSkinProfilesJson } from './team-parsers'
 
 export async function createTeam(formData: FormData) {
@@ -246,6 +247,7 @@ export async function createTeam(formData: FormData) {
     }
   }
 
+  await cleanupDriverMarketDataOnTeamJoin(session.userId)
   invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
   revalidatePath('/perfil')
