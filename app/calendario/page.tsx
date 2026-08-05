@@ -87,6 +87,9 @@ export default async function CalendarioPage({
     serverLink: e.serverLink ?? null,
     eventType: e.eventType ?? null,
     countryCode: e.countryCode ?? null,
+    hasQualy: e.hasQualy ?? true,
+    qualyStartsAt: e.qualyStartsAt ?? null,
+    qualyEndsAt: e.qualyEndsAt ?? null,
   }))
 
   const serializableLeagues = leagues.map(l => ({
