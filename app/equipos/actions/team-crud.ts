@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getAdminAccessContext } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
+import { invalidateCache } from '@/lib/ttl-cache'
 import { guardSession, canManageTeam, cleanPilotName, parseSkinProfilesJson } from './team-parsers'
 
 export async function createTeam(formData: FormData) {
@@ -245,7 +246,9 @@ export async function createTeam(formData: FormData) {
     }
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
+  revalidatePath('/perfil')
   if (redirectUrl) {
     redirect(redirectUrl)
   } else {
@@ -642,8 +645,10 @@ export async function updateTeam(formData: FormData) {
     console.error('Failed to update mock team:', e)
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
   revalidatePath(`/equipos/${teamId}`)
+  revalidatePath('/perfil')
   redirect(`${redirectTo}?updated=1`)
 }
 
@@ -753,6 +758,8 @@ export async function deleteTeamAction(teamId: string) {
     redirect('/equipos?error=delete-failed')
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
+  revalidatePath('/perfil')
   redirect('/equipos?deleted=1')
 }

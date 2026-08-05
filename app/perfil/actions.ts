@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 
+import { invalidateCache } from '@/lib/ttl-cache'
+
 export async function respondTeamInvite(formData: FormData) {
   const session = await getCurrentUser()
   if (!session) redirect('/perfil')
@@ -143,6 +145,7 @@ export async function respondTeamInvite(formData: FormData) {
     }
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/perfil')
   revalidatePath('/equipos')
   revalidatePath('/market')

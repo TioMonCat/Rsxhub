@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
 import { createNotification, notifyTeamInvitation } from '@/lib/notifications-data'
+import { invalidateCache } from '@/lib/ttl-cache'
 import { guardSession, canManageTeam } from './team-parsers'
 
 export async function invitePilot(formData: FormData) {
@@ -112,6 +113,7 @@ export async function invitePilot(formData: FormData) {
     }
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
   revalidatePath(`/equipos/${teamId}`)
   redirect(`${redirectTo}?invite=1`)
@@ -311,6 +313,7 @@ export async function removeTeamMember(formData: FormData) {
     })
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
   revalidatePath(`/equipos/${teamId}`)
   revalidatePath('/ligas')
@@ -396,6 +399,7 @@ export async function updateTeamMemberRole(formData: FormData) {
     redirect(`${redirectTo}?error=role-update-failed`)
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues'])
   revalidatePath('/equipos')
   revalidatePath(`/equipos/${teamId}`)
   redirect(`${redirectTo}?roleUpdated=1`)
