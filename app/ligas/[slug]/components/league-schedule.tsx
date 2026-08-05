@@ -9,6 +9,7 @@ import { formatDateTime } from '@/lib/utils'
 import { League, LeagueEvent, Registration, ManagedTeam, EventConfirmation, TeamStanding } from '../hooks/use-league-state'
 import { confirmAttendanceAction, cancelAttendanceAction } from '@/app/ligas/actions'
 import { useRouter } from 'next/navigation'
+import { EventEntryListModal } from './event-entry-list-modal'
 
 interface LeagueScheduleProps {
   league: League
@@ -346,14 +347,13 @@ export function LeagueSchedule({
         )}
       </div>
 
-      {/* View Entry List / Confirmed Teams Modal */}
+      {/* Entry List Modal (Confirmed teams & driver IDs & skin download) */}
       {viewingEntryListEvent && (
-        <ViewEntryListModal
+        <EventEntryListModal
           event={viewingEntryListEvent}
-          league={league}
-          classTags={classTags}
-          confirmations={localConfirmations.filter((c) => c.eventId === viewingEntryListEvent.id && c.status === 'confirmed')}
+          confirmations={localConfirmations.filter((c) => c.eventId === viewingEntryListEvent.id)}
           registrations={initialRegistrations}
+          classTags={classTags}
           myManagedTeams={myManagedTeams}
           standings={standings}
           isAdmin={isAdmin}

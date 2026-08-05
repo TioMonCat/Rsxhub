@@ -1,0 +1,384 @@
+/**
+ * lib/data/registrations.ts
+ *
+ * Registration, member, event-confirmation, team-points, and driver-fetching functions
+ * extracted from lib/platform-data.ts.
+ */
+
+import { cache } from 'react'
+import { mockRegistrations } from '@/data/mock'
+import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
+import { formatFirestoreValue } from '@/lib/firestore-utils'
+import { fetchWithTTLCache } from '@/lib/ttl-cache'
+import { getTeamsDashboard } from '@/lib/team-data'
+import type { LeagueMember, LeagueRegistration } from '@/types'
+import { getLeagues } from './leagues'
+
+export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueRegistration[]> => {
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        let query = db.collection('league_registrations')
+        let snapshot
+        if (leagueId) {
+          snapshot = await query.where('league_id', '==', leagueId).get()
+        } else {
+          snapshot = await query.get()
+        }
+
+        if (snapshot.empty) return []
+
+        const registrations = snapshot.docs.map((doc: any) => {
+          const data = doc.data()
+          return {
+            id: doc.id,
+            leagueId: data.league_id || '',
+            userId: data.user_id || '',
+            teamId: data.team_id || null,
+            displayName: data.display_name || '',
+            steamId: data.steam_id || '',
+            classTag: data.class_tag || null,
+            assignedNumber: data.assigned_number != null ? String(data.assigned_number) : null,
+            createdAt: formatFirestoreValue(data.created_at) || '',
+            status: data.status || 'pending',
+          }
+        })
+        const { teams } = await getTeamsDashboard()
+        const activeRegistrations = registrations.filter((r: LeagueRegistration) => {
+          if (!r.teamId) return true
+          const team = teams.find((t) => t.id === r.teamId)
+          if (!team) return false
+          const isMember = Array.isArray(team.members) && team.members.some((m: any) => m.userId === r.userId)
+          if (!isMember) return false
+          const car = (team.cars || []).find((c: any) => {
+            const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
+            const sameDorsal = String(c.dorsal || '') === String(r.assignedNumber || '') || Number(c.dorsal) === Number(r.assignedNumber)
+            const drivers = Array.isArray(c.driverUserIds)
+              ? c.driverUserIds
+              : Array.isArray(c.driver_user_ids)
+              ? c.driver_user_ids
+              : []
+            return sameClass && sameDorsal && drivers.includes(r.userId)
+          })
+          return Boolean(car)
+        })
+
+        return activeRegistrations.sort((a: any, b: any) => b.createdAt.localeCompare(a.createdAt))
+      } catch (error) {
+        console.error('Failed to get registrations from Firestore:', error)
+        return []
+      }
+    }
+  }
+
+  let list = mockRegistrations
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const override = cookieStore.get('mock_registrations')?.value
+    if (override) list = JSON.parse(override)
+  } catch (e) {}
+
+  const leagues = await getLeagues()
+  if (leagues.length === 0) return []
+  const filteredList = leagueId ? list.filter((item) => item.leagueId === leagueId) : list
+
+  try {
+    const { teams } = await getTeamsDashboard()
+    return filteredList.filter((r: any) => {
+      if (!r.teamId) return true
+      const team = teams.find((t) => t.id === r.teamId)
+      if (!team) return false
+      const isMember = Array.isArray(team.members) && team.members.some((m: any) => m.userId === r.userId)
+      if (!isMember) return false
+      const car = (team.cars || []).find((c: any) => {
+        const sameClass = String(c.category || '').toUpperCase() === String(r.classTag || '').toUpperCase()
+        const sameDorsal = Number(c.dorsal) === Number(r.assignedNumber)
+        const drivers = Array.isArray(c.driverUserIds)
+          ? c.driverUserIds
+          : Array.isArray(c.driver_user_ids)
+          ? c.driver_user_ids
+          : []
+        return sameClass && sameDorsal && drivers.includes(r.userId)
+      })
+      return Boolean(car)
+    })
+  } catch {
+    return filteredList
+  }
+})
+
+export const getLeagueMembers = cache(async (leagueId: string): Promise<LeagueMember[]> => {
+  if (!hasFirebase) return []
+  const db = getFirestoreDb()
+  if (!db) return []
+
+  try {
+    const snapshot = await db
+      .collection('league_members')
+      .where('league_id', '==', leagueId)
+      .get()
+
+    if (snapshot.empty) return []
+
+    const members = snapshot.docs.map((doc: any) => {
+      const data = doc.data()
+      return {
+        id: doc.id,
+        leagueId: data.league_id || '',
+        userId: data.user_id || '',
+        role: (data.role || 'driver') as LeagueMember['role'],
+        createdAt: formatFirestoreValue(data.created_at) || '',
+      }
+    })
+
+    const userIds = Array.from(new Set(members.map((item: any) => item.userId)))
+    if (userIds.length === 0) return []
+
+    const profilesSnapshot = await db.collection('profiles').where('user_id', 'in', userIds).get()
+    const steamSnapshot = await db.collection('steam_accounts').where('user_id', 'in', userIds).get()
+
+    const profileByUserId = new Map<string, string>(
+      profilesSnapshot.docs.map((doc: any) => {
+        const data = doc.data()
+        return [data.user_id, data.display_name || '']
+      })
+    )
+
+    const steamByUserId = new Map<string, { steamId: string; steamDisplayName: string }>(
+      steamSnapshot.docs.map((doc: any) => {
+        const data = doc.data()
+        return [data.user_id, { steamId: data.steam_id || '', steamDisplayName: data.steam_display_name || '' }]
+      })
+    )
+
+    return members.map((item: any) => {
+      const steam = steamByUserId.get(item.userId)
+      return {
+        id: item.id, leagueId: item.leagueId, userId: item.userId, role: item.role,
+        createdAt: item.createdAt, steamId: steam?.steamId, steamDisplayName: steam?.steamDisplayName,
+        displayName: profileByUserId.get(item.userId) || '',
+      }
+    }).sort((a: any, b: any) => a.createdAt.localeCompare(b.createdAt))
+  } catch (error) {
+    console.error('Failed to get league members from Firestore:', error)
+    return []
+  }
+})
+
+export const getEventConfirmations = cache(async (leagueId: string): Promise<any[]> => {
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const snapshot = await db
+          .collection('league_event_confirmations')
+          .where('league_id', '==', leagueId)
+          .get()
+        if (snapshot.empty) return []
+        const rawConfirmations = snapshot.docs.map((doc: any) => {
+          const data = doc.data()
+          return {
+            id: doc.id, eventId: data.event_id || '', leagueId: data.league_id || '',
+            teamId: data.team_id || '', classTag: data.class_tag || '',
+            carNumber: Number(data.car_number || 0), carModel: data.car_model || '',
+            status: data.status || 'confirmed',
+            confirmedAt: formatFirestoreValue(data.confirmed_at) || '',
+          }
+        })
+
+        const { teams } = await getTeamsDashboard()
+        return rawConfirmations.filter((c: any) => {
+          const team = teams.find((t) => t.id === c.teamId)
+          if (!team) return false
+          const car = (team.cars || []).find((carObj: any) => {
+            const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
+            const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
+            const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
+            return sameClass && sameDorsal && hasDrivers
+          })
+          return Boolean(car)
+        })
+      } catch (error) {
+        console.error('Failed to get event confirmations from Firestore:', error)
+        return []
+      }
+    }
+  }
+
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const raw = cookieStore.get('mock_event_confirmations')?.value
+    if (raw) {
+      const list = JSON.parse(raw).filter((c: any) => c.leagueId === leagueId)
+      const { teams } = await getTeamsDashboard()
+      return list.filter((c: any) => {
+        const team = teams.find((t) => t.id === c.teamId)
+        if (!team) return false
+        const car = (team.cars || []).find((carObj: any) => {
+          const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
+          const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
+          const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
+          return sameClass && sameDorsal && hasDrivers
+        })
+        return Boolean(car)
+      })
+    }
+  } catch (e) {
+    console.error('Failed to get mock event confirmations:', e)
+  }
+  return []
+})
+
+export type PlatformDriverUser = {
+  userId: string
+  displayName: string
+  avatarUrl: string | null
+  steamId: string
+  role: 'user' | 'team_manager' | 'steward' | 'platform_admin' | 'super_admin'
+  teamId: string | null
+  teamName: string | null
+  teamLogo: string | null
+  isTeamOwner: boolean
+  createdAt: string
+}
+
+export const getAllRegisteredDrivers = cache(async (): Promise<PlatformDriverUser[]> => {
+  return fetchWithTTLCache('platform_drivers', async () => {
+    if (hasFirebase) {
+      const db = getFirestoreDb()
+      if (db) {
+        try {
+          const [profilesSnap, rolesSnap, teamsSnap, membersSnap, steamSnap] = await Promise.all([
+            runWithTimeout(db.collection('profiles').get(), 3000),
+            runWithTimeout(db.collection('platform_roles').get(), 3000),
+            runWithTimeout(db.collection('teams').get(), 3000),
+            runWithTimeout(db.collection('team_members').get(), 3000),
+            runWithTimeout(db.collection('steam_accounts').get(), 3000),
+          ])
+
+          const steamByUserId = new Map<string, string>()
+          steamSnap.docs.forEach((doc: any) => {
+            const data = doc.data()
+            const uid = data.user_id || doc.id
+            if (data.steam_id) steamByUserId.set(uid, data.steam_id)
+          })
+
+          const rolesMap = new Map<string, string>()
+          rolesSnap.docs.forEach((doc: any) => {
+            const d = doc.data()
+            if (d.user_id && d.role) rolesMap.set(d.user_id, d.role)
+          })
+
+          const ownerUserIds = new Set<string>()
+          membersSnap.docs.forEach((doc: any) => {
+            const d = doc.data()
+            if ((d.role === 'owner' || d.role === 'manager') && d.user_id) ownerUserIds.add(d.user_id)
+          })
+
+          const teamsMap = new Map<string, { id: string; name: string; logoUrl: string | null }>()
+          teamsSnap.docs.forEach((doc: any) => {
+            const d = doc.data()
+            teamsMap.set(doc.id, { id: doc.id, name: d.name || '', logoUrl: d.logo_url || null })
+          })
+
+          const userTeamsMap = new Map<string, { id: string; name: string; logoUrl: string | null }>()
+          membersSnap.docs.forEach((doc: any) => {
+            const d = doc.data()
+            if (d.user_id && d.team_id && teamsMap.has(d.team_id)) {
+              userTeamsMap.set(d.user_id, teamsMap.get(d.team_id)!)
+            }
+          })
+
+          const users: PlatformDriverUser[] = profilesSnap.docs.map((doc: any) => {
+            const d = doc.data()
+            const userId = doc.id
+            const team = userTeamsMap.get(userId)
+            const isTeamOwner = ownerUserIds.has(userId)
+            let role = (rolesMap.get(userId) || 'user') as PlatformDriverUser['role']
+            if (role === 'user' && isTeamOwner) role = 'team_manager'
+
+            const rawSteamId = d.steam_id || d.steamId || steamByUserId.get(userId) || (userId.startsWith('steam_') ? userId.replace('steam_', '') : '')
+            const steamId = /^\d+$/.test(rawSteamId) ? rawSteamId : (steamByUserId.get(userId) || '')
+
+            return {
+              userId, displayName: d.display_name || d.displayName || 'Driver',
+              avatarUrl: d.avatar_url || d.avatarUrl || null, steamId, role,
+              teamId: team?.id || null, teamName: team?.name || null, teamLogo: team?.logoUrl || null,
+              isTeamOwner, createdAt: formatFirestoreValue(d.created_at) || new Date().toISOString(),
+            }
+          })
+
+          return users.sort((a, b) => a.displayName.localeCompare(b.displayName))
+        } catch (err) {
+          console.error('Failed to get registered drivers from Firestore:', err)
+        }
+      }
+    }
+
+    try {
+      const { cookies } = await import('next/headers')
+      const cookieStore = await cookies()
+      const sessionCookie = cookieStore.get('steam_session')?.value
+      const drivers: PlatformDriverUser[] = []
+      const { teams } = await getTeamsDashboard()
+
+      if (sessionCookie) {
+        try {
+          const session = JSON.parse(sessionCookie)
+          const userId = session.userId || `steam_${session.steamId}`
+          const userTeam = teams.find((t) => Array.isArray(t.members) && t.members.some((m: any) => m.userId === userId))
+          const isTeamOwner = Boolean(userTeam && userTeam.ownerUserId === userId)
+          drivers.push({
+            userId, displayName: session.steamDisplayName || 'Driver', avatarUrl: session.avatarUrl || null,
+            steamId: session.steamId || '', role: 'platform_admin',
+            teamId: userTeam?.id || null, teamName: userTeam?.name || null, teamLogo: userTeam?.logoUrl || null,
+            isTeamOwner, createdAt: new Date().toISOString(),
+          })
+        } catch {}
+      }
+      return drivers
+    } catch {
+      return []
+    }
+  }, 60)
+})
+
+export const getTeamPointsOverrides = cache(async (leagueId: string): Promise<Record<string, number>> => {
+  const pointsMap: Record<string, number> = {}
+
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const snap = await runWithTimeout(
+          db.collection('league_team_points').where('league_id', '==', leagueId).get(),
+          3000
+        )
+        snap.docs.forEach((doc: any) => {
+          const d = doc.data()
+          if (d.class_tag && d.team_id && typeof d.points === 'number') {
+            pointsMap[`${String(d.class_tag).toUpperCase()}_${d.team_id}`] = d.points
+          }
+        })
+      } catch (err) {
+        console.error('Failed to get team points from Firestore:', err)
+      }
+    }
+  }
+
+  try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const cookieKey = `mock_team_points_${leagueId}`
+    const existingStr = cookieStore.get(cookieKey)?.value
+    if (existingStr) {
+      const parsed = JSON.parse(existingStr)
+      Object.assign(pointsMap, parsed)
+    }
+  } catch (e) {}
+
+  return pointsMap
+})
