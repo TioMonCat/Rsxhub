@@ -247,6 +247,8 @@ export default function LeagueDetailPageContent({
     try {
       const startsAtFull = `${formEventDate}T${formEventStartsTime}:00Z`
       const endsAtFull = `${formEventDate}T${formEventEndsTime}:00Z`
+      const qualyStartsAtFull = formHasQualy ? `${formQualyDate || formEventDate}T${formQualyStartsTime || '19:30'}:00Z` : null
+      const qualyEndsAtFull = formHasQualy ? `${formQualyDate || formEventDate}T${formQualyEndsTime || '20:00'}:00Z` : null
 
       const formData = new FormData(e.currentTarget)
       formData.set('leagueId', league.id)
@@ -259,6 +261,8 @@ export default function LeagueDetailPageContent({
       formData.set('qualyDate', formQualyDate || formEventDate)
       formData.set('qualyStartsAtTime', formQualyStartsTime)
       formData.set('qualyEndsAtTime', formQualyEndsTime)
+      formData.set('qualyStartsAt', qualyStartsAtFull || '')
+      formData.set('qualyEndsAt', qualyEndsAtFull || '')
       formData.set('startsAt', startsAtFull)
       formData.set('endsAt', endsAtFull)
 

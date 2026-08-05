@@ -102,7 +102,7 @@ export function LeagueSchedule({
                     </h3>
 
                     <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300 pt-1 font-mono">
-                      {(ev.hasQualy === true || String(ev.hasQualy) === 'true' || Boolean(ev.hasQualy)) && (
+                      {(ev.hasQualy === true || String(ev.hasQualy) === 'true' || Boolean(ev.qualyStartsAt)) && (
                         <div className="flex items-center gap-1.5 bg-black/60 border border-cyan-500/30 px-2 py-0.5">
                           <Clock className="h-3 w-3 text-cyan-400" />
                           <span className="text-[10px] text-cyan-300 font-bold uppercase">QUALY:</span>

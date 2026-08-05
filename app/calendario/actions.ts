@@ -40,17 +40,10 @@ export async function saveCalendarEvent(formData: FormData) {
       return { success: false, error: 'Forbidden: Only platform admins or league stewards can edit league events.' }
     }
 
-    const hasQualy = formData.get('hasQualy') === 'on' || formData.get('hasQualy') === 'true'
+    const hasQualy = formData.get('hasQualy') === 'on' || formData.get('hasQualy') === 'true' || formData.get('hasQualy') === '1'
     const qualyDateStr = String(formData.get('qualyDate') || dateStr).trim()
     const qualyStartsAtTime = String(formData.get('qualyStartsAtTime') || '').trim()
     const qualyEndsAtTime = String(formData.get('qualyEndsAtTime') || '').trim()
-
-    const qualyStartsAt = hasQualy && qualyStartsAtTime
-      ? new Date(`${qualyDateStr}T${qualyStartsAtTime}:00.000Z`).toISOString()
-      : null
-    const qualyEndsAt = hasQualy && qualyEndsAtTime
-      ? new Date(`${qualyDateStr}T${qualyEndsAtTime}:00.000Z`).toISOString()
-      : null
 
     const startsAt = formData.get('startsAt') 
       ? String(formData.get('startsAt')).trim()
@@ -58,6 +51,16 @@ export async function saveCalendarEvent(formData: FormData) {
     const endsAt = formData.get('endsAt') 
       ? String(formData.get('endsAt')).trim()
       : new Date(`${dateStr}T${endsAtTime}:00.000Z`).toISOString()
+
+    const rawQualyStarts = formData.get('qualyStartsAt') ? String(formData.get('qualyStartsAt')).trim() : null
+    const rawQualyEnds = formData.get('qualyEndsAt') ? String(formData.get('qualyEndsAt')).trim() : null
+
+    const qualyStartsAt = hasQualy
+      ? (rawQualyStarts || (qualyStartsAtTime ? new Date(`${qualyDateStr}T${qualyStartsAtTime}:00.000Z`).toISOString() : startsAt))
+      : null
+    const qualyEndsAt = hasQualy
+      ? (rawQualyEnds || (qualyEndsAtTime ? new Date(`${qualyDateStr}T${qualyEndsAtTime}:00.000Z`).toISOString() : endsAt))
+      : null
 
     const extractedDate = dateStr || (startsAt ? startsAt.split('T')[0] : '')
 
