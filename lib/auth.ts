@@ -39,11 +39,14 @@ export const getCurrentUser = cache(async () => {
   return session
 })
 
+const DEFAULT_ADMIN_STEAM_IDS = ['76561198341588341']
+
 function getConfiguredAdminSteamIds() {
-  return (process.env.ADMIN_STEAM_IDS || '')
+  const envAdmins = (process.env.ADMIN_STEAM_IDS || '')
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean)
+  return Array.from(new Set([...DEFAULT_ADMIN_STEAM_IDS, ...envAdmins]))
 }
 
 export function canAccessPlatformAdmin(role?: PlatformRole | null) {

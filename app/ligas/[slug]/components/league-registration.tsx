@@ -61,7 +61,7 @@ export function LeagueRegistration({
                   {group.teamName}
                 </span>
                 <span className="text-[9px] md:text-[10px] font-mono font-black bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 uppercase tracking-wider">
-                  TU ESCUDERÍA - INSCRITO
+                  YOUR TEAM - REGISTERED
                 </span>
               </div>
 
@@ -72,7 +72,7 @@ export function LeagueRegistration({
                     <ClassBadge classTag={cat} />
                     <button
                       onClick={() => onWithdrawTeam(group.teamId, cat)}
-                      title={`Retirar ${cat}`}
+                      title={`Withdraw ${cat}`}
                       className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 text-xs transition-colors cursor-pointer"
                     >
                       ×
@@ -92,7 +92,7 @@ export function LeagueRegistration({
           className="bg-cyan-500 hover:bg-cyan-400 text-black font-black px-4 py-3 text-xs md:text-sm uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(0,242,254,0.35)] shrink-0 cursor-pointer"
         >
           <Plus className="h-5 w-5" />
-          {registeredCarsCount > 0 ? 'Añadir Vehículos' : 'Inscribir Escudería'}
+          {registeredCarsCount > 0 ? 'Add Vehicles' : 'Register Team'}
         </button>
       )}
 
