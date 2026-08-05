@@ -110,9 +110,15 @@ export default async function LigaDetailPage({
     title: e.title ?? null,
     circuitName: e.circuitName,
     circuitImageUrl: e.circuitImageUrl ?? null,
+    serverLink: e.serverLink ?? null,
+    hasQualy: e.hasQualy ?? true,
+    qualyStartsAt: e.qualyStartsAt ?? null,
+    qualyEndsAt: e.qualyEndsAt ?? null,
     startsAt: e.startsAt,
     endsAt: e.endsAt,
     status: e.status,
+    eventType: e.eventType ?? 'race',
+    countryCode: e.countryCode ?? null,
   }))
 
   const serializableSession = session

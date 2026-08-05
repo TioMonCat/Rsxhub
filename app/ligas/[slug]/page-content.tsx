@@ -15,6 +15,7 @@ import { updateLeagueDetailsAction, deleteLeagueAction, registerTeamAction, unre
 import { saveCalendarEvent, deleteCalendarEvent } from '@/app/calendario/actions'
 import { ClassBadge } from '@/components/class-badge'
 import { ImagePicker } from '@/components/image-picker'
+import { TimeInput24 } from '@/components/time-input-24'
 
 type Props = {
   league: League
@@ -859,24 +860,16 @@ export default function LeagueDetailPageContent({
                             className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] text-slate-400 uppercase font-mono mb-1">Qualy Starts</label>
-                          <input
-                            type="time"
-                            value={formQualyStartsTime}
-                            onChange={(e) => setFormQualyStartsTime(e.target.value)}
-                            className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] text-slate-400 uppercase font-mono mb-1">Qualy Ends</label>
-                          <input
-                            type="time"
-                            value={formQualyEndsTime}
-                            onChange={(e) => setFormQualyEndsTime(e.target.value)}
-                            className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
-                          />
-                        </div>
+                        <TimeInput24
+                          label="Qualy Starts"
+                          value={formQualyStartsTime}
+                          onChange={(val) => setFormQualyStartsTime(val)}
+                        />
+                        <TimeInput24
+                          label="Qualy Ends"
+                          value={formQualyEndsTime}
+                          onChange={(val) => setFormQualyEndsTime(val)}
+                        />
                       </div>
                     )}
                   </div>
@@ -897,26 +890,16 @@ export default function LeagueDetailPageContent({
                           className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
                         />
                       </div>
-                      <div>
-                        <label className="block text-[10px] text-slate-400 uppercase font-mono mb-1">Race Starts</label>
-                        <input
-                          type="time"
-                          value={formEventStartsTime}
-                          onChange={(e) => setFormEventStartsTime(e.target.value)}
-                          required
-                          className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] text-slate-400 uppercase font-mono mb-1">Race Ends</label>
-                        <input
-                          type="time"
-                          value={formEventEndsTime}
-                          onChange={(e) => setFormEventEndsTime(e.target.value)}
-                          required
-                          className="w-full border border-shell-line bg-black/40 px-2.5 py-1.5 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-mono"
-                        />
-                      </div>
+                      <TimeInput24
+                        label="Race Starts"
+                        value={formEventStartsTime}
+                        onChange={(val) => setFormEventStartsTime(val)}
+                      />
+                      <TimeInput24
+                        label="Race Ends"
+                        value={formEventEndsTime}
+                        onChange={(val) => setFormEventEndsTime(val)}
+                      />
                     </div>
                   </div>
                 </div>
