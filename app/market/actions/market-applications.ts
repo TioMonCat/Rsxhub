@@ -324,48 +324,58 @@ export async function withdrawApplicationAction(listingId: string) {
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
+  // 1. Delete from Firestore
   if (hasFirebase) {
     const db = getFirestoreDb()
     if (db) {
       try {
-        const snap = await runWithTimeout(
-          db.collection('market_applications').where('user_id', '==', session.userId).get()
-        )
+        const [snapListing, snapUser] = await Promise.all([
+          runWithTimeout(db.collection('market_applications').where('listing_id', '==', listingId).get(), 3000).catch(() => null),
+          runWithTimeout(db.collection('market_applications').where('user_id', '==', session.userId).get(), 3000).catch(() => null),
+        ])
 
-        const toDelete = snap.docs.filter((doc: any) => {
+        const docsMap = new Map<string, any>()
+        if (snapListing) snapListing.docs.forEach((d: any) => docsMap.set(d.id, d))
+        if (snapUser) snapUser.docs.forEach((d: any) => docsMap.set(d.id, d))
+
+        const toDelete = Array.from(docsMap.values()).filter((doc: any) => {
           const d = doc.data()
-          return doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
+          const isMyUser = d.user_id === session.userId
+          const isTargetListing = doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
+          return isMyUser && isTargetListing
         })
 
         for (const doc of toDelete) {
-          await runWithTimeout(doc.ref.delete())
+          await runWithTimeout(doc.ref.delete()).catch(() => null)
         }
-
-        revalidatePath('/market')
-        return
       } catch (err) {
         console.error('Failed to withdraw application in Firestore:', err)
-        throw err
       }
     }
   }
 
-  // Mock Mode Fallback
+  // 2. Delete from Mock Cookies (Always executed as safety fallback)
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
     const existingApps = cookieStore.get('mock_market_applications')?.value
-    let apps = existingApps ? JSON.parse(existingApps) : []
-
-    apps = apps.filter((a: any) => !(a.userId === session.userId && (a.listingId === listingId || a.teamId === listingId || a.id === listingId)))
-
-    cookieStore.set('mock_market_applications', JSON.stringify(apps), {
-      path: '/',
-      maxAge: 60 * 60 * 24 * 7,
-    })
+    if (existingApps) {
+      let apps = JSON.parse(existingApps)
+      if (Array.isArray(apps)) {
+        apps = apps.filter((a: any) => !(
+          (a.userId === session.userId || a.user_id === session.userId) &&
+          (a.listingId === listingId || a.teamId === listingId || a.id === listingId || a.listing_id === listingId)
+        ))
+        cookieStore.set('mock_market_applications', JSON.stringify(apps), {
+          path: '/',
+          maxAge: 60 * 60 * 24 * 7,
+        })
+      }
+    }
   } catch (err) {
     console.error('Failed to withdraw application in mock mode:', err)
   }
 
   revalidatePath('/market')
+  revalidatePath('/equipos')
 }

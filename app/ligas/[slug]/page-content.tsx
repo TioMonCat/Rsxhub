@@ -346,6 +346,7 @@ export default function LeagueDetailPageContent({
 
     try {
       const formData = new FormData()
+      formData.set('slug', league.slug || '')
       formData.set('leagueId', league.id)
       formData.set('teamId', selectedTeamId)
       formData.set('classTag', classTags[0] || 'GT3')

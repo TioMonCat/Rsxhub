@@ -176,7 +176,15 @@ export default function MarketPageContent({
   const handleWithdrawApplication = async (listingId: string) => {
     if (confirm('Are you sure you want to withdraw your application?')) {
       // Optimistic client update
-      setMyApps((prev) => prev.filter((a) => !(a.listingId === listingId && a.userId === currentUser?.userId)))
+      setMyApps((prev) =>
+        prev.filter(
+          (a) =>
+            !(
+              (a.userId === currentUser?.userId || !a.userId) &&
+              (a.listingId === listingId || a.teamId === listingId || a.id === listingId)
+            )
+        )
+      )
       try {
         await withdrawApplicationAction(listingId)
         router.refresh()

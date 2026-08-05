@@ -17,7 +17,7 @@ export async function registerTeamAction(formData: FormData) {
   const session = await getCurrentUser()
   if (!session) throw new Error('Unauthorized')
 
-  const slug = String(formData.get('slug') || '')
+  let slug = String(formData.get('slug') || '')
   const leagueId = String(formData.get('leagueId') || '')
   const teamId = String(formData.get('teamId') || '')
   const inputClassTag = String(formData.get('classTag') || '').trim().toUpperCase()
@@ -29,13 +29,34 @@ export async function registerTeamAction(formData: FormData) {
     throw new Error('League ID and Team ID are required.')
   }
 
-  // Fetch the league and its classTags
+  // Fetch the league and its classTags by leagueId or slug
   let leagueClassTags: string[] = []
-  try {
-    const league = await getLeagueBySlug(slug)
-    leagueClassTags = league?.classTags || []
-  } catch (err) {
-    console.error('Failed to resolve league details:', err)
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db && leagueId) {
+      try {
+        const leagueDoc = await db.collection('leagues').doc(leagueId).get()
+        if (leagueDoc.exists) {
+          const lData = leagueDoc.data()
+          leagueClassTags = lData?.class_tags || lData?.classTags || []
+          if (!slug) slug = lData?.slug || leagueId
+        }
+      } catch (err) {
+        console.error('Failed to fetch league by ID in registerTeamAction:', err)
+      }
+    }
+  }
+
+  if (leagueClassTags.length === 0 && slug) {
+    try {
+      const league = await getLeagueBySlug(slug)
+      leagueClassTags = league?.classTags || []
+      if (league?.id && !leagueId) {
+        // ok
+      }
+    } catch (err) {
+      console.error('Failed to resolve league details by slug:', err)
+    }
   }
 
   // Load team cars/members to perform automatic complete team registration (GT3, LMP2, etc.)
@@ -302,7 +323,9 @@ export async function registerTeamAction(formData: FormData) {
     }
   }
 
-  revalidatePath(`/ligas/${slug}`)
+  revalidatePath('/ligas')
+  if (slug) revalidatePath(`/ligas/${slug}`)
+  revalidatePath('/equipos')
 }
 
 export async function unregisterTeamAction(formData: FormData) {
