@@ -39,7 +39,7 @@ export async function createMarketListing(formData: FormData) {
     }
     const cleanContact = (contactInfo || '').trim()
     if (!cleanContact || cleanContact.length < 3) {
-      throw new Error('El usuario o contacto de Discord es obligatorio para los pilotos que buscan equipo.')
+      throw new Error('Discord contact info is required for drivers looking for a team.')
     }
   }
 

@@ -60,7 +60,7 @@ export function TeamCarsEditor({
 
     const isArchive = /\.(zip|rar|7z|tar|gz|tgz)$/i.test(file.name)
     if (!isArchive) {
-      alert('Únicamente se permiten archivos comprimidos (.zip, .rar, .7z, .tar.gz)')
+      alert('Only compressed archive files (.zip, .rar, .7z, .tar.gz) are allowed.')
       return
     }
 
@@ -78,7 +78,7 @@ export function TeamCarsEditor({
 
       const data = await res.json()
       if (!res.ok || data.error) {
-        alert(data.error || 'Error al subir el archivo de skin comprimido.')
+        alert(data.error || 'Error uploading compressed skin file.')
         return
       }
 
@@ -87,7 +87,7 @@ export function TeamCarsEditor({
       }
     } catch (err) {
       console.error('Skin upload failed:', err)
-      alert('Error al conectar con el servidor para subir el archivo.')
+      alert('Error connecting to server to upload file.')
     } finally {
       setUploadingCarId(null)
     }
@@ -373,10 +373,10 @@ export function TeamCarsEditor({
         <div className="flex items-center justify-between">
           <p className="text-xs uppercase tracking-wider font-extrabold text-cyan-400 flex items-center gap-2">
             <Filter className="h-4 w-4" />
-            Filtrar Vehículos por Liga
+            Filter Vehicles by League
           </p>
           <span className="text-[11px] text-slate-400 font-mono font-bold">
-            {cars.length} Vehículos totales
+            {cars.length} Total Vehicles
           </span>
         </div>
 
@@ -393,7 +393,7 @@ export function TeamCarsEditor({
             }`}
           >
             <Trophy className="h-3.5 w-3.5 text-amber-400" />
-            <span>Principal (Todos los coches)</span>
+            <span>General (All Cars)</span>
             <span className="ml-1 bg-black/40 text-slate-300 px-1.5 py-0.5 rounded text-[10px] font-mono">
               {cars.length}
             </span>
@@ -436,7 +436,7 @@ export function TeamCarsEditor({
         <div className="bg-rose-950/40 border border-rose-500/50 p-4 rounded-xl flex items-start gap-3">
           <ShieldAlert className="h-5 w-5 text-rose-400 shrink-0 mt-0.5" />
           <div className="space-y-1 text-xs text-rose-200">
-            <p className="font-bold">Hay errores en la configuración de tus vehículos:</p>
+            <p className="font-bold">There are errors in your vehicle configuration:</p>
             <ul className="list-disc pl-4 space-y-0.5">
               {Object.values(dorsalValidation).map((err, idx) => (
                 <li key={idx}>{err}</li>
@@ -460,13 +460,13 @@ export function TeamCarsEditor({
                 </span>
               </h3>
               <span className="text-xs text-slate-400 font-mono">
-                {categoryCars.length} vehículos
+                {categoryCars.length} {categoryCars.length === 1 ? 'vehicle' : 'vehicles'}
               </span>
             </div>
 
             {categoryCars.length === 0 ? (
               <p className="text-xs text-slate-500 italic py-2 pl-2">
-                No hay vehículos de categoría {category} registrados en esta vista.
+                No {category} category vehicles registered in this view.
               </p>
             ) : (
               <div className="space-y-4">
@@ -487,17 +487,17 @@ export function TeamCarsEditor({
                       <div className="flex items-center justify-between border-b border-slate-800/60 pb-2.5">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                            Coche <span className={`font-black font-mono text-sm ${theme.text}`}>#{car.dorsal || '---'}</span>
+                            Car <span className={`font-black font-mono text-sm ${theme.text}`}>#{car.dorsal || '---'}</span>
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => removeCar(car.id)}
                           className="p-1.5 text-slate-400 hover:text-rose-400 bg-slate-800/50 hover:bg-rose-950/40 border border-slate-700/50 hover:border-rose-500/40 rounded-lg transition-all cursor-pointer flex items-center gap-1 text-[11px]"
-                          title="Eliminar Vehículo"
+                          title="Delete Vehicle"
                         >
                           <Trash className="h-3.5 w-3.5" />
-                          <span>Eliminar</span>
+                          <span>Delete</span>
                         </button>
                       </div>
 
@@ -506,7 +506,7 @@ export function TeamCarsEditor({
                         {/* Car Number / Dorsal */}
                         <div>
                           <label className="mb-1 block text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
-                            Dorsal / Número (#0, #00, #000)
+                            Car Number / Dorsal (#0, #00, #000)
                           </label>
                           <input
                             type="text"
@@ -517,7 +517,7 @@ export function TeamCarsEditor({
                               const clean = e.target.value.replace(/[^0-9]/g, '').slice(0, 3)
                               updateCarField(car.id, 'dorsal', clean)
                             }}
-                            placeholder="ej. 0, 00, 000, 77"
+                            placeholder="e.g. 0, 00, 000, 77"
                             className={`w-full bg-[#0a0f1d] border text-xs text-white rounded-lg px-3 py-2 outline-none font-mono transition-all shadow-inner ${
                               errorMsg
                                 ? 'border-rose-500 focus:border-rose-400'
@@ -535,9 +535,9 @@ export function TeamCarsEditor({
                         {/* Compressed Skin File Upload */}
                         <div>
                           <label className="mb-1 text-[11px] text-slate-300 font-semibold uppercase tracking-wider flex items-center justify-between">
-                            <span>Skin Comprimido (.zip, .rar)</span>
+                            <span>Compressed Skin (.zip, .rar)</span>
                             {uploadingCarId === car.id && (
-                              <span className="text-[10px] text-cyan-400 font-normal animate-pulse">Subiendo...</span>
+                              <span className="text-[10px] text-cyan-400 font-normal animate-pulse">Uploading...</span>
                             )}
                           </label>
 
@@ -552,10 +552,10 @@ export function TeamCarsEditor({
                                 onClick={() => updateCarField(car.id, 'skinUrl', '')}
                                 className="text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer shrink-0 ml-1"
                               >
-                                Eliminar
+                                Delete
                               </button>
                               <label className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 cursor-pointer underline shrink-0 ml-1">
-                                Cambiar
+                                Change
                                 <input
                                   type="file"
                                   accept=".zip,.rar,.7z,.tar,.tar.gz,.gz"
@@ -576,7 +576,7 @@ export function TeamCarsEditor({
                               }`}>
                                 <Upload className="h-4 w-4 text-cyan-400" />
                                 <span className="font-medium text-[11px]">
-                                  {uploadingCarId === car.id ? 'Subiendo skin...' : 'Subir .zip / .rar'}
+                                  {uploadingCarId === car.id ? 'Uploading skin...' : 'Upload .zip / .rar'}
                                 </span>
                                 <input
                                   type="file"
@@ -593,7 +593,7 @@ export function TeamCarsEditor({
                                 type="text"
                                 value={car.skinUrl || ''}
                                 onChange={(e) => updateCarField(car.id, 'skinUrl', e.target.value)}
-                                placeholder="O pega un enlace (Drive, Mega, Directo)"
+                                placeholder="or paste a link (Drive, Mega, Direct link)"
                                 className="w-full bg-[#0a0f1d] border border-slate-700 rounded px-2.5 py-1 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
                               />
                             </div>
@@ -603,7 +603,7 @@ export function TeamCarsEditor({
                         {/* League Assignment Filter Tag */}
                         <div>
                           <label className="mb-1 block text-[11px] text-slate-300 font-semibold uppercase tracking-wider">
-                            Asignar a Liga
+                            Assign to League
                           </label>
                           <select
                             value={(() => {
@@ -613,7 +613,7 @@ export function TeamCarsEditor({
                             onChange={(e) => updateCarField(car.id, 'leagueId', e.target.value || null)}
                             className="w-full bg-[#0a0f1d] border border-slate-700 focus:border-cyan-400 text-xs text-slate-200 rounded-lg px-3 py-2 outline-none cursor-pointer transition-all font-semibold"
                           >
-                            <option value="">-- Todas las ligas --</option>
+                            <option value="">-- All Leagues --</option>
                             {leaguesOptions.map((l) => (
                               <option key={l.id} value={l.id}>
                                 {l.title}
@@ -635,10 +635,10 @@ export function TeamCarsEditor({
                             <div className="flex items-center justify-between">
                               <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                                 <Users className="h-3.5 w-3.5 text-cyan-400" />
-                                Pilotos Asignados {currentLeagueObj ? `(${currentLeagueObj.title})` : car.leagueId ? '(Liga Asignada)' : '(General)'}
+                                Assigned Drivers {currentLeagueObj ? `(${currentLeagueObj.title})` : car.leagueId ? '(Assigned League)' : '(General)'}
                               </label>
                               <span className="text-[10px] font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded">
-                                Máx. {maxSlots} Pilotos por Coche
+                                Max. {maxSlots} Drivers per Car
                               </span>
                             </div>
 
@@ -653,7 +653,7 @@ export function TeamCarsEditor({
                                     onChange={(e) => updateCarDriver(car.id, currentLeagueKey, driverIdx, e.target.value)}
                                     className="w-full bg-[#131d31] border border-slate-700/70 focus:border-cyan-400 text-slate-200 rounded-md px-2.5 py-1.5 text-xs outline-none cursor-pointer hover:border-slate-600 transition-all font-semibold"
                                   >
-                                    <option value="">-- Vacante --</option>
+                                    <option value="">-- Vacant --</option>
                                     {teamMembers.map((m) => {
                                       const isAssignedElsewhere = assignedDriverUserIds.has(m.userId) && m.userId !== currentVal
                                       if (isAssignedElsewhere) return null
@@ -684,7 +684,7 @@ export function TeamCarsEditor({
               className="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-700 hover:border-emerald-500/60 bg-emerald-950/20 hover:bg-emerald-950/40 text-emerald-400 font-semibold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <Plus className="h-4 w-4" />
-              Añadir Vehículo {category}
+              Add {category} Vehicle
             </button>
           </div>
         )
@@ -707,11 +707,11 @@ export function SaveTeamCarsButton() {
         {pending ? (
           <span className="text-xs text-cyan-400 font-mono font-bold animate-pulse flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            Sincronizando vehículos con Firebase...
+            Synchronizing vehicles with Firebase...
           </span>
         ) : (
           <span className="text-[11px] text-slate-400">
-            Asegúrate de guardar los cambios para actualizar la flota en el equipo.
+            Make sure to save changes to update the team's fleet.
           </span>
         )}
         <button
@@ -726,7 +726,7 @@ export function SaveTeamCarsButton() {
           {pending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin text-cyan-400" />
-              <span>Guardando...</span>
+              <span>Saving...</span>
             </>
           ) : (
             <>
