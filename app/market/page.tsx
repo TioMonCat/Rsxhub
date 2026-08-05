@@ -187,11 +187,20 @@ export default async function MarketPage() {
             logoUrl: team.logo_url || null,
           }))
 
-        // A user belongs to a team if they are owner or member in any team
         belongsToTeam = dashboard.teams.some((team: any) =>
           team.ownerUserId === session.userId ||
           (Array.isArray(team.members) && team.members.some((m: any) => m.userId === session.userId))
         )
+      }
+
+      if (hasFirebase && !belongsToTeam) {
+        const db = getFirestoreDb()
+        if (db) {
+          const memSnap = await runWithTimeout(db.collection('team_members').where('user_id', '==', session.userId).get(), 2000)
+          if (!memSnap.empty) belongsToTeam = true
+          const ownSnap = await runWithTimeout(db.collection('teams').where('owner_user_id', '==', session.userId).get(), 2000)
+          if (!ownSnap.empty) belongsToTeam = true
+        }
       }
     } catch (error) {
       console.error('Failed to load user teams for marketplace:', error)

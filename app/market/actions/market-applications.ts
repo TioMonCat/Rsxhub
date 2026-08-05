@@ -328,14 +328,19 @@ export async function withdrawApplicationAction(listingId: string) {
     const db = getFirestoreDb()
     if (db) {
       try {
-        const snap = await runWithTimeout(db.collection('market_applications')
-          .where('listing_id', '==', listingId)
-          .get())
+        const snap = await runWithTimeout(
+          db.collection('market_applications').where('user_id', '==', session.userId).get()
+        )
 
-        const myDocs = snap.docs.filter((doc: any) => doc.data()?.user_id === session.userId)
-        for (const doc of myDocs) {
+        const toDelete = snap.docs.filter((doc: any) => {
+          const d = doc.data()
+          return doc.id === listingId || d.listing_id === listingId || d.team_id === listingId
+        })
+
+        for (const doc of toDelete) {
           await runWithTimeout(doc.ref.delete())
         }
+
         revalidatePath('/market')
         return
       } catch (err) {
@@ -345,8 +350,6 @@ export async function withdrawApplicationAction(listingId: string) {
     }
   }
 
-  if (hasFirebase) return
-
   // Mock Mode Fallback
   try {
     const { cookies } = await import('next/headers')
@@ -354,7 +357,7 @@ export async function withdrawApplicationAction(listingId: string) {
     const existingApps = cookieStore.get('mock_market_applications')?.value
     let apps = existingApps ? JSON.parse(existingApps) : []
 
-    apps = apps.filter((a: any) => !(a.listingId === listingId && a.userId === session.userId))
+    apps = apps.filter((a: any) => !(a.userId === session.userId && (a.listingId === listingId || a.teamId === listingId || a.id === listingId)))
 
     cookieStore.set('mock_market_applications', JSON.stringify(apps), {
       path: '/',

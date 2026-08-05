@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus, X, Store, Send, Shield, User, Check, AlertCircle } from 'lucide-react'
 import {
   createMarketListing,
@@ -47,10 +48,16 @@ export default function MarketPageContent({
   invites,
   belongsToTeam = false
 }: Props) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'team' | 'driver'>('team')
   const [simFilter, setSimFilter] = useState<'all' | 'ac' | 'lmu'>('all')
   const [classFilter, setClassFilter] = useState<string>('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [myApps, setMyApps] = useState<MarketApplication[]>(applications)
+
+  useEffect(() => {
+    setMyApps(applications)
+  }, [applications])
 
   const hasOwnedTeam = myTeams.length > 0
 
@@ -168,10 +175,15 @@ export default function MarketPageContent({
 
   const handleWithdrawApplication = async (listingId: string) => {
     if (confirm('Are you sure you want to withdraw your application?')) {
+      // Optimistic client update
+      setMyApps((prev) => prev.filter((a) => !(a.listingId === listingId && a.userId === currentUser?.userId)))
       try {
         await withdrawApplicationAction(listingId)
+        router.refresh()
       } catch (err) {
+        console.error('Failed to withdraw application:', err)
         alert('Error withdrawing application')
+        setMyApps(applications)
       }
     }
   }
@@ -300,7 +312,7 @@ export default function MarketPageContent({
         <MarketTeamOffers
           listings={filteredListings}
           currentUserId={currentUser?.userId}
-          applications={applications}
+          applications={myApps}
           belongsToTeam={belongsToTeam || hasOwnedTeam}
           onDeleteListing={handleDelete}
           onApplyClick={(id) => setApplyingListingId(id)}

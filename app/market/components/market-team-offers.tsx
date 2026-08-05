@@ -131,6 +131,10 @@ export function MarketTeamOffers({
                         Withdraw
                       </button>
                     </div>
+                  ) : belongsToTeam ? (
+                    <span className="text-[10px] font-mono font-bold uppercase text-slate-400 bg-slate-900/80 border border-slate-800 px-2.5 py-1">
+                      Already in a team
+                    </span>
                   ) : (
                     <button
                       type="button"
