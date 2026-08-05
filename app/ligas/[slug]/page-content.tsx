@@ -202,6 +202,31 @@ export default function LeagueDetailPageContent({
     }
   }
 
+  const formatLocalTimeInput = (isoStr?: string | null, fallback = '20:00') => {
+    if (!isoStr) return fallback
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return fallback
+    const h = String(d.getHours()).padStart(2, '0')
+    const m = String(d.getMinutes()).padStart(2, '0')
+    return `${h}:${m}`
+  }
+
+  const formatLocalDateInput = (isoStr?: string | null, fallback = '') => {
+    if (!isoStr) return fallback
+    const d = new Date(isoStr)
+    if (isNaN(d.getTime())) return fallback
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+
+  const createLocalISO = (dateStr: string, timeStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number)
+    const [h, min] = (timeStr || '00:00').split(':').map(Number)
+    return new Date(y, (m || 1) - 1, d || 1, h || 0, min || 0).toISOString()
+  }
+
   const handleOpenEventModal = (event?: LeagueEvent) => {
     if (event) {
       setEditingEvent(event)
@@ -210,26 +235,27 @@ export default function LeagueDetailPageContent({
       setFormEventCountryCode((event as any).countryCode || 'FRA')
       setFormEventType((event as any).eventType || 'race')
       setFormHasQualy(event.hasQualy ?? true)
-      setFormQualyDate(event.qualyStartsAt ? event.qualyStartsAt.split('T')[0] : event.startsAt.split('T')[0])
-      setFormQualyStartsTime(event.qualyStartsAt ? event.qualyStartsAt.split('T')[1]?.substring(0, 5) : '19:30')
-      setFormQualyEndsTime(event.qualyEndsAt ? event.qualyEndsAt.split('T')[1]?.substring(0, 5) : '20:00')
-      setFormEventDate(event.startsAt.split('T')[0])
-      setFormEventStartsTime(event.startsAt.split('T')[1]?.substring(0, 5) || '20:15')
-      setFormEventEndsTime(event.endsAt.split('T')[1]?.substring(0, 5) || '22:00')
+      setFormQualyDate(formatLocalDateInput(event.qualyStartsAt || event.startsAt))
+      setFormQualyStartsTime(formatLocalTimeInput(event.qualyStartsAt, '19:30'))
+      setFormQualyEndsTime(formatLocalTimeInput(event.qualyEndsAt, '20:00'))
+      setFormEventDate(formatLocalDateInput(event.startsAt))
+      setFormEventStartsTime(formatLocalTimeInput(event.startsAt, '20:15'))
+      setFormEventEndsTime(formatLocalTimeInput(event.endsAt, '22:00'))
       setFormEventImageUrl(event.circuitImageUrl || '')
       setFormEventServerLink(event.serverLink || '')
     } else {
-      const today = new Date().toISOString().split('T')[0]
+      const today = new Date()
+      const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
       setEditingEvent(null)
       setFormEventTitle('')
       setFormEventCircuit('Circuit de la Sarthe, Le Mans')
       setFormEventCountryCode('FRA')
       setFormEventType('race')
       setFormHasQualy(true)
-      setFormQualyDate(today)
+      setFormQualyDate(todayStr)
       setFormQualyStartsTime('19:30')
       setFormQualyEndsTime('20:00')
-      setFormEventDate(today)
+      setFormEventDate(todayStr)
       setFormEventStartsTime('20:15')
       setFormEventEndsTime('22:00')
       setFormEventImageUrl('')
@@ -245,10 +271,10 @@ export default function LeagueDetailPageContent({
     setEventErrorMessage('')
 
     try {
-      const startsAtFull = `${formEventDate}T${formEventStartsTime}:00Z`
-      const endsAtFull = `${formEventDate}T${formEventEndsTime}:00Z`
-      const qualyStartsAtFull = formHasQualy ? `${formQualyDate || formEventDate}T${formQualyStartsTime || '19:30'}:00Z` : null
-      const qualyEndsAtFull = formHasQualy ? `${formQualyDate || formEventDate}T${formQualyEndsTime || '20:00'}:00Z` : null
+      const startsAtFull = createLocalISO(formEventDate, formEventStartsTime || '20:15')
+      const endsAtFull = createLocalISO(formEventDate, formEventEndsTime || '22:00')
+      const qualyStartsAtFull = formHasQualy ? createLocalISO(formQualyDate || formEventDate, formQualyStartsTime || '19:30') : null
+      const qualyEndsAtFull = formHasQualy ? createLocalISO(formQualyDate || formEventDate, formQualyEndsTime || '20:00') : null
 
       const formData = new FormData(e.currentTarget)
       formData.set('leagueId', league.id)

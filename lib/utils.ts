@@ -6,22 +6,28 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDate(dateString: string) {
-  return new Intl.DateTimeFormat('en-US', {
+  if (!dateString) return '-'
+  const d = new Date(dateString)
+  if (isNaN(d.getTime())) return dateString
+  return new Intl.DateTimeFormat('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-  }).format(new Date(dateString))
+  }).format(d)
 }
 
 export function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat('en-US', {
+  if (!dateString) return '-'
+  const d = new Date(dateString)
+  if (isNaN(d.getTime())) return dateString
+  const dateFormatted = new Intl.DateTimeFormat('en-GB', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short'
-  }).format(new Date(dateString))
+  }).format(d)
+  const hours = String(d.getHours()).padStart(2, '0')
+  const minutes = String(d.getMinutes()).padStart(2, '0')
+  return `${dateFormatted}, ${hours}:${minutes}`
 }
 
 export function simulatorLabel(sim: string) {
