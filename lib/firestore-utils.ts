@@ -1,4 +1,4 @@
-﻿/**
+/**
  * lib/firestore-utils.ts
  * Shared Firestore utility functions used across platform-data and team-data.
  */
@@ -6,11 +6,24 @@
 /**
  * Converts Firestore Timestamps and raw values into serializable primitives.
  */
-export function formatFirestoreValue(val: any): any {
-  if (val && typeof val.toDate === 'function') {
-    return val.toDate().toISOString()
+export function formatFirestoreValue(val: any): string {
+  if (!val) return ''
+  if (typeof val.toDate === 'function') {
+    try { return val.toDate().toISOString() } catch {}
   }
-  return val
+  if (typeof val === 'object' && typeof val.seconds === 'number') {
+    return new Date(val.seconds * 1000).toISOString()
+  }
+  if (typeof val === 'object' && typeof val._seconds === 'number') {
+    return new Date(val._seconds * 1000).toISOString()
+  }
+  if (val instanceof Date) {
+    return val.toISOString()
+  }
+  if (typeof val === 'string') {
+    return val
+  }
+  return String(val)
 }
 
 /**

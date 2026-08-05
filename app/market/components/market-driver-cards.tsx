@@ -3,6 +3,7 @@
 import { Trash, MessageSquare } from 'lucide-react'
 import { ClassBadge } from '@/components/class-badge'
 import { simulatorLabel } from '@/lib/utils'
+import { getCountryFlag, getCountryName } from '@/lib/countries'
 
 export type Listing = {
   id: string
@@ -10,6 +11,8 @@ export type Listing = {
   user_id: string
   user_name: string
   user_avatar: string | null
+  country_code?: string | null
+  countryCode?: string | null
   team_id: string | null
   team_name: string | null
   team_logo: string | null
@@ -82,7 +85,10 @@ export function MarketDriverCards({
                     <h4 className="text-xs font-bold text-white truncate max-w-[140px]">
                       {item.user_name}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-mono">Driver</span>
+                    <div className="flex items-center gap-1 text-[10px] text-slate-300 font-medium">
+                      <span>{getCountryFlag(item.country_code || item.countryCode || 'ES')}</span>
+                      <span>{getCountryName(item.country_code || item.countryCode || 'ES')}</span>
+                    </div>
                   </div>
                 </div>
 

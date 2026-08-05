@@ -220,7 +220,8 @@ async function loadMockTeamsDashboard(currentUserId?: string) {
 }
 
 export const getTeamsDashboard = cache(async (currentUserId?: string) => {
-  return fetchWithTTLCache('teams_dashboard', async () => {
+  const cacheKey = currentUserId ? `teams_dashboard_${currentUserId}` : 'teams_dashboard_anon'
+  return fetchWithTTLCache(cacheKey, async () => {
     if (!hasFirebase) {
       return loadMockTeamsDashboard(currentUserId)
     }

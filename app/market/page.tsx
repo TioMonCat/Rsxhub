@@ -51,15 +51,33 @@ export default async function MarketPage() {
         })
 
         const snap = await runWithTimeout(db.collection('market_listings').get(), 3000)
-        listings = snap.docs.map((doc: any) => {
-          const data = doc.data()
+        const rawListings = snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }))
+        const posterUserIds = Array.from(new Set(rawListings.map((r: any) => r.user_id).filter(Boolean)))
+
+        let profileCountryMap = new Map<string, string>()
+        if (posterUserIds.length > 0) {
+          try {
+            const pChunks = []
+            for (let i = 0; i < posterUserIds.length; i += 10) pChunks.push(posterUserIds.slice(i, i + 10))
+            const pSnaps = await Promise.all(pChunks.map((chunk) => db.collection('profiles').where('user_id', 'in', chunk).get()))
+            pSnaps.forEach((s) => {
+              s.docs.forEach((d: any) => {
+                const p = d.data()
+                if (p.user_id && p.country_code) profileCountryMap.set(p.user_id, p.country_code)
+              })
+            })
+          } catch {}
+        }
+
+        listings = rawListings.map((data: any) => {
           const createdAtVal = serializeDate(data.created_at)
           return {
-            id: doc.id,
+            id: data.id,
             type: data.type || 'team_seeking_driver',
             user_id: data.user_id || '',
             user_name: data.user_name || 'Driver',
             user_avatar: data.user_avatar || null,
+            country_code: data.country_code || data.countryCode || profileCountryMap.get(data.user_id) || 'ES',
             team_id: data.team_id || null,
             team_name: data.team_name || null,
             team_logo: data.team_logo || null,

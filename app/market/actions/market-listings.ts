@@ -39,9 +39,9 @@ export async function createMarketListing(formData: FormData) {
     }
   }
 
-  // Load user name and avatar
   let userName = session.steamDisplayName || 'Driver'
   let userAvatar = session.avatarUrl || null
+  let countryCode = 'ES'
   let teamName = ''
   let teamLogo = ''
 
@@ -53,6 +53,7 @@ export async function createMarketListing(formData: FormData) {
         if (userDoc.exists) {
           userName = userDoc.data()?.display_name || userName
           userAvatar = userDoc.data()?.avatar_url || userAvatar
+          countryCode = userDoc.data()?.country_code || 'ES'
         }
 
         if (type === 'team_seeking_driver' && teamId) {
@@ -108,6 +109,7 @@ export async function createMarketListing(formData: FormData) {
           user_id: session.userId,
           user_name: userName,
           user_avatar: userAvatar,
+          country_code: countryCode,
           team_id: teamId,
           team_name: teamName,
           team_logo: teamLogo,

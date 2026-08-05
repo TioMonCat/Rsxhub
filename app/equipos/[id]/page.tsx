@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { ClearStatusQuery } from '@/components/clear-status-query'
 import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
 import { getLeagues, getRegistrations, getLeagueEvents } from '@/lib/platform-data'
-import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
+import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
+import { formatFirestoreValue } from '@/lib/firestore-utils'
 import { getTeamsDashboard } from '@/lib/team-data'
 import { profileStatusMessage, hexToRgba } from './team-utils'
 import type { TeamStats, TeamPilot, LeagueParticipation, RecentResult, PendingApplication } from './team-utils'
@@ -286,21 +287,26 @@ export default async function TeamProfilePage({
 
       // Fetch pending driver applications
       try {
-        const appsSnap = await db.collection('market_applications')
-          .where('team_id', '==', team.id)
-          .where('status', '==', 'pending')
-          .get()
-        pendingApplications = appsSnap.docs.map((doc: any) => {
-          const data = doc.data()
-          return {
-            id: doc.id, userId: data.user_id || '', userName: data.user_name || 'Driver',
-            userAvatar: data.user_avatar || null, contactInfo: data.contact_info || 'Discord / Steam',
-            message: data.message || '',
-            createdAt: data.created_at && typeof data.created_at.toDate === 'function'
-              ? data.created_at.toDate().toISOString()
-              : data.created_at || new Date().toISOString()
-          }
-        })
+        const appsSnap = await runWithTimeout(
+          db.collection('market_applications')
+            .where('team_id', '==', team.id)
+            .get(),
+          3000
+        )
+        pendingApplications = appsSnap.docs
+          .filter((doc: any) => doc.data()?.status === 'pending')
+          .map((doc: any) => {
+            const data = doc.data()
+            return {
+              id: String(doc.id),
+              userId: String(data.user_id || ''),
+              userName: String(data.user_name || 'Driver'),
+              userAvatar: data.user_avatar ? String(data.user_avatar) : null,
+              contactInfo: String(data.contact_info || 'Discord / Steam'),
+              message: String(data.message || ''),
+              createdAt: formatFirestoreValue(data.created_at) || new Date().toISOString(),
+            }
+          })
       } catch (err) {
         console.error('Failed to fetch applications for team:', err)
       }

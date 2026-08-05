@@ -10,6 +10,7 @@ import { revalidatePath } from 'next/cache'
 import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { notifyDriverHired, createNotification } from '@/lib/notifications-data'
+import { invalidateCache } from '@/lib/ttl-cache'
 
 export async function applyToTeamListingAction(listingId: string, message?: string) {
   const session = await getCurrentUser()
