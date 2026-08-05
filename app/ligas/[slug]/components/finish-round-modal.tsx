@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { X, Upload, FileText, BarChart3, CheckCircle2, AlertCircle, RefreshCw, Edit3, Eraser, Timer, Flag } from 'lucide-react'
-import { ClassBadge } from '@/components/class-badge'
+import { ClassBadge, getCategoryStyles } from '@/components/class-badge'
 import type { LeagueEvent } from '../hooks/use-league-state'
 
 interface FinishRoundModalProps {
@@ -403,28 +403,33 @@ export function FinishRoundModal({
                 <button
                   type="button"
                   onClick={() => setSelectedCategoryFilter('ALL')}
-                  className={`px-3 py-1 text-xs font-extrabold uppercase transition-colors border cursor-pointer shrink-0 ${
+                  className={`px-3 py-1 text-xs font-extrabold uppercase transition-all border cursor-pointer shrink-0 ${
                     selectedCategoryFilter === 'ALL'
-                      ? 'bg-cyan-500 text-black border-cyan-400'
+                      ? 'bg-cyan-500 text-black border-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.35)]'
                       : 'bg-black/40 text-slate-400 border-slate-700 hover:text-white'
                   }`}
                 >
                   ALL ({parsedRows.length})
                 </button>
-                {availableCategories.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setSelectedCategoryFilter(cat)}
-                    className={`px-3 py-1 text-xs font-extrabold uppercase transition-colors border cursor-pointer shrink-0 ${
-                      selectedCategoryFilter === cat
-                        ? 'bg-cyan-500 text-black border-cyan-400'
-                        : 'bg-black/40 text-slate-400 border-slate-700 hover:text-white'
-                    }`}
-                  >
-                    {cat} ({parsedRows.filter((r) => r.classTag === cat).length})
-                  </button>
-                ))}
+                {availableCategories.map((cat) => {
+                  const isSelected = selectedCategoryFilter === cat
+                  const count = parsedRows.filter(
+                    (r) => String(r.classTag || '').trim().toUpperCase() === String(cat || '').trim().toUpperCase()
+                  ).length
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategoryFilter(cat)}
+                      className={`px-3 py-1 text-xs font-extrabold uppercase transition-all border cursor-pointer shrink-0 ${getCategoryStyles(
+                        cat,
+                        isSelected
+                      )}`}
+                    >
+                      {cat} ({count})
+                    </button>
+                  )
+                })}
               </div>
 
               {/* Grouped Category Tables */}

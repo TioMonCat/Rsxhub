@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { X, Trophy, ShieldCheck, Loader2, Timer, Flag } from 'lucide-react'
-import { ClassBadge } from '@/components/class-badge'
+import { ClassBadge, getCategoryStyles } from '@/components/class-badge'
 import { getEventResultsAction } from '@/app/ligas/actions'
 import type { LeagueEvent } from '../hooks/use-league-state'
 
@@ -59,7 +59,7 @@ export function ViewResultsModal({
     }
   }, [leagueId, event.id, sessionFilter])
 
-  const availableCategories = Array.from(new Set(results.map((r) => r.classTag)))
+  const availableCategories = Array.from(new Set(results.map((r) => r.classTag).filter(Boolean)))
   const displayCategories =
     selectedCategoryFilter === 'ALL'
       ? availableCategories.length > 0
@@ -134,28 +134,30 @@ export function ViewResultsModal({
           <button
             type="button"
             onClick={() => setSelectedCategoryFilter('ALL')}
-            className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer shrink-0 ${
+            className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-none transition-all cursor-pointer shrink-0 ${
               selectedCategoryFilter === 'ALL'
-                ? 'bg-cyan-500 text-black border border-cyan-400'
+                ? 'bg-cyan-500 text-black border border-cyan-400 font-black shadow-[0_0_12px_rgba(6,182,212,0.35)]'
                 : 'bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10'
             }`}
           >
             All Categories
           </button>
-          {(availableCategories.length > 0 ? availableCategories : classTags).map((cat) => (
-            <button
-              key={cat}
-              type="button"
-              onClick={() => setSelectedCategoryFilter(cat)}
-              className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-none transition-colors cursor-pointer shrink-0 ${
-                selectedCategoryFilter === cat
-                  ? 'bg-cyan-500 text-black border border-cyan-400'
-                  : 'bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
+          {(availableCategories.length > 0 ? availableCategories : classTags).map((cat) => {
+            const isSelected = selectedCategoryFilter === cat
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setSelectedCategoryFilter(cat)}
+                className={`px-3 py-1 text-xs uppercase tracking-wider rounded-none border transition-all cursor-pointer shrink-0 ${getCategoryStyles(
+                  cat,
+                  isSelected
+                )}`}
+              >
+                {cat}
+              </button>
+            )
+          })}
         </div>
 
         {/* Loading State */}
@@ -173,7 +175,9 @@ export function ViewResultsModal({
         ) : (
           <div className="space-y-6 max-h-[55vh] overflow-y-auto pr-1">
             {displayCategories.map((catTag) => {
-              const categoryRows = results.filter((r) => r.classTag === catTag)
+              const categoryRows = results.filter(
+                (r) => String(r.classTag || '').trim().toUpperCase() === String(catTag || '').trim().toUpperCase()
+              )
               if (categoryRows.length === 0 && selectedCategoryFilter !== 'ALL') return null
 
               return (
