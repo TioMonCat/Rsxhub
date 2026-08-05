@@ -62,38 +62,42 @@ export function canStewardLeague(role?: LeagueRole | PlatformRole | null) {
 }
 
 export const getPlatformRole = cache(async (userId?: string): Promise<PlatformRole | null> => {
-  try {
-    const { cookies } = await import('next/headers')
-    const cookieStore = await cookies()
-    const mockRole = cookieStore.get('mock_role')?.value
-    if (mockRole === 'admin') return 'super_admin'
-    if (mockRole === 'leader' || mockRole === 'driver') return 'user'
-  } catch (e) {}
-
   const session = await getSession()
   if (!session) return null
 
+  // 1. Configured Admin Steam IDs take top priority
   const configuredAdmins = getConfiguredAdminSteamIds()
   if (configuredAdmins.includes(session.steamId)) return 'super_admin'
 
   const resolvedUserId = userId || session.userId
   if (!resolvedUserId) return 'user'
 
+  // 2. Check Firestore platform_roles
   return fetchWithTTLCache(`platform_role_${resolvedUserId}`, async () => {
     const db = getFirestoreDb()
-    if (!db) return 'user'
-
-    try {
-      const snapshot = await runWithTimeout(db.collection('platform_roles').where('user_id', '==', resolvedUserId).get(), 3000)
-      if (snapshot.empty) return 'user'
-
-      const roles = snapshot.docs.map((doc: any) => doc.data().role as PlatformRole)
-      return roles.sort((a: PlatformRole, b: PlatformRole) => PLATFORM_ROLE_WEIGHT[b] - PLATFORM_ROLE_WEIGHT[a])[0] || 'user'
-    } catch (error) {
-      console.error('Failed to get platform role from Firestore:', error)
-      return 'user'
+    if (db) {
+      try {
+        const snapshot = await runWithTimeout(db.collection('platform_roles').where('user_id', '==', resolvedUserId).get(), 3000)
+        if (!snapshot.empty) {
+          const roles = snapshot.docs.map((doc: any) => doc.data().role as PlatformRole)
+          const topRole = roles.sort((a: PlatformRole, b: PlatformRole) => PLATFORM_ROLE_WEIGHT[b] - PLATFORM_ROLE_WEIGHT[a])[0]
+          if (topRole && topRole !== 'user') return topRole
+        }
+      } catch (error) {
+        console.error('Failed to get platform role from Firestore:', error)
+      }
     }
-  }, 120)
+
+    // 3. Fallback to mock cookie if set
+    try {
+      const { cookies } = await import('next/headers')
+      const cookieStore = await cookies()
+      const mockRole = cookieStore.get('mock_role')?.value
+      if (mockRole === 'admin') return 'super_admin'
+    } catch (e) {}
+
+    return 'user'
+  }, 30)
 })
 
 export const getLeagueRole = cache(async (leagueId: string, userId?: string): Promise<LeagueRole | null> => {
