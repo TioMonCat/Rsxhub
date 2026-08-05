@@ -32,7 +32,7 @@ interface MarketDriverCardsProps {
   listings: Listing[]
   currentUserId?: string
   myTeams: ManagedTeam[]
-  invites: Array<{ listingId: string; status: string; teamName: string }>
+  invites: Array<{ listingId: string; teamId?: string; status: string; teamName: string }>
   onDeleteListing: (id: string) => void
   onInviteClick: (listingId: string) => void
 }
@@ -56,7 +56,7 @@ export function MarketDriverCards({
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
         const myTeamInvite = invites.find(
-          (inv) => inv.listingId === item.id && (myTeamIds.includes(inv.teamId) || isOwner)
+          (inv) => inv.listingId === item.id && (Boolean(inv.teamId && myTeamIds.includes(inv.teamId)) || isOwner)
         )
 
         return (
