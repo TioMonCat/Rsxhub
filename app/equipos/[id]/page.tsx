@@ -103,7 +103,7 @@ export default async function TeamProfilePage({
 
   if (hasFirebase && db) {
     try {
-      const steamSnapshot = await db.collection('steam_accounts').orderBy('steam_display_name', 'asc').get()
+      const steamSnapshot = await runWithTimeout(db.collection('steam_accounts').get(), 3000)
       const steamAccounts = steamSnapshot.docs.map((doc: any) => {
         const data = doc.data()
         return {
@@ -225,15 +225,15 @@ export default async function TeamProfilePage({
         const filteredResults = allResults.filter((row: any) => leagueIds.includes(row.league_id || ''))
 
         filteredResults.sort((a: any, b: any) => {
-          const aDate = a.created_at && typeof a.created_at.toDate === 'function' ? a.created_at.toDate().toISOString() : (a.created_at || '')
-          const bDate = b.created_at && typeof b.created_at.toDate === 'function' ? b.created_at.toDate().toISOString() : (b.created_at || '')
+          const aDate = formatFirestoreValue(a.created_at)
+          const bDate = formatFirestoreValue(b.created_at)
           return bDate.localeCompare(aDate)
         })
 
         if (filteredResults.length > 0) {
           const normalizedResults = filteredResults
             .map((row: any) => {
-              const atDate = row.created_at && typeof row.created_at.toDate === 'function' ? row.created_at.toDate().toISOString() : (row.created_at || '')
+              const atDate = formatFirestoreValue(row.created_at)
               return {
                 id: String(row.id), leagueId: String(row.league_id), eventId: String(row.event_id),
                 userId: String(row.user_id), position: Number(row.position),
