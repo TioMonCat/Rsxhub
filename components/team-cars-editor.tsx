@@ -64,31 +64,90 @@ export function TeamCarsEditor({
       return
     }
 
-    if (file.size > 4.2 * 1024 * 1024) {
-      alert('Skin file is larger than 4.2 MB (Vercel serverless upload limit). Please paste a Google Drive, Mega, or MediaFire download link in the field below instead.')
+    if (file.size > 200 * 1024 * 1024) {
+      alert('Skin file exceeds maximum allowed limit (200 MB).')
       return
     }
 
     setUploadingCarId(carId)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('type', 'skin')
+      let finalSkinUrl: string | null = null
 
-      const res = await fetch('/api/uploads', {
-        method: 'POST',
-        body: formData,
-      })
+      // Tier 1: For files <= 3.5 MB, try primary server endpoint
+      if (file.size <= 3.5 * 1024 * 1024) {
+        try {
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('type', 'skin')
 
-      const data = await res.json()
-      if (!res.ok || data.error) {
-        alert(data.error || 'Error uploading compressed skin file.')
-        return
+          const res = await fetch('/api/uploads', {
+            method: 'POST',
+            body: formData,
+          })
+
+          if (res.ok) {
+            const data = await res.json()
+            if (data.url) {
+              finalSkinUrl = data.url
+            }
+          }
+        } catch (serverErr) {
+          console.warn('Primary server upload failed, falling back to direct cloud storage:', serverErr)
+        }
       }
 
-      if (data.url) {
-        updateCarField(carId, 'skinUrl', data.url)
+      // Tier 2: For larger files or if server endpoint failed, upload directly to Catbox (Free 200MB permanent host)
+      if (!finalSkinUrl) {
+        try {
+          const catboxData = new FormData()
+          catboxData.append('reqtype', 'fileupload')
+          catboxData.append('fileToUpload', file)
+
+          const catboxRes = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: catboxData,
+          })
+
+          if (catboxRes.ok) {
+            const returnedUrl = await catboxRes.text()
+            if (returnedUrl && returnedUrl.trim().startsWith('http')) {
+              finalSkinUrl = returnedUrl.trim()
+            }
+          }
+        } catch (catboxErr) {
+          console.warn('Catbox upload failed, attempting Litterbox fallback:', catboxErr)
+        }
+      }
+
+      // Tier 3: Litterbox fallback (Free 1GB host)
+      if (!finalSkinUrl) {
+        try {
+          const litterboxData = new FormData()
+          litterboxData.append('reqtype', 'fileupload')
+          litterboxData.append('time', '72h')
+          litterboxData.append('fileToUpload', file)
+
+          const lbRes = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+            method: 'POST',
+            body: litterboxData,
+          })
+
+          if (lbRes.ok) {
+            const returnedUrl = await lbRes.text()
+            if (returnedUrl && returnedUrl.trim().startsWith('http')) {
+              finalSkinUrl = returnedUrl.trim()
+            }
+          }
+        } catch (lbErr) {
+          console.warn('Litterbox upload failed:', lbErr)
+        }
+      }
+
+      if (finalSkinUrl) {
+        updateCarField(carId, 'skinUrl', finalSkinUrl)
+      } else {
+        alert('Could not upload skin file directly. Please paste a Google Drive, Mega, or MediaFire download link in the field below.')
       }
     } catch (err) {
       console.error('Skin upload failed:', err)

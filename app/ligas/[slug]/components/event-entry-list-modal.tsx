@@ -124,7 +124,7 @@ export function EventEntryListModal({
           if (car && car.skinUrl) skinUrl = car.skinUrl
         }
 
-        if (skinUrl && skinUrl.startsWith('http')) {
+        if (skinUrl && (skinUrl.startsWith('http') || skinUrl.startsWith('/'))) {
           try {
             const resp = await fetch(skinUrl)
             if (resp.ok) {
