@@ -158,7 +158,7 @@ export default function CalendarContent({
   const [formCountryCode, setFormCountryCode] = useState('ESP')
 
   // Programme filter state
-  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'time_attack'>('all')
+  const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'qualifying' | 'time_attack'>('all')
 
   function pad(value: number) {
     return String(value).padStart(2, '0')
@@ -540,6 +540,7 @@ export default function CalendarContent({
                 .filter((event) => {
                   const type = getEventType(event, leagueById.get(event.leagueId))
                   if (programmeFilter === 'race') return type === 'RACE'
+                  if (programmeFilter === 'qualifying') return type === 'QUALIFYING'
                   if (programmeFilter === 'time_attack') return type === 'TIME ATTACK'
                   return true
                 })
@@ -548,7 +549,7 @@ export default function CalendarContent({
               if (filteredEvents.length === 0) {
                 return (
                   <div className="p-12 text-center text-slate-500 italic text-sm border border-dashed border-white/10">
-                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : 'time attack sessions'} in the programme.
+                    No scheduled {programmeFilter === 'all' ? 'events' : programmeFilter === 'race' ? 'races' : programmeFilter === 'qualifying' ? 'qualifying sessions' : 'time attack sessions'} in the programme.
                   </div>
                 )
               }
