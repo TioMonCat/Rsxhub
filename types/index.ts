@@ -33,6 +33,9 @@ export interface LeagueEvent {
   circuitName: string
   circuitImageUrl?: string | null
   serverLink?: string | null
+  hasQualy?: boolean
+  qualyStartsAt?: string | null
+  qualyEndsAt?: string | null
   startsAt: string
   endsAt: string
   status: 'scheduled' | 'completed' | 'cancelled'
