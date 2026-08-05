@@ -64,8 +64,8 @@ export function TeamCarsEditor({
       return
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Skin file is too large for direct upload (max 10 MB). Please paste a Google Drive, Mega, or MediaFire download link in the field below instead.')
+    if (file.size > 4.2 * 1024 * 1024) {
+      alert('Skin file is larger than 4.2 MB (Vercel serverless upload limit). Please paste a Google Drive, Mega, or MediaFire download link in the field below instead.')
       return
     }
 

@@ -270,10 +270,10 @@ export async function POST(req: Request) {
         )
       }
 
-      // Max file size check for direct upload: 10MB limit for direct skin uploads
-      if (file.size > 10 * 1024 * 1024) {
+      // Max file size check for direct upload: 4.2MB (Vercel serverless body limit is 4.5MB)
+      if (file.size > 4.2 * 1024 * 1024) {
         return NextResponse.json(
-          { error: 'Skin file is too large for direct upload (max 10 MB). Please paste a Google Drive, Mega, or MediaFire download link instead.' },
+          { error: 'Skin file is larger than 4.2 MB (Vercel serverless upload limit). Please paste a Google Drive, Mega, or MediaFire download link instead.' },
           { status: 400 }
         )
       }
@@ -281,29 +281,79 @@ export async function POST(req: Request) {
       const SKINS_DIR = path.join(process.cwd(), 'public', 'uploads', 'skins')
       const ext = path.extname(file.name)
       const rawBase = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_\-\.\s]/g, '_')
-      const safeSkinName = `${rawBase}${ext.toLowerCase()}`
+      const safeSkinName = `${rawBase}_${Date.now().toString(36)}${ext.toLowerCase()}`
       const skinTargetPath = path.join(SKINS_DIR, safeSkinName)
 
+      // 1. Attempt writing to public disk (Local / Dedicated Server)
       try {
         await fs.mkdir(SKINS_DIR, { recursive: true })
         await fs.writeFile(skinTargetPath, inputBuffer)
-        const finalUrl = `/uploads/skins/${safeSkinName}`
+        const finalUrl = `/api/uploads/skins/${safeSkinName}`
         return NextResponse.json({ url: finalUrl, name: file.name })
       } catch (fsErr) {
-        console.warn('Writing compressed skin to disk failed (serverless environment):', fsErr)
-        // Allow fallback to Data URL ONLY if buffer is compact (<250KB) to prevent document size crashes in Firestore
-        if (inputBuffer.length < 250 * 1024) {
-          const mimeType = file.type || 'application/zip'
-          const base64 = inputBuffer.toString('base64')
-          const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
-          return NextResponse.json({ url: finalUrl, name: file.name })
-        } else {
-          return NextResponse.json(
-            { error: 'Skin file is too large for direct serverless storage. Please paste a Google Drive, Mega, or MediaFire download link instead.' },
-            { status: 400 }
-          )
+        console.warn('Writing compressed skin to public disk failed (serverless environment). Trying /tmp storage:', fsErr)
+      }
+
+      // 2. Attempt writing to /tmp disk (Writable on Vercel Serverless)
+      const TMP_SKINS_DIR = path.join('/tmp', 'skins')
+      const tmpTargetPath = path.join(TMP_SKINS_DIR, safeSkinName)
+      try {
+        await fs.mkdir(TMP_SKINS_DIR, { recursive: true })
+        await fs.writeFile(tmpTargetPath, inputBuffer)
+        const finalUrl = `/api/uploads/skins/${safeSkinName}`
+        return NextResponse.json({ url: finalUrl, name: file.name })
+      } catch (tmpErr) {
+        console.warn('Writing compressed skin to /tmp failed:', tmpErr)
+      }
+
+      // 3. Fallback: Chunk buffer and store in Firestore skin_files collection (Up to ~4MB in ~500KB chunks)
+      if (hasFirebase) {
+        const db = getFirestoreDb()
+        if (db) {
+          try {
+            const chunkSize = 500 * 1024 // 500KB per chunk
+            const chunks: string[] = []
+            for (let i = 0; i < inputBuffer.length; i += chunkSize) {
+              const chunkBuf = inputBuffer.subarray(i, i + chunkSize)
+              chunks.push(chunkBuf.toString('base64'))
+            }
+
+            const batch = db.batch()
+            const mainDocRef = db.collection('skin_files').doc(safeSkinName)
+            batch.set(mainDocRef, {
+              name: file.name,
+              mimeType: file.type || 'application/zip',
+              chunkCount: chunks.length,
+              sizeBytes: inputBuffer.length,
+              created_at: new Date().toISOString(),
+            })
+
+            for (let i = 0; i < chunks.length; i++) {
+              const chunkDocRef = db.collection('skin_files').doc(`${safeSkinName}_chunk_${i}`)
+              batch.set(chunkDocRef, { base64: chunks[i] })
+            }
+
+            await batch.commit()
+            const finalUrl = `/api/uploads/skins/${safeSkinName}`
+            return NextResponse.json({ url: finalUrl, name: file.name })
+          } catch (dbErr) {
+            console.error('Failed to save skin chunks to Firestore:', dbErr)
+          }
         }
       }
+
+      // 4. Ultimate fallback for very small files (<200KB)
+      if (inputBuffer.length < 200 * 1024) {
+        const mimeType = file.type || 'application/zip'
+        const base64 = inputBuffer.toString('base64')
+        const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
+        return NextResponse.json({ url: finalUrl, name: file.name })
+      }
+
+      return NextResponse.json(
+        { error: 'Could not store skin file. Please paste a Google Drive, Mega, or MediaFire download link instead.' },
+        { status: 500 }
+      )
     }
 
     // Compress raster images with sharp → WebP, max 1200x600, quality 82
