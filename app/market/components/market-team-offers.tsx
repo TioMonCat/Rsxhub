@@ -116,32 +116,28 @@ export function MarketTeamOffers({
                 <div>
                   {!currentUserId ? (
                     <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-900 border border-slate-800 px-2 py-1">
-                      Inicia sesión
-                    </span>
-                  ) : belongsToTeam ? (
-                    <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-900 border border-slate-800 px-2.5 py-1">
-                      En un equipo
+                      Log in to apply
                     </span>
                   ) : myApplication && myApplication.status === 'pending' ? (
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold uppercase text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-1">
-                        Pendiente
+                        Pending
                       </span>
                       <button
                         type="button"
                         onClick={() => onWithdrawApplication(item.id)}
                         className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline cursor-pointer"
                       >
-                        Retirar
+                        Withdraw
                       </button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => onApplyClick(item.id)}
-                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-3 py-1 text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-3.5 py-1 text-[10px] uppercase tracking-wider transition-colors cursor-pointer shadow-sm active:scale-95"
                     >
-                      Postularme
+                      APPLY NOW
                     </button>
                   )}
                 </div>

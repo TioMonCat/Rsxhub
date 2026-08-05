@@ -215,17 +215,7 @@ export async function deleteMarketListing(listingId: string) {
 
 export async function applyToTeamListingAction(listingId: string, message?: string) {
   const session = await getCurrentUser()
-  if (!session) throw new Error('Unauthorized')
-
-  // Check if they are already in a team
-  const dashboard = await getTeamsDashboard(session.userId)
-  const isAlreadyInTeam = dashboard.teams.some((team: any) =>
-    team.ownerUserId === session.userId ||
-    (Array.isArray(team.members) && team.members.some((m: any) => m.userId === session.userId))
-  )
-  if (isAlreadyInTeam) {
-    throw new Error('You cannot apply to a team if you already belong to one.')
-  }
+  if (!session) throw new Error('You must be logged in to apply.')
 
   if (hasFirebase) {
     const db = getFirestoreDb()
@@ -235,8 +225,18 @@ export async function applyToTeamListingAction(listingId: string, message?: stri
         const existingSnap = await runWithTimeout(db.collection('market_applications')
           .where('listing_id', '==', listingId)
           .get())
-        const alreadyApplied = existingSnap.docs.some((doc: any) => doc.data()?.user_id === session.userId)
-        if (alreadyApplied) return
+        const existingDoc = existingSnap.docs.find((doc: any) => doc.data()?.user_id === session.userId)
+        
+        if (existingDoc) {
+          // Update existing application message
+          await runWithTimeout(existingDoc.ref.update({
+            message: message || '',
+            status: 'pending',
+            created_at: new Date(),
+          }))
+          revalidatePath('/market')
+          return
+        }
 
         const listingDoc = await runWithTimeout(db.collection('market_listings').doc(listingId).get())
         if (!listingDoc.exists) throw new Error('Listing not found')
