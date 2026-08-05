@@ -120,12 +120,15 @@ export const getLeagueRole = cache(async (leagueId: string, userId?: string): Pr
   if (!db) return null
 
   try {
-    const snapshot = await db
-      .collection('league_members')
-      .where('league_id', '==', leagueId)
-      .where('user_id', '==', resolvedUserId)
-      .limit(1)
-      .get()
+    const snapshot = await runWithTimeout(
+      db
+        .collection('league_members')
+        .where('league_id', '==', leagueId)
+        .where('user_id', '==', resolvedUserId)
+        .limit(1)
+        .get(),
+      3000
+    )
 
     if (snapshot.empty) return null
     return (snapshot.docs[0].data().role as LeagueRole) || null
@@ -160,7 +163,10 @@ export const getLeagueMemberships = cache(async (userId?: string) => {
   if (!db) return []
 
   try {
-    const snapshot = await db.collection('league_members').where('user_id', '==', resolvedUserId).get()
+    const snapshot = await runWithTimeout(
+      db.collection('league_members').where('user_id', '==', resolvedUserId).get(),
+      3000
+    )
     if (snapshot.empty) return []
 
     return snapshot.docs.map((doc: any) => {
