@@ -204,27 +204,26 @@ export default function LeagueDetailPageContent({
 
   const formatLocalTimeInput = (isoStr?: string | null, fallback = '20:00') => {
     if (!isoStr) return fallback
-    const d = new Date(isoStr)
-    if (isNaN(d.getTime())) return fallback
-    const h = String(d.getHours()).padStart(2, '0')
-    const m = String(d.getMinutes()).padStart(2, '0')
-    return `${h}:${m}`
+    if (isoStr.includes('T')) {
+      const timePart = isoStr.split('T')[1]?.substring(0, 5)
+      if (timePart && /^\d{2}:\d{2}$/.test(timePart)) return timePart
+    }
+    return fallback
   }
 
   const formatLocalDateInput = (isoStr?: string | null, fallback = '') => {
     if (!isoStr) return fallback
-    const d = new Date(isoStr)
-    if (isNaN(d.getTime())) return fallback
-    const y = d.getFullYear()
-    const m = String(d.getMonth() + 1).padStart(2, '0')
-    const day = String(d.getDate()).padStart(2, '0')
-    return `${y}-${m}-${day}`
+    if (isoStr.includes('T')) {
+      const datePart = isoStr.split('T')[0]
+      if (datePart && /^\d{4}-\d{2}-\d{2}$/.test(datePart)) return datePart
+    }
+    return fallback
   }
 
   const createLocalISO = (dateStr: string, timeStr: string) => {
-    const [y, m, d] = dateStr.split('-').map(Number)
-    const [h, min] = (timeStr || '00:00').split(':').map(Number)
-    return new Date(y, (m || 1) - 1, d || 1, h || 0, min || 0).toISOString()
+    const d = dateStr || '2026-08-08'
+    const t = timeStr || '20:00'
+    return `${d}T${t}:00`
   }
 
   const handleOpenEventModal = (event?: LeagueEvent) => {

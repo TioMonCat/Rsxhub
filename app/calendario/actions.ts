@@ -47,19 +47,19 @@ export async function saveCalendarEvent(formData: FormData) {
 
     const startsAt = formData.get('startsAt') 
       ? String(formData.get('startsAt')).trim()
-      : new Date(`${dateStr}T${startsAtTime}:00.000Z`).toISOString()
+      : `${dateStr}T${startsAtTime}:00`
     const endsAt = formData.get('endsAt') 
       ? String(formData.get('endsAt')).trim()
-      : new Date(`${dateStr}T${endsAtTime}:00.000Z`).toISOString()
+      : `${dateStr}T${endsAtTime}:00`
 
     const rawQualyStarts = formData.get('qualyStartsAt') ? String(formData.get('qualyStartsAt')).trim() : null
     const rawQualyEnds = formData.get('qualyEndsAt') ? String(formData.get('qualyEndsAt')).trim() : null
 
     const qualyStartsAt = hasQualy
-      ? (rawQualyStarts || (qualyStartsAtTime ? new Date(`${qualyDateStr}T${qualyStartsAtTime}:00.000Z`).toISOString() : startsAt))
+      ? (rawQualyStarts || `${qualyDateStr}T${qualyStartsAtTime || '19:30'}:00`)
       : null
     const qualyEndsAt = hasQualy
-      ? (rawQualyEnds || (qualyEndsAtTime ? new Date(`${qualyDateStr}T${qualyEndsAtTime}:00.000Z`).toISOString() : endsAt))
+      ? (rawQualyEnds || `${qualyDateStr}T${qualyEndsAtTime || '20:00'}:00`)
       : null
 
     const extractedDate = dateStr || (startsAt ? startsAt.split('T')[0] : '')
