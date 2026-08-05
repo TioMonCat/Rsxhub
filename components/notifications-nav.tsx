@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Bell, Check, Trash2, Info, AlertTriangle, ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
@@ -23,7 +23,7 @@ export function NotificationsNav({
   const [notifications, setNotifications] = useState<NotificationItem[]>(initialNotifications)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  const fetchNotifications = useCallback(() => {
     fetch('/api/notifications')
       .then((res) => res.json())
       .then((data) => {
@@ -33,6 +33,18 @@ export function NotificationsNav({
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    fetchNotifications()
+    const interval = setInterval(fetchNotifications, 10000)
+    return () => clearInterval(interval)
+  }, [fetchNotifications])
+
+  useEffect(() => {
+    if (open) {
+      fetchNotifications()
+    }
+  }, [open, fetchNotifications])
 
   // Close dropdown when clicking outside
   useEffect(() => {

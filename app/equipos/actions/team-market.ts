@@ -1,8 +1,7 @@
-'use server'
-
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
+import { createNotification } from '@/lib/notifications-data'
 import { guardSession, canManageTeam } from './team-parsers'
 
 export async function acceptDriverApplicationAction(formData: FormData) {
@@ -25,6 +24,10 @@ export async function acceptDriverApplicationAction(formData: FormData) {
         if (!appDoc.exists) redirect(`${redirectTo}?error=app-not-found`)
         const appData = appDoc.data()
         const hiredUserId = appData?.user_id
+        const applicantName = appData?.user_name || 'Driver'
+
+        const teamDoc = await db.collection('teams').doc(teamId).get()
+        const teamName = teamDoc.exists ? (teamDoc.data()?.name || 'the team') : 'the team'
 
         // Add to team_members
         await db.collection('team_members').doc(`${teamId}_${hiredUserId}`).set({
@@ -57,6 +60,23 @@ export async function acceptDriverApplicationAction(formData: FormData) {
         invitesSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
         await batch.commit()
+
+        // Send notifications
+        if (hiredUserId) {
+          await createNotification({
+            userId: hiredUserId,
+            title: `Application Accepted!`,
+            message: `Congratulations! You have been accepted as an official driver for ${teamName}.`,
+            link: `/equipos/${teamId}`,
+          })
+        }
+
+        await createNotification({
+          userId: session.userId,
+          title: `Driver Joined`,
+          message: `Driver ${applicantName} is now an official driver for ${teamName}.`,
+          link: `/equipos/${teamId}`,
+        })
       } catch (err) {
         console.error('Failed to accept application:', err)
         redirect(`${redirectTo}?error=accept-failed`)
@@ -134,7 +154,34 @@ export async function declineDriverApplicationAction(formData: FormData) {
     const db = getFirestoreDb()
     if (db) {
       try {
-        await db.collection('market_applications').doc(applicationId).update({ status: 'declined' })
+        const appRef = db.collection('market_applications').doc(applicationId)
+        const appDoc = await appRef.get()
+        if (appDoc.exists) {
+          const appData = appDoc.data()
+          const applicantUserId = appData?.user_id
+          const applicantName = appData?.user_name || 'Driver'
+
+          const teamDoc = await db.collection('teams').doc(teamId).get()
+          const teamName = teamDoc.exists ? (teamDoc.data()?.name || 'the team') : 'the team'
+
+          await appRef.update({ status: 'declined' })
+
+          if (applicantUserId) {
+            await createNotification({
+              userId: applicantUserId,
+              title: `Application Update`,
+              message: `Your application to join ${teamName} was declined.`,
+              link: '/market',
+            })
+          }
+
+          await createNotification({
+            userId: session.userId,
+            title: `Application Declined`,
+            message: `You declined the application from ${applicantName} for ${teamName}.`,
+            link: `/equipos/${teamId}`,
+          })
+        }
       } catch (err) {
         console.error('Failed to decline application:', err)
         redirect(`${redirectTo}?error=decline-failed`)
