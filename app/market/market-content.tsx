@@ -241,19 +241,36 @@ export default function MarketPageContent({
       <div className="flex flex-wrap items-center justify-between gap-3 bg-black/20 border border-shell-line p-3">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-2">Category:</span>
-          {CLASS_OPTIONS.map((cls) => (
-            <button
-              key={cls}
-              onClick={() => setClassFilter(cls)}
-              className={`px-3 py-1 text-[11px] font-extrabold uppercase transition-all rounded-none ${
-                classFilter === cls
-                  ? 'bg-white text-black'
-                  : 'bg-black/40 text-slate-400 hover:text-white border border-white/10'
-              }`}
-            >
-              {cls}
-            </button>
-          ))}
+          {CLASS_OPTIONS.map((cls) => {
+            const isSelected = classFilter === cls
+            let pillStyle = 'bg-black/40 text-slate-400 border-white/10 hover:text-white'
+
+            if (cls === 'ALL') {
+              pillStyle = isSelected
+                ? 'bg-white text-black font-black shadow-sm'
+                : 'bg-black/40 text-slate-400 border-white/10 hover:text-white'
+            } else if (isSelected) {
+              if (cls === 'GT3') pillStyle = 'bg-[#009f00] text-white border-green-400 font-black italic shadow-[0_0_12px_rgba(0,159,0,0.35)]'
+              else if (cls === 'HYPERCAR') pillStyle = 'bg-[#e10600] text-white border-red-500 font-black italic shadow-[0_0_12px_rgba(225,6,0,0.35)]'
+              else if (cls === 'FORMULA') pillStyle = 'bg-[#9333ea] text-white border-purple-400 font-black italic shadow-[0_0_12px_rgba(147,51,234,0.35)]'
+              else if (cls === 'LMP2') pillStyle = 'bg-[#0072f0] text-white border-blue-400 font-black italic shadow-[0_0_12px_rgba(0,114,240,0.35)]'
+            } else {
+              if (cls === 'GT3') pillStyle = 'bg-black/50 text-slate-400 border-emerald-500/30 hover:border-emerald-500 hover:text-emerald-400'
+              else if (cls === 'HYPERCAR') pillStyle = 'bg-black/50 text-slate-400 border-red-500/30 hover:border-red-500 hover:text-red-400'
+              else if (cls === 'FORMULA') pillStyle = 'bg-black/50 text-slate-400 border-purple-500/30 hover:border-purple-500 hover:text-purple-400'
+              else if (cls === 'LMP2') pillStyle = 'bg-black/50 text-slate-400 border-blue-500/30 hover:border-blue-500 hover:text-blue-400'
+            }
+
+            return (
+              <button
+                key={cls}
+                onClick={() => setClassFilter(cls)}
+                className={`px-3 py-1 text-[11px] font-extrabold uppercase transition-all rounded-none border ${pillStyle}`}
+              >
+                {cls}
+              </button>
+            )
+          })}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -360,28 +377,35 @@ export default function MarketPageContent({
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-bold">Primary Simulator</label>
-                <div className="flex items-center gap-3">
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="simRadio"
-                      checked={formSim === 'ac'}
-                      onChange={() => setFormSim('ac')}
-                      className="accent-cyan-500"
-                    />
-                    Assetto Corsa (AC)
-                  </label>
-                  <label className="flex items-center gap-2 text-xs font-bold text-slate-300 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="simRadio"
-                      checked={formSim === 'lmu'}
-                      onChange={() => setFormSim('lmu')}
-                      className="accent-cyan-500"
-                    />
-                    Le Mans Ultimate (LMU)
-                  </label>
+                <label className="mb-1.5 block text-xs text-slate-300 uppercase font-bold tracking-wider">
+                  Primary Simulator
+                </label>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() => setFormSim('ac')}
+                    className={`flex flex-col items-center justify-center p-3 border text-center transition-all cursor-pointer rounded-none ${
+                      formSim === 'ac'
+                        ? 'border-cyan-400 bg-cyan-950/40 text-white shadow-[0_0_15px_rgba(34,211,238,0.25)]'
+                        : 'border-white/10 bg-black/40 text-slate-400 hover:text-white hover:border-slate-400'
+                    }`}
+                  >
+                    <span className="text-xs font-black tracking-wide uppercase">Assetto Corsa</span>
+                    <span className="mt-0.5 text-[10px] text-slate-400">AC / ACC Racing</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFormSim('lmu')}
+                    className={`flex flex-col items-center justify-center p-3 border text-center transition-all cursor-pointer rounded-none ${
+                      formSim === 'lmu'
+                        ? 'border-cyan-400 bg-cyan-950/40 text-white shadow-[0_0_15px_rgba(34,211,238,0.25)]'
+                        : 'border-white/10 bg-black/40 text-slate-400 hover:text-white hover:border-slate-400'
+                    }`}
+                  >
+                    <span className="text-xs font-black tracking-wide uppercase">Le Mans Ultimate</span>
+                    <span className="mt-0.5 text-[10px] text-slate-400">LMU WEC Official</span>
+                  </button>
                 </div>
               </div>
 
