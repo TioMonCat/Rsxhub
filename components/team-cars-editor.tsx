@@ -64,6 +64,11 @@ export function TeamCarsEditor({
       return
     }
 
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Skin file is too large for direct upload (max 10 MB). Please paste a Google Drive, Mega, or MediaFire download link in the field below instead.')
+      return
+    }
+
     setUploadingCarId(carId)
 
     try {

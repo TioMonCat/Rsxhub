@@ -32,14 +32,22 @@ export function TeamBannerStats({
   accentHard,
   leagueParticipation,
 }: TeamBannerStatsProps) {
+  const heroImage = (() => {
+    if (leagueParticipation[0]?.bannerUrl) return leagueParticipation[0].bannerUrl
+    if (team.logoUrl) return team.logoUrl
+    if (Array.isArray(team.carSkinUrls)) {
+      const validImg = team.carSkinUrls.find((url: string) => /\.(png|jpe?g|webp|svg)$/i.test(url))
+      if (validImg) return validImg
+    }
+    return ''
+  })()
+
   return (
     <section className="overflow-hidden border border-shell-line bg-[#070d17] rounded-none">
       <div
         className="relative min-h-[320px] overflow-hidden p-6 md:min-h-[400px] md:p-9"
         style={{
-          backgroundImage: `linear-gradient(112deg, rgba(6,10,17,0.94) 20%, ${accentSoft} 58%, rgba(6,10,17,0.86) 100%), url(${
-            team.leagueTitle && leagueParticipation[0]?.bannerUrl ? leagueParticipation[0].bannerUrl : team.carSkinUrls?.[0] || team.logoUrl || ''
-          })`,
+          backgroundImage: `linear-gradient(112deg, rgba(6,10,17,0.94) 20%, ${accentSoft} 58%, rgba(6,10,17,0.86) 100%), url(${heroImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}

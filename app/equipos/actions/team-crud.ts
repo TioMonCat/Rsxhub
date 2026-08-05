@@ -312,16 +312,22 @@ export async function updateTeam(formData: FormData) {
       const rawCars = JSON.parse(teamCarsJson)
       if (Array.isArray(rawCars)) {
         teamCars = rawCars
-          .map((car: any) => ({
-            ...car,
-            id: car.id || `car_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
-            category: String(car.category || 'GT3').toUpperCase(),
-            dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
-            skinUrl: car.skinUrl || car.skin_url || '',
-            driverUserIds: (car.driverUserIds || car.driver_user_ids || []).map((d: any) => String(d || '').trim()),
-            driverUserIdsByLeague: car.driverUserIdsByLeague || car.driver_user_ids_by_league || {},
-            leagueId: car.leagueId || car.league_id || null,
-          }))
+          .map((car: any) => {
+            let skinUrl = String(car.skinUrl || car.skin_url || '').trim()
+            if (skinUrl.startsWith('data:') && skinUrl.length > 200000) {
+              skinUrl = ''
+            }
+            return {
+              ...car,
+              id: car.id || `car_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+              category: String(car.category || 'GT3').toUpperCase(),
+              dorsal: String(car.dorsal || '').replace(/[^0-9]/g, '').slice(0, 3),
+              skinUrl,
+              driverUserIds: (car.driverUserIds || car.driver_user_ids || []).map((d: any) => String(d || '').trim()),
+              driverUserIdsByLeague: car.driverUserIdsByLeague || car.driver_user_ids_by_league || {},
+              leagueId: car.leagueId || car.league_id || null,
+            }
+          })
           .filter((car: any) => Boolean(car.id || car.dorsal || car.category))
 
         // Validate internal uniqueness of dorsals per category & league

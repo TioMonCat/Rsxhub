@@ -265,7 +265,15 @@ export async function POST(req: Request) {
     if (type === 'skin' || isArchive) {
       if (!isArchive) {
         return NextResponse.json(
-          { error: 'Formato no permitido. Únicamente se permiten archivos comprimidos (.zip, .rar, .7z, .tar.gz)' },
+          { error: 'Only compressed archive files (.zip, .rar, .7z, .tar.gz) are allowed.' },
+          { status: 400 }
+        )
+      }
+
+      // Max file size check for direct upload: 10MB limit for direct skin uploads
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { error: 'Skin file is too large for direct upload (max 10 MB). Please paste a Google Drive, Mega, or MediaFire download link instead.' },
           { status: 400 }
         )
       }
@@ -282,11 +290,19 @@ export async function POST(req: Request) {
         const finalUrl = `/uploads/skins/${safeSkinName}`
         return NextResponse.json({ url: finalUrl, name: file.name })
       } catch (fsErr) {
-        console.warn('Writing compressed skin to disk failed (serverless environment). Falling back to Data URL base64:', fsErr)
-        const mimeType = file.type || 'application/zip'
-        const base64 = inputBuffer.toString('base64')
-        const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
-        return NextResponse.json({ url: finalUrl, name: file.name })
+        console.warn('Writing compressed skin to disk failed (serverless environment):', fsErr)
+        // Allow fallback to Data URL ONLY if buffer is compact (<250KB) to prevent document size crashes in Firestore
+        if (inputBuffer.length < 250 * 1024) {
+          const mimeType = file.type || 'application/zip'
+          const base64 = inputBuffer.toString('base64')
+          const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
+          return NextResponse.json({ url: finalUrl, name: file.name })
+        } else {
+          return NextResponse.json(
+            { error: 'Skin file is too large for direct serverless storage. Please paste a Google Drive, Mega, or MediaFire download link instead.' },
+            { status: 400 }
+          )
+        }
       }
     }
 
