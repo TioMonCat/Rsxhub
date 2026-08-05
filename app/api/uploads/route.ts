@@ -280,8 +280,11 @@ export async function POST(req: Request) {
         const finalUrl = `/uploads/skins/${safeSkinName}`
         return NextResponse.json({ url: finalUrl, name: file.name })
       } catch (fsErr) {
-        console.warn('Writing compressed skin to disk failed:', fsErr)
-        return NextResponse.json({ error: 'No se pudo guardar el archivo comprimido' }, { status: 500 })
+        console.warn('Writing compressed skin to disk failed (serverless environment). Falling back to Data URL base64:', fsErr)
+        const mimeType = file.type || 'application/zip'
+        const base64 = inputBuffer.toString('base64')
+        const finalUrl = `data:${mimeType};base64,${base64}`
+        return NextResponse.json({ url: finalUrl, name: file.name })
       }
     }
 

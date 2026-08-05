@@ -572,8 +572,17 @@ export function TeamCarsEditor({
                             <div className="flex items-center gap-2 bg-[#0a0f1d] border border-emerald-500/50 rounded-lg px-3 py-1.5 text-xs text-emerald-300 min-w-0">
                               <FileArchive className="h-4 w-4 shrink-0 text-emerald-400" />
                               <span className="truncate flex-1 font-mono text-[11px]" title={car.skinUrl}>
-                                {car.skinUrl.split('/').pop() || 'skin.zip'}
+                                {car.skinUrl.startsWith('data:')
+                                  ? 'skin_comprimido.zip'
+                                  : car.skinUrl.split('/').pop() || 'skin.zip'}
                               </span>
+                              <button
+                                type="button"
+                                onClick={() => updateCarField(car.id, 'skinUrl', '')}
+                                className="text-[10px] font-bold uppercase tracking-wider text-rose-400 hover:text-rose-300 cursor-pointer shrink-0 ml-1"
+                              >
+                                Eliminar
+                              </button>
                               <label className="text-[10px] font-bold uppercase tracking-wider text-cyan-400 hover:text-cyan-300 cursor-pointer underline shrink-0 ml-1">
                                 Cambiar
                                 <input
@@ -588,26 +597,35 @@ export function TeamCarsEditor({
                               </label>
                             </div>
                           ) : (
-                            <label className={`w-full flex items-center justify-center gap-2 bg-[#0a0f1d] border border-dashed rounded-lg px-3 py-1.5 text-xs cursor-pointer transition-all ${
-                              uploadingCarId === car.id
-                                ? 'border-cyan-500/50 text-cyan-300 bg-cyan-950/20'
-                                : 'border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white'
-                            }`}>
-                              <Upload className="h-4 w-4 text-cyan-400" />
-                              <span className="font-medium text-[11px]">
-                                {uploadingCarId === car.id ? 'Subiendo skin...' : 'Subir .zip / .rar'}
-                              </span>
+                            <div className="space-y-1.5">
+                              <label className={`w-full flex items-center justify-center gap-2 bg-[#0a0f1d] border border-dashed rounded-lg px-3 py-1.5 text-xs cursor-pointer transition-all ${
+                                uploadingCarId === car.id
+                                  ? 'border-cyan-500/50 text-cyan-300 bg-cyan-950/20'
+                                  : 'border-slate-700 hover:border-cyan-400 text-slate-300 hover:text-white'
+                              }`}>
+                                <Upload className="h-4 w-4 text-cyan-400" />
+                                <span className="font-medium text-[11px]">
+                                  {uploadingCarId === car.id ? 'Subiendo skin...' : 'Subir .zip / .rar'}
+                                </span>
+                                <input
+                                  type="file"
+                                  accept=".zip,.rar,.7z,.tar,.tar.gz,.gz"
+                                  className="hidden"
+                                  disabled={uploadingCarId === car.id}
+                                  onChange={(e) => {
+                                    const f = e.target.files?.[0]
+                                    if (f) handleSkinFileUpload(car.id, f)
+                                  }}
+                                />
+                              </label>
                               <input
-                                type="file"
-                                accept=".zip,.rar,.7z,.tar,.tar.gz,.gz"
-                                className="hidden"
-                                disabled={uploadingCarId === car.id}
-                                onChange={(e) => {
-                                  const f = e.target.files?.[0]
-                                  if (f) handleSkinFileUpload(car.id, f)
-                                }}
+                                type="text"
+                                value={car.skinUrl || ''}
+                                onChange={(e) => updateCarField(car.id, 'skinUrl', e.target.value)}
+                                placeholder="O pega un enlace (Drive, Mega, Directo)"
+                                className="w-full bg-[#0a0f1d] border border-slate-700 rounded px-2.5 py-1 text-[11px] text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 font-mono"
                               />
-                            </label>
+                            </div>
                           )}
                         </div>
 
