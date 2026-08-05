@@ -4,11 +4,9 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import { ImagePicker } from '@/components/image-picker'
-import { updateLeagueDetailsAction, deleteLeagueAction } from '../actions'
-import type { League } from '@/types'
-
+import { updateLeagueDetailsAction, deleteLeagueAction } from '@/app/ligas/actions'
 type LeagueEditModalProps = {
-  league: League
+  league: any
   isOpen: boolean
   onClose: () => void
 }
@@ -137,7 +135,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                 <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Simulator</label>
                 <select
                   value={formSimulator}
-                  onChange={(e) => setFormSimulator(e.target.value)}
+                  onChange={(e) => setFormSimulator(e.target.value as any)}
                   className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
                 >
                   <option value="ac">Assetto Corsa</option>
@@ -148,7 +146,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                 <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Format</label>
                 <select
                   value={formFormat}
-                  onChange={(e) => setFormFormat(e.target.value)}
+                  onChange={(e) => setFormFormat(e.target.value as any)}
                   className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
                 >
                   <option value="endurance">Endurance</option>
@@ -163,7 +161,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                   value={formStatus === 'open' ? 'open' : 'completed'}
                   onChange={(e) => {
                     const val = e.target.value
-                    setFormStatus(val)
+                    setFormStatus(val as any)
                     setFormRegistrationOpen(val === 'open')
                   }}
                   className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400 font-semibold"
@@ -179,7 +177,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                 <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Registration Mode</label>
                 <select
                   value={formRegistrationMode}
-                  onChange={(e) => setFormRegistrationMode(e.target.value)}
+                  onChange={(e) => setFormRegistrationMode(e.target.value as any)}
                   className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white outline-none rounded-none focus:border-cyan-400"
                 >
                   <option value="team">By Team / Constructor (Team Registration)</option>
@@ -203,7 +201,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                   {['GT3', 'Hypercar', 'LMP2'].map((cat) => {
                     const currentCats = formClassTags
                       .split(',')
-                      .map((s) => s.trim().toUpperCase())
+                      .map((s: string) => s.trim().toUpperCase())
                       .filter(Boolean)
                     const isChecked = currentCats.includes(cat.toUpperCase())
                     const currentLimit = (league as any).classLimits?.[cat.toUpperCase()] ?? 30
@@ -226,7 +224,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                               if (e.target.checked) {
                                 updated = Array.from(new Set([...currentCats, cat.toUpperCase()]))
                               } else {
-                                updated = currentCats.filter((c) => c !== cat.toUpperCase())
+                                updated = currentCats.filter((c: string) => c !== cat.toUpperCase())
                               }
                               setFormClassTags(updated.join(', '))
                             }}

@@ -10,9 +10,11 @@ import {
   getPreferredNumbers as _getPreferredNumbers,
   pickAssignedNumber as _pickAssignedNumber,
   isNumberAvailable as _isNumberAvailable,
+  parseDesiredNumber,
 } from './actions/league-number-management'
 import {
   upsertLeagueRegistration as _upsertLeagueRegistration,
+  parseClassTag,
 } from './actions/league-registration-upsert'
 
 export async function getPreferredNumbers(params: Parameters<typeof _getPreferredNumbers>[0]) {

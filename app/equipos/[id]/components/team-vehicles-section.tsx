@@ -13,7 +13,7 @@ type TeamVehiclesSectionProps = {
   takenDorsals: Array<{ teamId: string; teamName: string; category: string; dorsal: string; leagueId?: string | null }>
   leaguesOptions: LeagueOption[]
   teamMembersOptions: TeamMemberOption[]
-  leagues: Array<{ id: string; slug: string; maxDriversPerCar?: number; title: string }>
+  leagues: Array<{ id: string; slug: string; maxDriversPerCar?: number | null; title: string }>
 }
 
 const CATEGORY_THEMES: Record<string, {
