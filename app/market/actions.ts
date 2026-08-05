@@ -845,10 +845,10 @@ export async function withdrawApplicationAction(listingId: string) {
       try {
         const snap = await runWithTimeout(db.collection('market_applications')
           .where('listing_id', '==', listingId)
-          .where('user_id', '==', session.userId)
           .get())
         
-        for (const doc of snap.docs) {
+        const myDocs = snap.docs.filter((doc: any) => doc.data()?.user_id === session.userId)
+        for (const doc of myDocs) {
           await runWithTimeout(doc.ref.delete())
         }
         revalidatePath('/market')

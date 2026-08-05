@@ -44,7 +44,9 @@ export function MarketTeamOffers({
           .split(',')
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
-        const myApplication = applications.find((app) => app.listingId === item.id)
+        const myApplication = currentUserId
+          ? applications.find((app) => app.listingId === item.id && app.userId === currentUserId)
+          : null
 
         return (
           <div
@@ -64,9 +66,9 @@ export function MarketTeamOffers({
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-white truncate max-w-[140px]">
-                      {item.team_name || 'Team Offer'}
+                      {item.team_name || 'Oferta de Equipo'}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-mono">By {item.user_name}</span>
+                    <span className="text-[10px] text-slate-400 font-mono">Por {item.user_name}</span>
                   </div>
                 </div>
 
@@ -78,7 +80,7 @@ export function MarketTeamOffers({
                     <button
                       onClick={() => onDeleteListing(item.id)}
                       className="p-1 text-slate-400 hover:text-rose-400 transition-colors"
-                      title="Delete Listing"
+                      title="Eliminar Anuncio"
                     >
                       <Trash className="h-3.5 w-3.5" />
                     </button>
@@ -111,32 +113,36 @@ export function MarketTeamOffers({
                 {item.contact_info}
               </span>
 
-              {!isOwner && currentUserId && (
+              {!isOwner && (
                 <div>
-                  {belongsToTeam ? (
+                  {!currentUserId ? (
+                    <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-900 border border-slate-800 px-2 py-1">
+                      Inicia sesión
+                    </span>
+                  ) : belongsToTeam ? (
                     <span className="text-[10px] font-bold uppercase text-slate-500 bg-slate-900 border border-slate-800 px-2.5 py-1">
-                      In a Team
+                      En un equipo
                     </span>
                   ) : myApplication && myApplication.status === 'pending' ? (
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-bold uppercase text-amber-400 bg-amber-950/40 border border-amber-800/40 px-2 py-1">
-                        Pending
+                        Pendiente
                       </span>
                       <button
                         type="button"
                         onClick={() => onWithdrawApplication(item.id)}
                         className="text-[10px] font-bold text-rose-400 hover:text-rose-300 underline cursor-pointer"
                       >
-                        Withdraw
+                        Retirar
                       </button>
                     </div>
                   ) : (
                     <button
                       type="button"
                       onClick={() => onApplyClick(item.id)}
-                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-bold px-3 py-1 text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
+                      className="bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold px-3 py-1 text-[10px] uppercase tracking-wider transition-colors cursor-pointer"
                     >
-                      Apply Now
+                      Postularme
                     </button>
                   )}
                 </div>

@@ -45,6 +45,8 @@ export function MarketDriverCards({
   onDeleteListing,
   onInviteClick,
 }: MarketDriverCardsProps) {
+  const myTeamIds = myTeams.map((t) => t.id)
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {listings.map((item) => {
@@ -53,7 +55,9 @@ export function MarketDriverCards({
           .split(',')
           .map((t) => t.trim().toUpperCase())
           .filter(Boolean)
-        const myTeamInvite = invites.find((inv) => inv.listingId === item.id)
+        const myTeamInvite = invites.find(
+          (inv) => inv.listingId === item.id && (myTeamIds.includes(inv.teamId) || isOwner)
+        )
 
         return (
           <div
