@@ -199,6 +199,13 @@ export function EventEntryListModal({
 
     confirmations.forEach((c) => {
       const tag = String(c.classTag || '').toUpperCase()
+      if (registrations && registrations.length > 0) {
+        const isReg = registrations.some(
+          (r) => (r.teamId ? r.teamId === c.teamId : r.userId === (c as any).userId) && String(r.classTag || '').toUpperCase() === tag
+        )
+        if (!isReg) return
+      }
+
       const dorsal = String((c as any).dorsalDisplay || c.carNumber || '')
       const teamName = resolveTeamName(c.teamId)
       const drivers = resolveDrivers(c.teamId, tag, c.carNumber)

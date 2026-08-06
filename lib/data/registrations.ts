@@ -244,14 +244,25 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
         })
 
         const { teams } = await getTeamsDashboard()
+        const leagueRegs = await getRegistrations(leagueId)
+
         return rawConfirmations.filter((c: any) => {
+          const isReg = leagueRegs.some(
+            (r) => (c.teamId && r.teamId === c.teamId) || (c.userId && r.userId === c.userId)
+          )
+          if (!isReg && leagueRegs.length > 0) return false
+
           const team = teams.find((t) => t.id === c.teamId)
           if (!team) return false
           const car = (team.cars || []).find((carObj: any) => {
             const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
-            const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
-            const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
-            return sameClass && sameDorsal && hasDrivers
+            const sameDorsal = String(carObj.dorsal ?? '').trim() === String(c.carNumber ?? '').trim() || Number(carObj.dorsal) === Number(c.carNumber)
+            const drivers = Array.isArray(carObj.driverUserIds)
+              ? carObj.driverUserIds.filter(Boolean)
+              : Array.isArray(carObj.driver_user_ids)
+              ? carObj.driver_user_ids.filter(Boolean)
+              : []
+            return sameClass && sameDorsal && drivers.length > 0
           })
           return Boolean(car)
         })
@@ -269,14 +280,25 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
     if (raw) {
       const list = JSON.parse(raw).filter((c: any) => c.leagueId === leagueId)
       const { teams } = await getTeamsDashboard()
+      const leagueRegs = await getRegistrations(leagueId)
+
       return list.filter((c: any) => {
+        const isReg = leagueRegs.some(
+          (r) => (c.teamId && r.teamId === c.teamId) || (c.userId && r.userId === c.userId)
+        )
+        if (!isReg && leagueRegs.length > 0) return false
+
         const team = teams.find((t) => t.id === c.teamId)
         if (!team) return false
         const car = (team.cars || []).find((carObj: any) => {
           const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
-          const sameDorsal = Number(carObj.dorsal) === Number(c.carNumber)
-          const hasDrivers = Array.isArray(carObj.driverUserIds) && carObj.driverUserIds.some((id: string) => Boolean(id))
-          return sameClass && sameDorsal && hasDrivers
+          const sameDorsal = String(carObj.dorsal ?? '').trim() === String(c.carNumber ?? '').trim() || Number(carObj.dorsal) === Number(c.carNumber)
+          const drivers = Array.isArray(carObj.driverUserIds)
+            ? carObj.driverUserIds.filter(Boolean)
+            : Array.isArray(carObj.driver_user_ids)
+            ? carObj.driver_user_ids.filter(Boolean)
+            : []
+          return sameClass && sameDorsal && drivers.length > 0
         })
         return Boolean(car)
       })

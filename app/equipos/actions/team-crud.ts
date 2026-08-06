@@ -739,6 +739,10 @@ export async function deleteTeamAction(teamId: string) {
             const pilotRegsSnap = await runWithTimeout(db.collection('league_registrations').where('team_id', '==', teamId).get(), 3000)
             pilotRegsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
 
+            // 3.1b. Delete event confirmations associated with this team
+            const evConfsSnap = await runWithTimeout(db.collection('league_event_confirmations').where('team_id', '==', teamId).get(), 3000).catch(() => null)
+            if (evConfsSnap) evConfsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
+
             // 3.2. Delete team market listings
             const mListingsSnap = await runWithTimeout(db.collection('market_listings').where('team_id', '==', teamId).get(), 3000).catch(() => null)
             if (mListingsSnap) mListingsSnap.docs.forEach((doc: any) => batch.delete(doc.ref))
@@ -795,6 +799,16 @@ export async function deleteTeamAction(teamId: string) {
             if (Array.isArray(regs)) {
               regs = regs.filter((r: any) => r.teamId !== teamId)
               cookieStore.set('mock_registrations', JSON.stringify(regs), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+            }
+          }
+
+          // Clean up mock event confirmations associated with this team
+          const existingEvConfs = cookieStore.get('mock_event_confirmations')?.value
+          if (existingEvConfs) {
+            let confs = JSON.parse(existingEvConfs)
+            if (Array.isArray(confs)) {
+              confs = confs.filter((c: any) => c.teamId !== teamId)
+              cookieStore.set('mock_event_confirmations', JSON.stringify(confs), { path: '/', maxAge: 60 * 60 * 24 * 30 })
             }
           }
 

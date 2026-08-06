@@ -186,9 +186,20 @@ export function LeagueSchedule({
                 <div className="flex flex-wrap gap-4 pt-2 z-10 w-full">
                   {classTags.map((tag) => {
                     const limit = (league as any).classLimits?.[tag] ?? 30
-                    const confirmedCount = localConfirmations.filter(
-                      (c) => c.eventId === ev.id && c.classTag === tag && c.status === 'confirmed'
-                    ).length
+                    const confirmedCount = localConfirmations.filter((c) => {
+                      if (c.eventId !== ev.id || String(c.classTag || '').toUpperCase() !== tag.toUpperCase() || c.status !== 'confirmed') {
+                        return false
+                      }
+                      if (initialRegistrations && initialRegistrations.length > 0) {
+                        const isRegistered = initialRegistrations.some(
+                          (r) =>
+                            (r.teamId ? r.teamId === c.teamId : r.userId === (c as any).userId) &&
+                            String(r.classTag || '').toUpperCase() === tag.toUpperCase()
+                        )
+                        if (!isRegistered) return false
+                      }
+                      return true
+                    }).length
                     const pct = Math.min(100, (confirmedCount / limit) * 100)
 
                     return (
