@@ -59,70 +59,58 @@ export function EventEntryListModal({
     const targetDorsal = String(dorsal ?? '').trim()
     const targetTag = String(classTag ?? '').trim().toUpperCase()
 
-    const findInCars = (cars?: any[]) => {
-      if (!Array.isArray(cars) || cars.length === 0) return null
+    const checkCars = (cars?: any[]): { found: boolean; url: string | null } => {
+      if (!Array.isArray(cars) || cars.length === 0) return { found: false, url: null }
 
-      // 1. Match category & dorsal
+      // 1. Strict match by category & dorsal
       const car1 = cars.find(
         (c: any) =>
           String(c.category || '').toUpperCase() === targetTag &&
-          String(c.dorsal ?? '').trim() === targetDorsal &&
-          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
+          String(c.dorsal ?? '').trim() === targetDorsal
       )
-      if (car1) return car1.skinUrl || car1.skin_url || car1.skin || car1.skinFile
+      if (car1) {
+        const url = String(car1.skinUrl || car1.skin_url || car1.skin || car1.skinFile || '').trim()
+        return { found: true, url: url || null }
+      }
 
-      // 2. Match dorsal
-      const car2 = cars.find(
-        (c: any) =>
-          String(c.dorsal ?? '').trim() === targetDorsal &&
-          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
-      )
-      if (car2) return car2.skinUrl || car2.skin_url || car2.skin || car2.skinFile
+      // 2. Strict match by dorsal
+      const car2 = cars.find((c: any) => String(c.dorsal ?? '').trim() === targetDorsal)
+      if (car2) {
+        const url = String(car2.skinUrl || car2.skin_url || car2.skin || car2.skinFile || '').trim()
+        return { found: true, url: url || null }
+      }
 
-      // 3. Match category
-      const car3 = cars.find(
-        (c: any) =>
-          String(c.category || '').toUpperCase() === targetTag &&
-          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
-      )
-      if (car3) return car3.skinUrl || car3.skin_url || car3.skin || car3.skinFile
-
-      // 4. Any car with skinUrl
-      const car4 = cars.find((c: any) => c.skinUrl || c.skin_url || c.skin || c.skinFile)
-      if (car4) return car4.skinUrl || car4.skin_url || car4.skin || car4.skinFile
-
-      return null
+      return { found: false, url: null }
     }
 
-    const findInAssignments = (assignments?: any[]) => {
-      if (!Array.isArray(assignments) || assignments.length === 0) return null
+    const checkAssignments = (assignments?: any[]): { found: boolean; url: string | null } => {
+      if (!Array.isArray(assignments) || assignments.length === 0) return { found: false, url: null }
       const match = assignments.find(
-        (s: any) =>
-          String((s.carNumber || s.dorsal) ?? '').trim() === targetDorsal &&
-          (s.skinUrl || s.skin_url)
+        (s: any) => String((s.carNumber || s.dorsal) ?? '').trim() === targetDorsal
       )
-      if (match) return match.skinUrl || match.skin_url
-      const first = assignments.find((s: any) => s.skinUrl || s.skin_url)
-      if (first) return first.skinUrl || first.skin_url
-      return null
+      if (match) {
+        const url = String(match.skinUrl || match.skin_url || '').trim()
+        return { found: true, url: url || null }
+      }
+      return { found: false, url: null }
     }
 
     // 1. Check in myManagedTeams
     const managed = myManagedTeams.find((m) => m.id === teamId)
     if (managed) {
-      const s1 = findInAssignments((managed as any).skinAssignments)
-      if (s1) return s1
-      const s2 = findInCars(managed.cars)
-      if (s2) return s2
+      const resCars = checkCars(managed.cars)
+      if (resCars.found) return resCars.url
+      const resAss = checkAssignments((managed as any).skinAssignments)
+      if (resAss.found) return resAss.url
     }
 
     // 2. Check in teamInfo
     const info = teamInfo[teamId]
     if (info) {
-      const s1 = findInAssignments(info.skinAssignments)
-      if (s1) return s1
-      const s2 = findInCars(info.cars)
-      if (s2) return s2
+      const resCars = checkCars(info.cars)
+      if (resCars.found) return resCars.url
+      const resAss = checkAssignments(info.skinAssignments)
+      if (resAss.found) return resAss.url
     }
 
     return null
@@ -358,11 +346,15 @@ export function EventEntryListModal({
                                 onClick={() => {
                                   const ids = t.drivers
                                     .map((d) => d.steamId)
-                                    .filter((id) => Boolean(id) && id !== t.teamId && /^\d{15,18}$/.test(id))
-                                  const copyText = ids.length > 0 ? ids.join(', ') : t.teamId
-                                  navigator.clipboard.writeText(copyText)
-                                  setCopiedKey(rowKey)
-                                  setTimeout(() => setCopiedKey(null), 2200)
+                                    .filter((id) => Boolean(id) && /^\d{15,18}$/.test(id))
+                                  const copyText = ids.join(', ')
+                                  if (copyText) {
+                                    navigator.clipboard.writeText(copyText)
+                                    setCopiedKey(rowKey)
+                                    setTimeout(() => setCopiedKey(null), 2200)
+                                  } else {
+                                    alert('No Steam 64 IDs found for drivers in this car.')
+                                  }
                                 }}
                                 className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer shrink-0"
                                 title={`Copy driver Steam 64 IDs for car #${t.dorsal}`}

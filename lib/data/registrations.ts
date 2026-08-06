@@ -45,7 +45,62 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
           }
         })
         const { teams } = await getTeamsDashboard()
-        const activeRegistrations = registrations.filter((r: LeagueRegistration) => {
+
+        const steamIdByUserId = new Map<string, string>()
+        for (const t of teams) {
+          for (const m of t.members || []) {
+            if (m.userId && m.steamId) {
+              steamIdByUserId.set(m.userId, m.steamId)
+            }
+          }
+        }
+
+        const unmappedUserIds = Array.from(
+          new Set(
+            registrations
+              .map((r: any) => r.userId)
+              .filter((uid: string) => uid && !steamIdByUserId.has(uid) && !uid.startsWith('steam_'))
+          )
+        )
+
+        if (unmappedUserIds.length > 0) {
+          try {
+            const chunks = []
+            for (let i = 0; i < unmappedUserIds.length; i += 10) {
+              chunks.push(unmappedUserIds.slice(i, i + 10))
+            }
+            const steamSnaps = await Promise.all(
+              chunks.map((chunk: any) =>
+                runWithTimeout(db.collection('steam_accounts').where('user_id', 'in', chunk).get(), 3000)
+              )
+            )
+            for (const snap of steamSnaps) {
+              for (const doc of snap.docs) {
+                const data = doc.data()
+                const uid = data.user_id || doc.id
+                const sId = data.steam_id || (uid.startsWith('steam_') ? uid.replace('steam_', '') : '')
+                if (uid && sId) {
+                  steamIdByUserId.set(uid, sId)
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch steam accounts for registrations:', err)
+          }
+        }
+
+        const enrichedRegistrations = registrations.map((r: any) => {
+          let sId = r.steamId || steamIdByUserId.get(r.userId) || ''
+          if (!sId && r.userId && r.userId.startsWith('steam_')) {
+            sId = r.userId.replace('steam_', '')
+          }
+          return {
+            ...r,
+            steamId: sId,
+          }
+        })
+
+        const activeRegistrations = enrichedRegistrations.filter((r: LeagueRegistration) => {
           if (!r.teamId) return true
           const team = teams.find((t) => t.id === r.teamId)
           if (!team) return false
