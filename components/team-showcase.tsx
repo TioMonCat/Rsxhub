@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Download, Users, ArrowRight } from 'lucide-react'
@@ -35,6 +36,7 @@ export function TeamShowcase({
   skins = [],
 }: TeamShowcaseProps) {
   const router = useRouter()
+  const [isNavigating, setIsNavigating] = useState(false)
   const barColor = accentColor || primaryColor || '#ff3a3a'
 
   const goToProfile = (event: React.MouseEvent) => {
@@ -43,6 +45,10 @@ export function TeamShowcase({
     if (target.closest('a') || target.closest('button')) return
 
     if (!profileHref) return
+    setIsNavigating(true)
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('rsx:navigation-start'))
+    }
     router.push(profileHref)
   }
 
@@ -51,7 +57,7 @@ export function TeamShowcase({
       onClick={goToProfile}
       className={`relative border border-shell-line bg-[#090d16]/90 p-5 shadow-xl transition-all duration-300 hover:shadow-[0_12px_24px_rgba(0,0,0,0.55)] flex flex-col justify-between min-h-[220px] rounded-none group ${
         profileHref ? 'cursor-pointer hover:border-red-650' : ''
-      }`}
+      } ${isNavigating ? 'opacity-75 border-cyan-500/60 shadow-[0_0_20px_rgba(6,182,212,0.3)]' : ''}`}
       style={{
         borderLeft: `3px solid ${barColor}`,
       }}

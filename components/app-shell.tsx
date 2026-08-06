@@ -3,6 +3,8 @@ import { TopNav } from '@/components/top-nav'
 import { Footer } from '@/components/footer'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 
+import { TopLoadingBar } from '@/components/top-loading-bar'
+
 export async function AppShell({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser()
   const access = await getAdminAccessContext(user?.userId)
@@ -41,6 +43,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-shell flex flex-col justify-between">
+      <TopLoadingBar />
       <div className="w-full">
         <header className="border-y border-shell-line bg-black relative">
           <div className="w-full px-6 py-2.5 md:px-12 md:py-3">
