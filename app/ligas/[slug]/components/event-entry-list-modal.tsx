@@ -12,6 +12,7 @@ type EventEntryListModalProps = {
   registrations: Registration[]
   classTags: string[]
   myManagedTeams: ManagedTeam[]
+  teamInfo?: Record<string, { name: string; primaryColor: string | null; logoUrl: string | null; cars?: any[]; skinAssignments?: any[] }>
   standings?: Record<string, TeamStanding[]>
   isAdmin: boolean
   onClose: () => void
@@ -23,6 +24,7 @@ export function EventEntryListModal({
   registrations,
   classTags,
   myManagedTeams,
+  teamInfo = {},
   standings,
   isAdmin,
   onClose,
@@ -48,7 +50,64 @@ export function EventEntryListModal({
     if (managed) return managed.name
     const standingTeam = allTeamsInStandings.find((t) => t.id === teamId)
     if (standingTeam) return standingTeam.name
+    const info = teamInfo[teamId]
+    if (info) return info.name
     return `Team (${teamId.slice(0, 5)})`
+  }
+
+  const resolveCarSkin = (teamId: string, classTag: string, dorsal: string) => {
+    const targetDorsal = String(dorsal ?? '').trim()
+    const targetTag = String(classTag ?? '').trim().toUpperCase()
+
+    // 1. Check in myManagedTeams
+    const managed = myManagedTeams.find((m) => m.id === teamId)
+    if (managed) {
+      if (Array.isArray((managed as any).skinAssignments)) {
+        const match = (managed as any).skinAssignments.find(
+          (s: any) => String(s.carNumber ?? '').trim() === targetDorsal && (s.skinUrl || s.skin_url)
+        )
+        if (match?.skinUrl || match?.skin_url) return match.skinUrl || match.skin_url
+      }
+      if (Array.isArray(managed.cars)) {
+        const car = managed.cars.find(
+          (c: any) =>
+            String(c.category || '').toUpperCase() === targetTag &&
+            String(c.dorsal ?? '').trim() === targetDorsal &&
+            (c.skinUrl || c.skin_url)
+        )
+        if (car?.skinUrl || car?.skin_url) return car.skinUrl || car.skin_url
+        const catCar = managed.cars.find(
+          (c: any) => String(c.category || '').toUpperCase() === targetTag && (c.skinUrl || c.skin_url)
+        )
+        if (catCar?.skinUrl || catCar?.skin_url) return catCar.skinUrl || catCar.skin_url
+      }
+    }
+
+    // 2. Check in teamInfo
+    const info = teamInfo[teamId]
+    if (info) {
+      if (Array.isArray(info.skinAssignments)) {
+        const match = info.skinAssignments.find(
+          (s: any) => String(s.carNumber ?? '').trim() === targetDorsal && (s.skinUrl || s.skin_url)
+        )
+        if (match?.skinUrl || match?.skin_url) return match.skinUrl || match.skin_url
+      }
+      if (Array.isArray(info.cars)) {
+        const car = info.cars.find(
+          (c: any) =>
+            String(c.category || '').toUpperCase() === targetTag &&
+            String(c.dorsal ?? '').trim() === targetDorsal &&
+            (c.skinUrl || c.skin_url)
+        )
+        if (car?.skinUrl || car?.skin_url) return car.skinUrl || car.skin_url
+        const catCar = info.cars.find(
+          (c: any) => String(c.category || '').toUpperCase() === targetTag && (c.skinUrl || c.skin_url)
+        )
+        if (catCar?.skinUrl || catCar?.skin_url) return catCar.skinUrl || catCar.skin_url
+      }
+    }
+
+    return null
   }
 
   const resolveDrivers = (teamId: string, classTag: string, carNumber: string | number) => {
@@ -103,7 +162,7 @@ export function EventEntryListModal({
     })
 
     return map
-  }, [confirmations, classTags, myManagedTeams, registrations, allTeamsInStandings])
+  }, [confirmations, classTags, myManagedTeams, registrations, allTeamsInStandings, teamInfo])
 
   const handleDownloadCategorySkins = async (tag: string, teamList: Array<{ teamId: string; teamName: string; dorsal: string }>) => {
     setDownloadingCategory(tag)
@@ -112,30 +171,29 @@ export function EventEntryListModal({
       let downloadedCount = 0
 
       for (const t of teamList) {
-        const managed = myManagedTeams.find((m) => m.id === t.teamId)
-        let skinUrl = ''
+        const skinUrl = resolveCarSkin(t.teamId, tag, t.dorsal)
 
-        if (managed && Array.isArray(managed.cars)) {
-          const car = managed.cars.find(
-            (c: any) =>
-              String(c.category || '').toUpperCase() === tag.toUpperCase() &&
-              String(c.dorsal || '').trim() === String(t.dorsal).trim()
-          )
-          if (car && car.skinUrl) skinUrl = car.skinUrl
-        }
+        if (skinUrl) {
+          const sanitize = (str: string) => str.replace(/[^a-z0-9_-]/gi, '_')
+          const fileName = `skin_${tag}_#${t.dorsal}_${sanitize(t.teamName)}.zip`
 
-        if (skinUrl && (skinUrl.startsWith('http') || skinUrl.startsWith('/'))) {
-          try {
-            const resp = await fetch(skinUrl)
-            if (resp.ok) {
-              const blob = await resp.blob()
-              const sanitize = (str: string) => str.replace(/[^a-z0-9_-]/gi, '_')
-              const fileName = `skin_${tag}_#${t.dorsal}_${sanitize(t.teamName)}.zip`
-              zip.file(fileName, blob)
+          if (skinUrl.startsWith('data:')) {
+            const base64Parts = skinUrl.split(',')
+            if (base64Parts[1]) {
+              zip.file(fileName, base64Parts[1], { base64: true })
               downloadedCount++
             }
-          } catch (fetchErr) {
-            console.error(`Failed to fetch skin for team ${t.teamName}:`, fetchErr)
+          } else if (skinUrl.startsWith('http') || skinUrl.startsWith('/')) {
+            try {
+              const resp = await fetch(skinUrl)
+              if (resp.ok) {
+                const blob = await resp.blob()
+                zip.file(fileName, blob)
+                downloadedCount++
+              }
+            } catch (fetchErr) {
+              console.error(`Failed to fetch skin for team ${t.teamName}:`, fetchErr)
+            }
           }
         }
       }
@@ -229,6 +287,8 @@ export function EventEntryListModal({
                   <div className="grid gap-2">
                     {teamList.map((t, idx) => {
                       const rowKey = `${tag}_${t.teamId}_${t.dorsal}_${idx}`
+                      const skinUrl = resolveCarSkin(t.teamId, tag, t.dorsal)
+
                       return (
                         <div
                           key={rowKey}
@@ -285,6 +345,17 @@ export function EventEntryListModal({
                                   </>
                                 )}
                               </button>
+                            )}
+
+                            {skinUrl ? (
+                              <span className="bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold uppercase px-2 py-0.5 flex items-center gap-1">
+                                <Check className="h-3 w-3 text-cyan-400" />
+                                SKIN OK
+                              </span>
+                            ) : (
+                              <span className="bg-slate-900 text-slate-400 border border-slate-700/60 text-[10px] font-bold uppercase px-2 py-0.5">
+                                NO SKIN
+                              </span>
                             )}
 
                             <span className="bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase px-2 py-0.5">

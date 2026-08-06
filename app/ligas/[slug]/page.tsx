@@ -39,6 +39,8 @@ export default async function LigaDetailPage({
       name: string
       primaryColor: string | null
       logoUrl: string | null
+      cars?: any[]
+      skinAssignments?: any[]
     }
   >()
 
@@ -59,6 +61,8 @@ export default async function LigaDetailPage({
           name: row.name,
           primaryColor: row.primary_color || null,
           logoUrl: row.logo_url || null,
+          cars: row.cars || [],
+          skinAssignments: row.skin_assignments || row.skinAssignments || [],
         })
       }
     } catch (e) {
@@ -76,6 +80,8 @@ export default async function LigaDetailPage({
             name: t.name,
             primaryColor: t.primaryColor || null,
             logoUrl: cookieStore.get(`mock_team_logo_${t.id}`)?.value || t.logoUrl || null,
+            cars: t.cars || [],
+            skinAssignments: t.skinAssignments || [],
           })
         }
       }

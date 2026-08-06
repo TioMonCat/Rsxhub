@@ -379,6 +379,7 @@ export default function LeagueDetailPageContent({
             myManagedTeams={myManagedTeams}
             groupedRegistrations={groupedRegistrations}
             registeredCarsCount={registeredCars.length}
+            initialRegistrations={initialRegistrations}
             onOpenRegisterModal={() => setIsRegisterOpen(true)}
             onWithdrawTeam={handleWithdrawTeam}
           />
@@ -395,6 +396,7 @@ export default function LeagueDetailPageContent({
           confirmations={confirmations}
           initialRegistrations={initialRegistrations}
           myManagedTeams={myManagedTeams}
+          teamInfo={teamInfo}
           standings={standings}
           onOpenEventModal={handleOpenEventModal}
           onDeleteEvent={handleEventDelete}

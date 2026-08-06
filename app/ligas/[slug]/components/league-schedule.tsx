@@ -19,6 +19,7 @@ interface LeagueScheduleProps {
   confirmations: EventConfirmation[]
   initialRegistrations: Registration[]
   myManagedTeams: ManagedTeam[]
+  teamInfo?: Record<string, { name: string; primaryColor: string | null; logoUrl: string | null; cars?: any[]; skinAssignments?: any[] }>
   standings?: Record<string, TeamStanding[]>
   onOpenEventModal: (event?: LeagueEvent) => void
   onDeleteEvent: (eventId: string) => void
@@ -34,6 +35,7 @@ export function LeagueSchedule({
   confirmations,
   initialRegistrations,
   myManagedTeams,
+  teamInfo,
   standings,
   onOpenEventModal,
   onDeleteEvent,
@@ -355,6 +357,7 @@ export function LeagueSchedule({
           registrations={initialRegistrations}
           classTags={classTags}
           myManagedTeams={myManagedTeams}
+          teamInfo={teamInfo}
           standings={standings}
           isAdmin={isAdmin}
           onClose={() => setViewingEntryListEvent(null)}

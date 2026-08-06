@@ -10,6 +10,7 @@ interface LeagueRegistrationProps {
   myManagedTeams: ManagedTeam[]
   groupedRegistrations: Array<{ teamId: string; teamName: string; logoUrl: string | null; categories: string[] }>
   registeredCarsCount: number
+  initialRegistrations?: Array<{ teamId: string | null; userId: string }>
   onOpenRegisterModal: () => void
   onWithdrawTeam: (teamId: string, classTag: string) => void
 }
@@ -20,20 +21,28 @@ export function LeagueRegistration({
   myManagedTeams,
   groupedRegistrations,
   registeredCarsCount,
+  initialRegistrations = [],
   onOpenRegisterModal,
   onWithdrawTeam,
 }: LeagueRegistrationProps) {
   const isLeader = myManagedTeams.length > 0
-  const myRegisteredGroups = groupedRegistrations.filter((group) =>
-    myManagedTeams.some((t) => t.id === group.teamId)
-  )
+  const sessClean = session ? String(session.userId || session.steamId || '').replace(/^steam_/, '') : ''
+
+  const myRegisteredGroups = groupedRegistrations.filter((group) => {
+    const isManaged = myManagedTeams.some((t) => t.id === group.teamId)
+    const isMember = initialRegistrations.some(
+      (r) => r.teamId === group.teamId && String(r.userId || '').replace(/^steam_/, '') === sessClean
+    )
+    return isManaged || isMember
+  })
+
   const hasUnregisteredTeams = myManagedTeams.some(
     (t) => !groupedRegistrations.some((group) => group.teamId === t.id)
   )
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      {/* Show ONLY teams managed by the logged-in user in this status badge */}
+      {/* Show teams managed by OR belonging to the logged-in user */}
       {myRegisteredGroups.map((group) => {
         const teamLogo =
           group.logoUrl ||
@@ -73,13 +82,15 @@ export function LeagueRegistration({
                 {group.categories.map((cat) => (
                   <div key={cat} className="flex items-center gap-1.5 bg-black/90 px-2 py-0.5 border border-white/20">
                     <ClassBadge classTag={cat} />
-                    <button
-                      onClick={() => onWithdrawTeam(group.teamId, cat)}
-                      title={`Withdraw ${cat}`}
-                      className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 text-xs transition-colors cursor-pointer"
-                    >
-                      ×
-                    </button>
+                    {isLeader && (
+                      <button
+                        onClick={() => onWithdrawTeam(group.teamId, cat)}
+                        title={`Withdraw ${cat}`}
+                        className="ml-0.5 text-rose-400 hover:text-rose-300 font-bold hover:bg-rose-500/20 px-1 text-xs transition-colors cursor-pointer"
+                      >
+                        ×
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -99,7 +110,7 @@ export function LeagueRegistration({
         </button>
       )}
 
-      {/* Notice box when user is logged in, NOT a team leader, and has no active team registration */}
+      {/* Notice box ONLY when user is logged in, NOT a team leader, AND has no registered team in this league */}
       {!isLeader && session && myRegisteredGroups.length === 0 && (
         <div className="border border-amber-500/40 bg-gradient-to-r from-amber-950/80 via-black/90 to-amber-950/60 px-4 py-2.5 shadow-[0_0_20px_rgba(245,158,11,0.15)] flex items-center gap-3 rounded-none">
           <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0" />
