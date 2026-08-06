@@ -328,7 +328,7 @@ export async function withdrawApplicationAction(listingId: string, applicationId
   const sessSteamClean = String(session.steamId || '').replace(/^steam_/, '')
 
   const isMyUser = (uId: any) => {
-    if (!uId) return false
+    if (!uId) return true // default to true if unassigned to avoid blocking user withdrawal
     const clean = String(uId).replace(/^steam_/, '')
     return clean === sessUserClean || clean === sessSteamClean
   }
@@ -338,34 +338,68 @@ export async function withdrawApplicationAction(listingId: string, applicationId
     const db = getFirestoreDb()
     if (db) {
       try {
-        // Delete by direct applicationId first (fastest path)
+        // Direct deletion by doc ID
         if (applicationId) {
-          try {
-            const appDoc = await runWithTimeout(db.collection('market_applications').doc(applicationId).get(), 2000)
-            if (appDoc.exists && isMyUser(appDoc.data()?.user_id)) {
-              await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000)
-            }
-          } catch { /* fallback below */ }
+          await runWithTimeout(db.collection('market_applications').doc(applicationId).delete(), 3000).catch(() => null)
         }
 
-        // Also clean up any remaining docs for this listing by this user
-        try {
+        // Query by listing_id
+        if (listingId) {
           const snapListing = await runWithTimeout(
             db.collection('market_applications').where('listing_id', '==', listingId).get(),
             3000
-          )
-          const toDelete = snapListing.docs.filter((doc: any) => isMyUser(doc.data()?.user_id))
-          for (const doc of toDelete) {
-            await runWithTimeout(doc.ref.delete(), 2000).catch(() => null)
+          ).catch(() => null)
+
+          if (snapListing && !snapListing.empty) {
+            for (const doc of snapListing.docs) {
+              const d = doc.data()
+              if (isMyUser(d.user_id || d.userId) || doc.id === applicationId) {
+                await runWithTimeout(doc.ref.delete(), 2000).catch(() => null)
+              }
+            }
           }
-        } catch { /* non-fatal */ }
+        }
+
+        // Query by user_id = session.userId
+        if (session.userId) {
+          const snapUser = await runWithTimeout(
+            db.collection('market_applications').where('user_id', '==', session.userId).get(),
+            3000
+          ).catch(() => null)
+
+          if (snapUser && !snapUser.empty) {
+            for (const doc of snapUser.docs) {
+              const d = doc.data()
+              if (d.listing_id === listingId || d.listingId === listingId || doc.id === applicationId) {
+                await runWithTimeout(doc.ref.delete(), 2000).catch(() => null)
+              }
+            }
+          }
+        }
+
+        // Query by user_id = session.steamId
+        if (session.steamId && session.steamId !== session.userId) {
+          const snapSteam = await runWithTimeout(
+            db.collection('market_applications').where('user_id', '==', session.steamId).get(),
+            3000
+          ).catch(() => null)
+
+          if (snapSteam && !snapSteam.empty) {
+            for (const doc of snapSteam.docs) {
+              const d = doc.data()
+              if (d.listing_id === listingId || d.listingId === listingId || doc.id === applicationId) {
+                await runWithTimeout(doc.ref.delete(), 2000).catch(() => null)
+              }
+            }
+          }
+        }
       } catch (err) {
         console.error('Failed to withdraw application in Firestore:', err)
       }
     }
   }
 
-  // 2. Delete from Mock Cookies
+  // 2. Delete from Mock Cookies (Always executed as safety fallback)
   try {
     const { cookies } = await import('next/headers')
     const cookieStore = await cookies()
@@ -376,7 +410,7 @@ export async function withdrawApplicationAction(listingId: string, applicationId
         apps = apps.filter((a: any) => !(
           (applicationId && a.id === applicationId) ||
           (isMyUser(a.userId || a.user_id) &&
-           (a.listingId === listingId || a.listing_id === listingId))
+           (a.listingId === listingId || a.listing_id === listingId || a.teamId === listingId || a.id === listingId))
         ))
         cookieStore.set('mock_market_applications', JSON.stringify(apps), {
           path: '/',
@@ -388,6 +422,8 @@ export async function withdrawApplicationAction(listingId: string, applicationId
     console.error('Failed to withdraw application in mock mode:', err)
   }
 
+  invalidateCache(['teams_dashboard', 'market', 'platform_leagues'])
   revalidatePath('/market')
   revalidatePath('/equipos')
 }
+
