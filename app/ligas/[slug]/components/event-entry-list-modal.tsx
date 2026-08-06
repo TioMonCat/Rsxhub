@@ -12,7 +12,7 @@ type EventEntryListModalProps = {
   registrations: Registration[]
   classTags: string[]
   myManagedTeams: ManagedTeam[]
-  teamInfo?: Record<string, { name: string; primaryColor: string | null; logoUrl: string | null; cars?: any[]; skinAssignments?: any[] }>
+  teamInfo?: Record<string, { name: string; primaryColor: string | null; logoUrl: string | null; cars?: any[]; members?: any[]; skinAssignments?: any[] }>
   standings?: Record<string, TeamStanding[]>
   isAdmin: boolean
   onClose: () => void
@@ -130,29 +130,60 @@ export function EventEntryListModal({
 
   const resolveDrivers = (teamId: string, classTag: string, carNumber: string | number) => {
     const targetDorsal = String(carNumber ?? '').trim()
+    const targetTag = String(classTag ?? '').trim().toUpperCase()
+
+    // 1. Get team info from myManagedTeams or teamInfo
+    const managed = myManagedTeams.find((t) => t.id === teamId)
+    const info = teamInfo[teamId]
+    const teamCars = managed?.cars || info?.cars || []
+    const teamMembers: any[] = managed?.members || info?.members || []
+
+    // 2. Find car matching category & dorsal
+    const car =
+      teamCars.find(
+        (c: any) =>
+          String(c.category || '').toUpperCase() === targetTag &&
+          String(c.dorsal ?? '').trim() === targetDorsal
+      ) || teamCars.find((c: any) => String(c.dorsal ?? '').trim() === targetDorsal)
+
+    const driverUserIds: string[] = car?.driverUserIds || car?.driver_user_ids || []
+
+    if (driverUserIds.length > 0) {
+      const resolved = driverUserIds
+        .map((dId) => {
+          const member = teamMembers.find((m: any) => m.userId === dId || m.id === dId)
+          const reg = registrations.find((r) => r.userId === dId && r.teamId === teamId)
+          const name = member?.displayName || member?.name || reg?.displayName || 'Driver'
+          const steamId = getSteam64Id(member?.steamId, (reg as any)?.steamId, dId)
+          return { name, steamId }
+        })
+        .filter((d) => d.name)
+
+      if (resolved.length > 0) return resolved
+    }
+
+    // 3. Fallback to matched registrations
     const matchedRegs = registrations.filter(
       (r) =>
         r.teamId === teamId &&
-        String(r.classTag || '').toUpperCase() === String(classTag || '').toUpperCase() &&
+        String(r.classTag || '').toUpperCase() === targetTag &&
         String(r.assignedNumber ?? '').trim() === targetDorsal
     )
 
-    const managed = myManagedTeams.find((t) => t.id === teamId)
-
     if (matchedRegs.length > 0) {
       return matchedRegs.map((r) => {
-        const member = managed?.members?.find((m) => m.userId === r.userId)
+        const member = teamMembers.find((m: any) => m.userId === r.userId)
         return {
-          name: r.displayName || 'Driver',
-          steamId: getSteam64Id((r as any).steamId, r.userId, (member as any)?.steamId),
+          name: r.displayName || member?.displayName || 'Driver',
+          steamId: getSteam64Id((r as any).steamId, member?.steamId, r.userId),
         }
       })
     }
 
-    if (managed && managed.members) {
-      return managed.members.map((m) => ({
-        name: m.displayName || 'Driver',
-        steamId: getSteam64Id((m as any).steamId, m.userId),
+    if (teamMembers.length > 0) {
+      return teamMembers.map((m: any) => ({
+        name: m.displayName || m.name || 'Driver',
+        steamId: getSteam64Id(m.steamId, m.userId),
       }))
     }
 
@@ -190,7 +221,7 @@ export function EventEntryListModal({
   const handleDownloadCategorySkins = async (tag: string, teamList: Array<{ teamId: string; teamName: string; dorsal: string }>) => {
     setDownloadingCategory(tag)
     try {
-      const zip = new JSZip()
+      const masterZip = new JSZip()
       let downloadedCount = 0
 
       for (const t of teamList) {
@@ -198,37 +229,73 @@ export function EventEntryListModal({
 
         if (skinUrl) {
           const sanitize = (str: string) => str.replace(/[^a-z0-9_-]/gi, '_')
-          const fileName = `skin_${tag}_#${t.dorsal}_${sanitize(t.teamName)}.zip`
+          const skinFolderName = `#${t.dorsal}_${sanitize(t.teamName)}`
 
-          if (skinUrl.startsWith('data:')) {
-            const base64Parts = skinUrl.split(',')
-            if (base64Parts[1]) {
-              zip.file(fileName, base64Parts[1], { base64: true })
-              downloadedCount++
-            }
-          } else if (skinUrl.startsWith('http') || skinUrl.startsWith('/')) {
-            try {
+          try {
+            let buffer: ArrayBuffer | null = null
+
+            if (skinUrl.startsWith('data:')) {
+              const base64Parts = skinUrl.split(',')
+              if (base64Parts[1]) {
+                const binaryStr = atob(base64Parts[1])
+                const len = binaryStr.length
+                const bytes = new Uint8Array(len)
+                for (let i = 0; i < len; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i)
+                }
+                buffer = bytes.buffer
+              }
+            } else if (skinUrl.startsWith('http') || skinUrl.startsWith('/')) {
               const resp = await fetch(skinUrl)
               if (resp.ok) {
-                const blob = await resp.blob()
-                zip.file(fileName, blob)
-                downloadedCount++
+                buffer = await resp.arrayBuffer()
               } else {
                 console.warn(`Fetch returned status ${resp.status} for skinUrl: ${skinUrl}`)
               }
-            } catch (fetchErr) {
-              console.error(`Failed to fetch skin for team ${t.teamName}:`, fetchErr)
             }
+
+            if (buffer) {
+              try {
+                // Unpack team zip in memory into AC Content Manager format
+                const teamZip = await JSZip.loadAsync(buffer)
+                let hasContentCars = false
+                let hasSkinsFolder = false
+
+                teamZip.forEach((relativePath) => {
+                  if (relativePath.startsWith('content/cars/')) hasContentCars = true
+                  if (relativePath.startsWith('skins/')) hasSkinsFolder = true
+                })
+
+                for (const [relativePath, zipObj] of Object.entries(teamZip.files)) {
+                  if (zipObj.dir) continue
+                  const fileData = await zipObj.async('uint8array')
+
+                  if (hasContentCars || hasSkinsFolder) {
+                    masterZip.file(relativePath, fileData)
+                  } else {
+                    masterZip.file(`skins/${skinFolderName}/${relativePath}`, fileData)
+                  }
+                }
+                downloadedCount++
+              } catch (unzipErr) {
+                // If not a valid zip archive (e.g. single dds or png), place in skin subfolder
+                const ext = skinUrl.includes('.') ? skinUrl.slice(skinUrl.lastIndexOf('.')) : '.dds'
+                masterZip.file(`skins/${skinFolderName}/skin${ext}`, new Uint8Array(buffer))
+                downloadedCount++
+              }
+            }
+          } catch (fetchErr) {
+            console.error(`Failed to fetch/process skin for team ${t.teamName}:`, fetchErr)
           }
         }
       }
 
       if (downloadedCount === 0) {
-        alert(`No skin .zip files found to download for ${tag} category.`)
+        alert(`No skin files found to download for ${tag} category.`)
         return
       }
 
-      const content = await zip.generateAsync({ type: 'blob' })
+      const content = await masterZip.generateAsync({ type: 'blob' })
       const link = document.createElement('a')
       link.href = URL.createObjectURL(content)
       link.download = `Skins_Confirmed_${tag}_Round.zip`

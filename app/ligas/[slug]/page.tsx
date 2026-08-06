@@ -30,7 +30,7 @@ export default async function LigaDetailPage({
   const confirmations = await getEventConfirmations(league.id)
   const initialPointsOverrides = await getTeamPointsOverrides(league.id)
 
-  const { teams, myTeamIds } = session ? await getTeamsDashboard(session.userId) : { teams: [], myTeamIds: [] as string[] }
+  const { teams, myTeamIds } = await getTeamsDashboard(session?.userId)
   const managedTeams = teams.filter((team) => myTeamIds.includes(team.id))
 
   const teamInfoById = new Map<
@@ -40,54 +40,20 @@ export default async function LigaDetailPage({
       primaryColor: string | null
       logoUrl: string | null
       cars?: any[]
+      members?: any[]
       skinAssignments?: any[]
     }
   >()
 
-  const db = getFirestoreDb()
-  const registrationTeamIds = Array.from(new Set(registrations.map((item) => item.teamId).filter(Boolean))) as string[]
-
-  if (hasFirebase && db && registrationTeamIds.length > 0) {
-    try {
-      const chunks = []
-      for (let i = 0; i < registrationTeamIds.length; i += 10) {
-        chunks.push(registrationTeamIds.slice(i, i + 10))
-      }
-      const teamSnaps = await Promise.all(chunks.map((chunk: any) => db.collection('teams').where('__name__', 'in', chunk).get()))
-      const teamsRows = teamSnaps.flatMap((snap: any) => snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() })))
-
-      for (const row of teamsRows) {
-        teamInfoById.set(row.id, {
-          name: row.name,
-          primaryColor: row.primary_color || null,
-          logoUrl: row.logo_url || null,
-          cars: row.cars || [],
-          skinAssignments: row.skin_assignments || row.skinAssignments || [],
-        })
-      }
-    } catch (e) {
-      console.error(e)
-    }
-  } else if (!hasFirebase && registrationTeamIds.length > 0) {
-    try {
-      const { cookies } = await import('next/headers')
-      const cookieStore = await cookies()
-      const existing = cookieStore.get('mock_teams')?.value
-      const allMockTeams: any[] = existing ? JSON.parse(existing) : []
-      for (const t of allMockTeams) {
-        if (registrationTeamIds.includes(t.id)) {
-          teamInfoById.set(t.id, {
-            name: t.name,
-            primaryColor: t.primaryColor || null,
-            logoUrl: cookieStore.get(`mock_team_logo_${t.id}`)?.value || t.logoUrl || null,
-            cars: t.cars || [],
-            skinAssignments: t.skinAssignments || [],
-          })
-        }
-      }
-    } catch (e) {
-      console.error(e)
-    }
+  for (const t of teams) {
+    teamInfoById.set(t.id, {
+      name: t.name,
+      primaryColor: t.primaryColor || null,
+      logoUrl: t.logoUrl || null,
+      cars: t.cars || [],
+      members: t.members || [],
+      skinAssignments: t.skinAssignments || [],
+    })
   }
 
   // Map to serializable structures

@@ -427,21 +427,64 @@ function ViewEntryListModal({
   const handleDownloadCategorySkins = async (tag: string, teamList: Array<{ teamId: string; teamName: string; dorsal: string }>) => {
     setDownloadingCategory(tag)
     try {
-      const zip = new JSZip()
+      const masterZip = new JSZip()
       let addedCount = 0
 
       for (const item of teamList) {
         const skinUrl = resolveSkinUrl(item.teamId, tag, item.dorsal)
         if (skinUrl) {
+          const sanitize = (str: string) => str.replace(/[^a-z0-9_-]/gi, '_')
+          const skinFolderName = `#${item.dorsal}_${sanitize(item.teamName)}`
+
           try {
-            const res = await fetch(skinUrl)
-            if (res.ok) {
-              const blob = await res.blob()
-              const ext = skinUrl.includes('.') ? skinUrl.slice(skinUrl.lastIndexOf('.')) : '.zip'
-              const sanitizedTeamName = item.teamName.replace(/[^a-zA-Z0-9_-]/g, '_')
-              const fileName = `Dorsal_${item.dorsal}_${sanitizedTeamName}_${tag}${ext}`
-              zip.file(fileName, blob)
-              addedCount++
+            let buffer: ArrayBuffer | null = null
+
+            if (skinUrl.startsWith('data:')) {
+              const base64Parts = skinUrl.split(',')
+              if (base64Parts[1]) {
+                const binaryStr = atob(base64Parts[1])
+                const len = binaryStr.length
+                const bytes = new Uint8Array(len)
+                for (let i = 0; i < len; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i)
+                }
+                buffer = bytes.buffer
+              }
+            } else if (skinUrl.startsWith('http') || skinUrl.startsWith('/')) {
+              const res = await fetch(skinUrl)
+              if (res.ok) {
+                buffer = await res.arrayBuffer()
+              }
+            }
+
+            if (buffer) {
+              try {
+                // Unpack team zip in memory into AC Content Manager format
+                const teamZip = await JSZip.loadAsync(buffer)
+                let hasContentCars = false
+                let hasSkinsFolder = false
+
+                teamZip.forEach((relativePath) => {
+                  if (relativePath.startsWith('content/cars/')) hasContentCars = true
+                  if (relativePath.startsWith('skins/')) hasSkinsFolder = true
+                })
+
+                for (const [relativePath, zipObj] of Object.entries(teamZip.files)) {
+                  if (zipObj.dir) continue
+                  const fileData = await zipObj.async('uint8array')
+
+                  if (hasContentCars || hasSkinsFolder) {
+                    masterZip.file(relativePath, fileData)
+                  } else {
+                    masterZip.file(`skins/${skinFolderName}/${relativePath}`, fileData)
+                  }
+                }
+                addedCount++
+              } catch (unzipErr) {
+                const ext = skinUrl.includes('.') ? skinUrl.slice(skinUrl.lastIndexOf('.')) : '.dds'
+                masterZip.file(`skins/${skinFolderName}/skin${ext}`, new Uint8Array(buffer))
+                addedCount++
+              }
             }
           } catch (e) {
             console.error(`Failed to fetch skin for team ${item.teamName}:`, e)
@@ -455,7 +498,7 @@ function ViewEntryListModal({
         return
       }
 
-      const content = await zip.generateAsync({ type: 'blob' })
+      const content = await masterZip.generateAsync({ type: 'blob' })
       const downloadUrl = URL.createObjectURL(content)
       const a = document.createElement('a')
       a.href = downloadUrl
