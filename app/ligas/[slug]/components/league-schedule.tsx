@@ -15,6 +15,7 @@ interface LeagueScheduleProps {
   league: League
   events: LeagueEvent[]
   isAdmin: boolean
+  isSteward?: boolean
   classTags: string[]
   confirmations: EventConfirmation[]
   initialRegistrations: Registration[]
@@ -31,6 +32,7 @@ export function LeagueSchedule({
   league,
   events,
   isAdmin,
+  isSteward = false,
   classTags,
   confirmations,
   initialRegistrations,
@@ -124,8 +126,8 @@ export function LeagueSchedule({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* ADMIN: MANAGE ROUND BUTTON */}
-                    {isAdmin && onFinishRound && (
+                    {/* ADMIN & STEWARD: MANAGE ROUND BUTTON */}
+                    {(isAdmin || isSteward) && onFinishRound && (
                       <button
                         type="button"
                         onClick={() => onFinishRound(ev)}
@@ -136,8 +138,8 @@ export function LeagueSchedule({
                       </button>
                     )}
 
-                    {/* DRIVERS & NON-ADMINS: VIEW ROUND BUTTON */}
-                    {(!isAdmin || !onFinishRound) && onViewResults && (
+                    {/* DRIVERS & NON-ADMINS/NON-STEWARDS: VIEW ROUND BUTTON */}
+                    {(!isAdmin && !isSteward) && onViewResults && (
                       <button
                         type="button"
                         onClick={() => onViewResults(ev)}

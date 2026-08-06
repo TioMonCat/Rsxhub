@@ -106,7 +106,7 @@ export async function invitePilot(formData: FormData) {
       await notifyTeamInvitation({
         invitedUserId,
         teamName,
-        message: message || `El equipo ${teamName} te ha enviado una invitación para unirte a sus filas.`,
+        message: message || `${teamName} has sent you an invitation to join their team.`,
       })
     } catch (errNotif) {
       console.error('Failed to send team invite notification:', errNotif)
@@ -131,7 +131,7 @@ export async function removeTeamMember(formData: FormData) {
 
   let removedFromFirestore = false
   let redirectUrl: string | null = null
-  let removedDriverName = 'Piloto'
+  let removedDriverName = 'Driver'
   let teamName = ''
   let ownerUserIdToNotify = ''
   const removedCarsList: string[] = []
@@ -302,13 +302,13 @@ export async function removeTeamMember(formData: FormData) {
   // Create Notification for Team Leader
   if (ownerUserIdToNotify) {
     const carNoticeMsg = removedCarsList.length > 0
-      ? ` Además, el/los vehículo(s) ${removedCarsList.join(', ')} fueron eliminados automáticamente al quedarse sin pilotos asignados.`
+      ? ` Additionally, vehicle(s) ${removedCarsList.join(', ')} were automatically unassigned due to having no active drivers.`
       : ''
 
     await createNotification({
       userId: ownerUserIdToNotify,
-      title: 'Salida de Piloto y Actualización de Vehículos',
-      message: `El piloto ${removedDriverName} ha dejado de pertenecer al equipo ${teamName}.${carNoticeMsg}`,
+      title: 'Driver Departure & Vehicle Update',
+      message: `Driver ${removedDriverName} has left team ${teamName}.${carNoticeMsg}`,
       link: `/equipos/${teamId}`
     })
   }

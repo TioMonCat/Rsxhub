@@ -119,10 +119,10 @@ export default function EquiposContent({
         )}
       </div>
 
-      {/* Grid of Teams */}
-      <section className="grid gap-6 sm:grid-cols-1 md:grid-cols-2">
+      {/* Grid of Teams (3 per row on lg) */}
+      <section className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {teams.length === 0 ? (
-          <div className="shell-panel p-8 text-center rounded-none border border-shell-line bg-zinc-950/20 md:col-span-2">
+          <div className="shell-panel p-8 text-center rounded-none border border-shell-line bg-zinc-950/20 lg:col-span-3">
             <p className="text-sm text-slate-400">No teams have been created yet.</p>
             {session && !belongsToTeam && (
               <button

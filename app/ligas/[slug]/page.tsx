@@ -151,6 +151,7 @@ export default async function LigaDetailPage({
       league={serializableLeague}
       initialEvents={serializableEvents}
       isAdmin={isAdmin}
+      isSteward={isSteward}
       canEditPoints={canEditPoints}
       session={serializableSession}
       initialRegistrations={serializableRegistrations}

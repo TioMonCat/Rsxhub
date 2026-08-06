@@ -22,6 +22,7 @@ type Props = {
   league: League
   initialEvents: LeagueEvent[]
   isAdmin: boolean
+  isSteward?: boolean
   canEditPoints?: boolean
   session: any
   initialRegistrations: Registration[]
@@ -36,6 +37,7 @@ export default function LeagueDetailPageContent({
   league,
   initialEvents,
   isAdmin,
+  isSteward = false,
   canEditPoints = false,
   session,
   initialRegistrations,
@@ -392,6 +394,7 @@ export default function LeagueDetailPageContent({
           league={league}
           events={events}
           isAdmin={isAdmin}
+          isSteward={isSteward}
           classTags={classTags}
           confirmations={confirmations}
           initialRegistrations={initialRegistrations}
