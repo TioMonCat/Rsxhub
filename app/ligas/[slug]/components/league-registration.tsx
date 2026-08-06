@@ -92,7 +92,7 @@ export function LeagueRegistration({
           className="bg-cyan-500 hover:bg-cyan-400 text-black font-black px-4 py-3 text-xs md:text-sm uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(0,242,254,0.35)] shrink-0 cursor-pointer"
         >
           <Plus className="h-5 w-5" />
-          {registeredCarsCount > 0 ? 'Add Vehicles' : 'Register Team'}
+          Añadir Equipo
         </button>
       )}
 

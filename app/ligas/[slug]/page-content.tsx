@@ -709,10 +709,10 @@ export default function LeagueDetailPageContent({
             <button onClick={() => setIsRegisterOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white">
               <X className="h-4 w-4" />
             </button>
-            <h2 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Register Team Entry</h2>
+            <h2 className="text-xl font-bold uppercase tracking-tight text-white mb-2">Añadir Equipo a la Liga</h2>
             <form onSubmit={handleRegisterSubmit} className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Select Team</label>
+                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Seleccionar Equipo</label>
                 <select
                   value={selectedTeamId}
                   onChange={(e) => setSelectedTeamId(e.target.value)}
@@ -728,10 +728,10 @@ export default function LeagueDetailPageContent({
               </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-shell-line/50">
                 <button type="button" onClick={() => setIsRegisterOpen(false)} className="border border-shell-line px-4 py-2 text-xs font-bold uppercase">
-                  Cancel
+                  Cancelar
                 </button>
                 <button type="submit" disabled={isRegSubmitting} className="bg-shell-accent px-5 py-2 text-xs font-bold uppercase text-white">
-                  {isRegSubmitting ? 'Registering...' : 'Confirm Registration'}
+                  {isRegSubmitting ? 'Registrando...' : 'Confirmar Registro'}
                 </button>
               </div>
             </form>
