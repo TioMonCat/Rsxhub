@@ -1,6 +1,7 @@
 import { CenterModal } from '@/components/center-modal'
 import { MessageSquare, Users } from 'lucide-react'
-import { updateTeamMemberRole, removeTeamMember, acceptDriverApplicationAction, declineDriverApplicationAction } from '@/app/equipos/actions'
+import { updateTeamMemberRole, removeTeamMember } from '@/app/equipos/actions/team-membership'
+import { acceptDriverApplicationAction, declineDriverApplicationAction } from '@/app/equipos/actions/team-market'
 import type { TeamPilot, PendingApplication } from '../team-utils'
 
 type TeamDriversSectionProps = {
