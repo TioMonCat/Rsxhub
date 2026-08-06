@@ -250,16 +250,6 @@ export default function EquiposContent({
                     <input type="hidden" name="classTags" value={selectedTags.join(',')} />
                   </div>
 
-                  {/* Team Logo Picker */}
-                  <div>
-                    <ImagePicker
-                      name="logoUrl"
-                      defaultValue=""
-                      label="Team Logo (PNG/JPG/WebP - Will be compressed automatically)"
-                      hideGallery
-                    />
-                  </div>
-
                   {/* Team Identity & Customization */}
                   <div className="border border-white/5 bg-white/[0.02] p-4 space-y-4">
                     <h3 className="text-xs font-black uppercase italic tracking-wider text-slate-200 border-b border-white/10 pb-2">

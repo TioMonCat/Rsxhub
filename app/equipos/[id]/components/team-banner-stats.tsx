@@ -208,16 +208,6 @@ export function TeamBannerStats({
                   </div>
                 </div>
 
-                {/* Logo Picker */}
-                <div className="text-left">
-                  <ImagePicker
-                    name="logoUrl"
-                    defaultValue={team.logoUrl || ''}
-                    label="Team Logo (PNG/JPG/WebP - Will be compressed automatically)"
-                    hideGallery
-                  />
-                </div>
-
                 {/* Save Button */}
                 <div className="flex justify-end pt-4 border-t border-shell-line/50">
                   <button className="bg-shell-accent hover:bg-red-700 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-white rounded-none transition-colors cursor-pointer">

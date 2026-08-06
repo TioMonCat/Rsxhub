@@ -375,43 +375,81 @@ export async function updateTeam(formData: FormData) {
           youtube_url: youtubeUrl || null,
         }))
 
-        // Auto Sync: Find all unique league_id where this team is registered and update registrations
+        // Auto Sync: Find all leagues where this team or its cars belong
         try {
           const regSnap = await db.collection('league_registrations').where('team_id', '==', teamId).get()
-          const leagueIds = Array.from(new Set(regSnap.docs.map((doc: any) => doc.data()?.league_id).filter(Boolean))) as string[]
+          const regLeagueIds = regSnap.docs.map((doc: any) => doc.data()?.league_id).filter(Boolean)
 
-          if (leagueIds.length > 0) {
-            for (const leagueId of leagueIds) {
-              const leagueDoc = await db.collection('leagues').doc(leagueId).get()
-              if (leagueDoc.exists) {
-                const leagueClassTags = parseClassTags(leagueDoc.data()?.class_tags || leagueDoc.data()?.classTags) || []
-                
-                // Filter updated cars matching this league's classTags
-                const matchingCars = teamCars.filter((car: any) => {
-                  if (!car.category) return false
-                  const c1 = car.category.toUpperCase()
-                  const carLeagueId = car.leagueId || car.league_id
-                  if (carLeagueId && carLeagueId !== leagueId) return false
-                  return leagueClassTags.some((tag: any) => {
-                    const c2 = tag.toUpperCase()
-                    return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
-                  })
+          const carLeagueIds = teamCars
+            .map((car: any) => car.leagueId || car.league_id)
+            .filter(Boolean)
+
+          const teamLeagueId = existingTeam?.league_id || existingTeam?.leagueId
+
+          const allLeaguesSnap = await db.collection('leagues').get()
+          const allLeagueIds = allLeaguesSnap.docs.map((doc: any) => doc.id)
+
+          const targetLeagueIds = Array.from(
+            new Set([...regLeagueIds, ...carLeagueIds, teamLeagueId, ...allLeagueIds].filter(Boolean))
+          ) as string[]
+
+          for (const leagueId of targetLeagueIds) {
+            let leagueDoc = await db.collection('leagues').doc(leagueId).get()
+            if (!leagueDoc.exists) {
+              const slugSnap = await db.collection('leagues').where('slug', '==', leagueId).get()
+              if (!slugSnap.empty) {
+                leagueDoc = slugSnap.docs[0]
+              }
+            }
+
+            if (leagueDoc.exists) {
+              const realLeagueId = leagueDoc.id
+              const leagueData = leagueDoc.data()
+              const leagueClassTags = parseClassTags(leagueData?.class_tags || leagueData?.classTags) || []
+
+              // Filter updated cars matching this league
+              const matchingCars = teamCars.filter((car: any) => {
+                if (!car.category) return false
+                const c1 = car.category.toUpperCase()
+                const carLeagueId = car.leagueId || car.league_id
+                if (carLeagueId && carLeagueId !== realLeagueId && carLeagueId !== leagueData?.slug) return false
+                return leagueClassTags.some((tag: any) => {
+                  const c2 = tag.toUpperCase()
+                  return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
                 })
+              })
 
-                // Get other team registrations to prevent number/dorsal collisions
-                const otherRegsSnap = await db.collection('league_registrations').where('league_id', '==', leagueId).get()
-                const otherRegs = otherRegsSnap.docs
-                  .map((d: any) => d.data())
-                  .filter((r: any) => r.team_id !== teamId)
+              if (matchingCars.length === 0) continue
 
-                const registrationsInThisLeague: any[] = []
+              // Get other team registrations to prevent number/dorsal collisions
+              const otherRegsSnap = await db.collection('league_registrations').where('league_id', '==', realLeagueId).get()
+              const otherRegs = otherRegsSnap.docs
+                .map((d: any) => d.data())
+                .filter((r: any) => r.team_id !== teamId)
 
-                for (const car of matchingCars) {
-                  const carClassTag = String(car.category || '').toUpperCase()
-                  const carDorsal = String(car.dorsal || '').trim()
+              const registrationsInThisLeague: any[] = []
 
-                  let regCarNumber = carDorsal
-                  if (!regCarNumber) {
+              for (const car of matchingCars) {
+                const carClassTag = String(car.category || '').toUpperCase()
+                const carDorsal = String(car.dorsal || '').trim()
+
+                let regCarNumber = carDorsal
+                if (!regCarNumber) {
+                  for (let num = 12; num <= 99; num++) {
+                    const numStr = String(num)
+                    const taken = otherRegs.some(
+                      (r: any) => r.class_tag === carClassTag && String(r.assigned_number ?? '').trim() === numStr && r.status !== 'rejected'
+                    )
+                    if (!taken) {
+                      regCarNumber = numStr
+                      break
+                    }
+                  }
+                } else {
+                  const isTaken = otherRegs.some(
+                    (r: any) => r.class_tag === carClassTag && String(r.assigned_number ?? '').trim() === regCarNumber && r.status !== 'rejected'
+                  )
+                  if (isTaken) {
                     for (let num = 12; num <= 99; num++) {
                       const numStr = String(num)
                       const taken = otherRegs.some(
@@ -422,86 +460,71 @@ export async function updateTeam(formData: FormData) {
                         break
                       }
                     }
-                  } else {
-                    const isTaken = otherRegs.some(
-                      (r: any) => r.class_tag === carClassTag && String(r.assigned_number ?? '').trim() === regCarNumber && r.status !== 'rejected'
-                    )
-                    if (isTaken) {
-                      for (let num = 12; num <= 99; num++) {
-                        const numStr = String(num)
-                        const taken = otherRegs.some(
-                          (r: any) => r.class_tag === carClassTag && String(r.assigned_number ?? '').trim() === numStr && r.status !== 'rejected'
-                        )
-                        if (!taken) {
-                          regCarNumber = numStr
-                          break
-                        }
-                      }
-                    }
-                  }
-
-                  let carDrivers: string[] = []
-                  const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
-                  if (byLeague[leagueId] && Array.isArray(byLeague[leagueId]) && byLeague[leagueId].length > 0) {
-                    carDrivers = byLeague[leagueId].filter(Boolean).map(String)
-                  } else if (Array.isArray(car.driverUserIds) && car.driverUserIds.length > 0) {
-                    carDrivers = car.driverUserIds.filter(Boolean).map(String)
-                  } else if (Array.isArray(car.driver_user_ids) && car.driver_user_ids.length > 0) {
-                    carDrivers = car.driver_user_ids.filter(Boolean).map(String)
-                  }
-
-                  if (carDrivers.length === 0) {
-                    carDrivers = [session.userId]
-                  }
-
-                  for (const userId of carDrivers) {
-                    let displayName = `Pilot ${userId.slice(0, 4)}`
-                    try {
-                      const profileDoc = await db.collection('profiles').doc(userId).get()
-                      if (profileDoc.exists) {
-                        displayName = profileDoc.data()?.display_name || displayName
-                      } else {
-                        const steamDoc = await db.collection('steam_accounts').doc(userId).get()
-                        if (steamDoc.exists) {
-                          displayName = steamDoc.data()?.steam_display_name || displayName
-                        }
-                      }
-                    } catch (e) {
-                      console.error('Failed to resolve display name:', e)
-                    }
-
-                    registrationsInThisLeague.push({
-                      league_id: leagueId,
-                      user_id: userId,
-                      team_id: teamId,
-                      display_name: displayName,
-                      status: 'approved',
-                      class_tag: carClassTag,
-                      assigned_number: regCarNumber,
-                      created_at: new Date().toISOString()
-                    })
                   }
                 }
 
-                // Apply changes in a batch
-                const existingRegsSnap = await db.collection('league_registrations')
-                  .where('league_id', '==', leagueId)
-                  .where('team_id', '==', teamId)
-                  .get()
-
-                const batch = db.batch()
-                existingRegsSnap.docs.forEach((doc: any) => {
-                  batch.delete(doc.ref)
-                })
-
-                for (const newReg of registrationsInThisLeague) {
-                  const docId = `${leagueId}_${newReg.class_tag}_${newReg.user_id}_${newReg.assigned_number}`
-                  const docRef = db.collection('league_registrations').doc(docId)
-                  batch.set(docRef, newReg, { merge: true })
+                let carDrivers: string[] = []
+                const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
+                if (byLeague[realLeagueId] && Array.isArray(byLeague[realLeagueId]) && byLeague[realLeagueId].length > 0) {
+                  carDrivers = byLeague[realLeagueId].filter(Boolean).map(String)
+                } else if (Array.isArray(car.driverUserIds) && car.driverUserIds.length > 0) {
+                  carDrivers = car.driverUserIds.filter(Boolean).map(String)
+                } else if (Array.isArray(car.driver_user_ids) && car.driver_user_ids.length > 0) {
+                  carDrivers = car.driver_user_ids.filter(Boolean).map(String)
                 }
 
-                await batch.commit()
+                // If car has NO drivers assigned, do NOT generate registrations for this car
+                if (carDrivers.length === 0) {
+                  continue
+                }
+
+                for (const userId of carDrivers) {
+                  let displayName = `Pilot ${userId.slice(0, 4)}`
+                  try {
+                    const profileDoc = await db.collection('profiles').doc(userId).get()
+                    if (profileDoc.exists) {
+                      displayName = profileDoc.data()?.display_name || displayName
+                    } else {
+                      const steamDoc = await db.collection('steam_accounts').doc(userId).get()
+                      if (steamDoc.exists) {
+                        displayName = steamDoc.data()?.steam_display_name || displayName
+                      }
+                    }
+                  } catch (e) {
+                    console.error('Failed to resolve display name:', e)
+                  }
+
+                  registrationsInThisLeague.push({
+                    league_id: realLeagueId,
+                    user_id: userId,
+                    team_id: teamId,
+                    display_name: displayName,
+                    status: 'approved',
+                    class_tag: carClassTag,
+                    assigned_number: regCarNumber,
+                    created_at: new Date().toISOString()
+                  })
+                }
               }
+
+              // Apply changes in a batch
+              const existingRegsSnap = await db.collection('league_registrations')
+                .where('league_id', '==', realLeagueId)
+                .where('team_id', '==', teamId)
+                .get()
+
+              const batch = db.batch()
+              existingRegsSnap.docs.forEach((doc: any) => {
+                batch.delete(doc.ref)
+              })
+
+              for (const newReg of registrationsInThisLeague) {
+                const docId = `${realLeagueId}_${newReg.class_tag}_${newReg.user_id}_${newReg.assigned_number}`
+                const docRef = db.collection('league_registrations').doc(docId)
+                batch.set(docRef, newReg, { merge: true })
+              }
+
+              await batch.commit()
             }
           }
         } catch (err) {
@@ -556,21 +579,23 @@ export async function updateTeam(formData: FormData) {
         listRegs = [...defaultRegs]
       }
 
-      // Find all unique leagueIds where this team is registered
-      const registeredLeagues = Array.from(new Set(
-        listRegs.filter((r: any) => r.teamId === teamId).map((r: any) => r.leagueId).filter(Boolean)
-      )) as string[]
+      const mockLeaguesCookie = cookieStore.get('mock_leagues')?.value
+      let listLeagues: any[] = []
+      if (mockLeaguesCookie) {
+        listLeagues = JSON.parse(mockLeaguesCookie)
+      } else {
+        const { leagues: defaultLeagues } = await import('@/data/mock')
+        listLeagues = [...defaultLeagues]
+      }
+
+      // Find all candidate leagueIds for this team and its vehicles
+      const registeredLeagues = Array.from(new Set([
+        ...listRegs.filter((r: any) => r.teamId === teamId).map((r: any) => r.leagueId).filter(Boolean),
+        ...teamCars.map((c: any) => c.leagueId || c.league_id).filter(Boolean),
+        ...listLeagues.map((l: any) => l.id),
+      ])) as string[]
 
       if (registeredLeagues.length > 0) {
-        const mockLeaguesCookie = cookieStore.get('mock_leagues')?.value
-        let listLeagues: any[] = []
-        if (mockLeaguesCookie) {
-          listLeagues = JSON.parse(mockLeaguesCookie)
-        } else {
-          const { leagues: defaultLeagues } = await import('@/data/mock')
-          listLeagues = [...defaultLeagues]
-        }
-
         for (const leagueId of registeredLeagues) {
           const league = listLeagues.find((l: any) => l.id === leagueId)
           if (league) {
