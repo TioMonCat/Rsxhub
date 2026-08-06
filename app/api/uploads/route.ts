@@ -294,19 +294,17 @@ export async function POST(req: Request) {
         console.warn('Writing compressed skin to public disk failed (serverless environment). Trying /tmp storage:', fsErr)
       }
 
-      // 2. Attempt writing to /tmp disk (Writable on Vercel Serverless)
+      // 2. Write to /tmp disk AND store in Firestore skin_files for serverless persistence
       const TMP_SKINS_DIR = path.join('/tmp', 'skins')
       const tmpTargetPath = path.join(TMP_SKINS_DIR, safeSkinName)
       try {
         await fs.mkdir(TMP_SKINS_DIR, { recursive: true })
         await fs.writeFile(tmpTargetPath, inputBuffer)
-        const finalUrl = `/api/uploads/skins/${safeSkinName}`
-        return NextResponse.json({ url: finalUrl, name: file.name })
       } catch (tmpErr) {
         console.warn('Writing compressed skin to /tmp failed:', tmpErr)
       }
 
-      // 3. Fallback: Chunk buffer and store in Firestore skin_files collection (Up to ~4MB in ~500KB chunks)
+      // 3. Store in Firestore skin_files collection for persistent cross-request serving
       if (hasFirebase) {
         const db = getFirestoreDb()
         if (db) {
@@ -334,20 +332,22 @@ export async function POST(req: Request) {
             }
 
             await batch.commit()
-            const finalUrl = `/api/uploads/skins/${safeSkinName}`
-            return NextResponse.json({ url: finalUrl, name: file.name })
           } catch (dbErr) {
             console.error('Failed to save skin chunks to Firestore:', dbErr)
           }
         }
       }
 
+      const finalUrl = `/api/uploads/skins/${safeSkinName}`
+      return NextResponse.json({ url: finalUrl, name: file.name })
+
       // 4. Ultimate fallback for very small files (<200KB)
       if (inputBuffer.length < 200 * 1024) {
-        const mimeType = file.type || 'application/zip'
+        const mimeType = file?.type || 'application/zip'
+        const fileName = file?.name || 'skin.zip'
         const base64 = inputBuffer.toString('base64')
-        const finalUrl = `data:${mimeType};name=${encodeURIComponent(file.name)};base64,${base64}`
-        return NextResponse.json({ url: finalUrl, name: file.name })
+        const finalUrl = `data:${mimeType};name=${encodeURIComponent(fileName)};base64,${base64}`
+        return NextResponse.json({ url: finalUrl, name: fileName })
       }
 
       return NextResponse.json(

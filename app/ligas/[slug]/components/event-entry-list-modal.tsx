@@ -59,55 +59,85 @@ export function EventEntryListModal({
     const targetDorsal = String(dorsal ?? '').trim()
     const targetTag = String(classTag ?? '').trim().toUpperCase()
 
+    const findInCars = (cars?: any[]) => {
+      if (!Array.isArray(cars) || cars.length === 0) return null
+
+      // 1. Match category & dorsal
+      const car1 = cars.find(
+        (c: any) =>
+          String(c.category || '').toUpperCase() === targetTag &&
+          String(c.dorsal ?? '').trim() === targetDorsal &&
+          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
+      )
+      if (car1) return car1.skinUrl || car1.skin_url || car1.skin || car1.skinFile
+
+      // 2. Match dorsal
+      const car2 = cars.find(
+        (c: any) =>
+          String(c.dorsal ?? '').trim() === targetDorsal &&
+          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
+      )
+      if (car2) return car2.skinUrl || car2.skin_url || car2.skin || car2.skinFile
+
+      // 3. Match category
+      const car3 = cars.find(
+        (c: any) =>
+          String(c.category || '').toUpperCase() === targetTag &&
+          (c.skinUrl || c.skin_url || c.skin || c.skinFile)
+      )
+      if (car3) return car3.skinUrl || car3.skin_url || car3.skin || car3.skinFile
+
+      // 4. Any car with skinUrl
+      const car4 = cars.find((c: any) => c.skinUrl || c.skin_url || c.skin || c.skinFile)
+      if (car4) return car4.skinUrl || car4.skin_url || car4.skin || car4.skinFile
+
+      return null
+    }
+
+    const findInAssignments = (assignments?: any[]) => {
+      if (!Array.isArray(assignments) || assignments.length === 0) return null
+      const match = assignments.find(
+        (s: any) =>
+          String((s.carNumber || s.dorsal) ?? '').trim() === targetDorsal &&
+          (s.skinUrl || s.skin_url)
+      )
+      if (match) return match.skinUrl || match.skin_url
+      const first = assignments.find((s: any) => s.skinUrl || s.skin_url)
+      if (first) return first.skinUrl || first.skin_url
+      return null
+    }
+
     // 1. Check in myManagedTeams
     const managed = myManagedTeams.find((m) => m.id === teamId)
     if (managed) {
-      if (Array.isArray((managed as any).skinAssignments)) {
-        const match = (managed as any).skinAssignments.find(
-          (s: any) => String(s.carNumber ?? '').trim() === targetDorsal && (s.skinUrl || s.skin_url)
-        )
-        if (match?.skinUrl || match?.skin_url) return match.skinUrl || match.skin_url
-      }
-      if (Array.isArray(managed.cars)) {
-        const car = managed.cars.find(
-          (c: any) =>
-            String(c.category || '').toUpperCase() === targetTag &&
-            String(c.dorsal ?? '').trim() === targetDorsal &&
-            (c.skinUrl || c.skin_url)
-        )
-        if (car?.skinUrl || car?.skin_url) return car.skinUrl || car.skin_url
-        const catCar = managed.cars.find(
-          (c: any) => String(c.category || '').toUpperCase() === targetTag && (c.skinUrl || c.skin_url)
-        )
-        if (catCar?.skinUrl || catCar?.skin_url) return catCar.skinUrl || catCar.skin_url
-      }
+      const s1 = findInAssignments((managed as any).skinAssignments)
+      if (s1) return s1
+      const s2 = findInCars(managed.cars)
+      if (s2) return s2
     }
 
     // 2. Check in teamInfo
     const info = teamInfo[teamId]
     if (info) {
-      if (Array.isArray(info.skinAssignments)) {
-        const match = info.skinAssignments.find(
-          (s: any) => String(s.carNumber ?? '').trim() === targetDorsal && (s.skinUrl || s.skin_url)
-        )
-        if (match?.skinUrl || match?.skin_url) return match.skinUrl || match.skin_url
-      }
-      if (Array.isArray(info.cars)) {
-        const car = info.cars.find(
-          (c: any) =>
-            String(c.category || '').toUpperCase() === targetTag &&
-            String(c.dorsal ?? '').trim() === targetDorsal &&
-            (c.skinUrl || c.skin_url)
-        )
-        if (car?.skinUrl || car?.skin_url) return car.skinUrl || car.skin_url
-        const catCar = info.cars.find(
-          (c: any) => String(c.category || '').toUpperCase() === targetTag && (c.skinUrl || c.skin_url)
-        )
-        if (catCar?.skinUrl || catCar?.skin_url) return catCar.skinUrl || catCar.skin_url
-      }
+      const s1 = findInAssignments(info.skinAssignments)
+      if (s1) return s1
+      const s2 = findInCars(info.cars)
+      if (s2) return s2
     }
 
     return null
+  }
+
+  const getSteam64Id = (rSteam?: string, rUser?: string, memberSteam?: string) => {
+    const candidates = [rSteam, memberSteam, rUser]
+    for (const cand of candidates) {
+      if (!cand) continue
+      const cleaned = String(cand).trim().replace(/^steam_/, '')
+      if (/^\d{15,18}$/.test(cleaned)) {
+        return cleaned
+      }
+    }
+    return ''
   }
 
   const resolveDrivers = (teamId: string, classTag: string, carNumber: string | number) => {
@@ -118,18 +148,23 @@ export function EventEntryListModal({
         String(r.classTag || '').toUpperCase() === String(classTag || '').toUpperCase() &&
         String(r.assignedNumber ?? '').trim() === targetDorsal
     )
-    if (matchedRegs.length > 0) {
-      return matchedRegs.map((r) => ({
-        name: r.displayName || 'Driver',
-        steamId: (r as any).steamId || r.userId || '',
-      }))
-    }
 
     const managed = myManagedTeams.find((t) => t.id === teamId)
+
+    if (matchedRegs.length > 0) {
+      return matchedRegs.map((r) => {
+        const member = managed?.members?.find((m) => m.userId === r.userId)
+        return {
+          name: r.displayName || 'Driver',
+          steamId: getSteam64Id((r as any).steamId, r.userId, (member as any)?.steamId),
+        }
+      })
+    }
+
     if (managed && managed.members) {
       return managed.members.map((m) => ({
         name: m.displayName || 'Driver',
-        steamId: m.userId || '',
+        steamId: getSteam64Id((m as any).steamId, m.userId),
       }))
     }
 
@@ -190,6 +225,8 @@ export function EventEntryListModal({
                 const blob = await resp.blob()
                 zip.file(fileName, blob)
                 downloadedCount++
+              } else {
+                console.warn(`Fetch returned status ${resp.status} for skinUrl: ${skinUrl}`)
               }
             } catch (fetchErr) {
               console.error(`Failed to fetch skin for team ${t.teamName}:`, fetchErr)
@@ -305,13 +342,8 @@ export function EventEntryListModal({
                               {t.drivers.length > 0 && (
                                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400 mt-0.5">
                                   {t.drivers.map((d, dIdx) => (
-                                    <span key={dIdx} className="inline-flex items-center gap-1">
-                                      <span className="text-slate-300 font-medium">{d.name}</span>
-                                      {isAdmin && d.steamId && (
-                                        <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-1 border border-slate-800">
-                                          {d.steamId}
-                                        </span>
-                                      )}
+                                    <span key={dIdx} className="text-slate-300 font-medium">
+                                      {d.name}
                                     </span>
                                   ))}
                                 </div>
@@ -324,14 +356,16 @@ export function EventEntryListModal({
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const ids = t.drivers.map((d) => d.steamId).filter(Boolean)
+                                  const ids = t.drivers
+                                    .map((d) => d.steamId)
+                                    .filter((id) => Boolean(id) && id !== t.teamId && /^\d{15,18}$/.test(id))
                                   const copyText = ids.length > 0 ? ids.join(', ') : t.teamId
                                   navigator.clipboard.writeText(copyText)
                                   setCopiedKey(rowKey)
                                   setTimeout(() => setCopiedKey(null), 2200)
                                 }}
                                 className="bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 cursor-pointer shrink-0"
-                                title={`Copy driver IDs for car #${t.dorsal}`}
+                                title={`Copy driver Steam 64 IDs for car #${t.dorsal}`}
                               >
                                 {copiedKey === rowKey ? (
                                   <>
