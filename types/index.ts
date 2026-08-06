@@ -132,6 +132,7 @@ export interface Team {
   primaryColor?: string | null
   secondaryColor?: string | null
   logoUrl?: string | null
+  bannerUrl?: string | null
   carSkinUrls?: string[]
   skinAssignments?: Array<{
     leagueSlug: string

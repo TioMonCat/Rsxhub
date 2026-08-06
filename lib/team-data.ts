@@ -255,7 +255,8 @@ export const getTeamsDashboard = cache(async (currentUserId?: string) => {
         slogan: row.slogan || null,
         discordUrl: row.discord_url || null,
         youtubeUrl: row.youtube_url || null,
-        logoUrl: row.logo_url || null,
+        logoUrl: row.logo_url || row.logoUrl || null,
+        bannerUrl: row.banner_url || row.bannerUrl || null,
         carSkinUrls: parseTextArray(row.car_skin_urls),
         skinAssignments: parseSkinAssignments(row.skin_assignments),
         cars: (Array.isArray(row.cars) ? row.cars : []).map((car: any) => ({

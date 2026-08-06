@@ -26,6 +26,7 @@ export async function createTeam(formData: FormData) {
   const name = String(formData.get('name') || '').trim()
   const description = String(formData.get('description') || '').trim()
   const logoUrl = String(formData.get('logoUrl') || '').trim()
+  const bannerUrl = String(formData.get('bannerUrl') || '').trim()
   const classTagsRaw = formData.getAll('classTags').flatMap(val => String(val).split(',')).map(t => t.trim().toUpperCase()).filter(Boolean)
   const classTags = Array.from(new Set(classTagsRaw))
   const skinProfilesJson = String(formData.get('skinProfilesJson') || '').trim()
@@ -55,6 +56,7 @@ export async function createTeam(formData: FormData) {
           name,
           description: description || null,
           logo_url: logoUrl || null,
+          banner_url: bannerUrl || null,
           class_tags: classTags,
           owner_user_id: session.userId,
           car_skin_urls: mergedSkinUrls,
@@ -299,7 +301,8 @@ export async function updateTeam(formData: FormData) {
   const name = formData.has('name') ? String(formData.get('name') || '').trim() : (existingTeam?.name || '')
   const description = formData.has('description') ? String(formData.get('description') || '').trim() : (existingTeam?.description || existingTeam?.description_short || '')
   const logoUrl = formData.has('logoUrl') ? String(formData.get('logoUrl') || '').trim() : (existingTeam?.logoUrl || existingTeam?.logo_url || '')
-  
+  const bannerUrl = formData.has('bannerUrl') ? String(formData.get('bannerUrl') || '').trim() : (existingTeam?.bannerUrl || existingTeam?.banner_url || '')
+
   let classTags = existingTeam?.classTags || existingTeam?.class_tags || []
   if (formData.has('classTags')) {
     const classTagsRaw = formData.getAll('classTags').flatMap(val => String(val).split(',')).map(t => t.trim().toUpperCase()).filter(Boolean)
@@ -363,6 +366,7 @@ export async function updateTeam(formData: FormData) {
           name,
           description: description || null,
           logo_url: logoUrl || null,
+          banner_url: bannerUrl || null,
           class_tags: classTags,
           cars: teamCars,
           accent_color: accentColor,

@@ -33,6 +33,7 @@ export function TeamBannerStats({
   leagueParticipation,
 }: TeamBannerStatsProps) {
   const heroImage = (() => {
+    if (team.bannerUrl || team.banner_url) return team.bannerUrl || team.banner_url
     if (leagueParticipation[0]?.bannerUrl) return leagueParticipation[0].bannerUrl
     if (team.logoUrl) return team.logoUrl
     if (Array.isArray(team.carSkinUrls)) {
@@ -106,6 +107,20 @@ export function TeamBannerStats({
                     placeholder="e.g. Speed. Precision. Victory."
                     maxLength={85}
                     className="w-full border border-shell-line bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-white/30 rounded-none transition-colors text-left"
+                  />
+                </div>
+
+                {/* Team Logo & Banner Pickers */}
+                <div className="grid gap-4 md:grid-cols-2 text-left">
+                  <ImagePicker
+                    name="logoUrl"
+                    label="Team Logo (512x512 px recommended)"
+                    defaultValue={team.logoUrl || ''}
+                  />
+                  <ImagePicker
+                    name="bannerUrl"
+                    label="Team Banner / Cover (1920x600 px recommended)"
+                    defaultValue={team.bannerUrl || team.banner_url || ''}
                   />
                 </div>
 

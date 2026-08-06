@@ -205,6 +205,20 @@ export default function EquiposContent({
                     />
                   </div>
 
+                  {/* Team Logo & Banner Pickers */}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <ImagePicker
+                      name="logoUrl"
+                      label="Team Logo (512x512 px recommended)"
+                      defaultValue=""
+                    />
+                    <ImagePicker
+                      name="bannerUrl"
+                      label="Team Banner / Cover (1920x600 px recommended)"
+                      defaultValue=""
+                    />
+                  </div>
+
                   {/* Categories */}
                   <div>
                     <label className="mb-2 block text-xs text-slate-355 uppercase tracking-wider font-semibold">
