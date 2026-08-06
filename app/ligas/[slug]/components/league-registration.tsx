@@ -27,6 +27,9 @@ export function LeagueRegistration({
   const myRegisteredGroups = groupedRegistrations.filter((group) =>
     myManagedTeams.some((t) => t.id === group.teamId)
   )
+  const hasUnregisteredTeams = myManagedTeams.some(
+    (t) => !groupedRegistrations.some((group) => group.teamId === t.id)
+  )
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -85,14 +88,14 @@ export function LeagueRegistration({
         )
       })}
 
-      {/* Action Button for Team Leaders */}
-      {isLeader && league.registrationOpen && league.status === 'open' && (
+      {/* Action Button for Team Leaders (Only if team isn't registered yet) */}
+      {isLeader && league.registrationOpen && league.status === 'open' && hasUnregisteredTeams && (
         <button
           onClick={onOpenRegisterModal}
           className="bg-cyan-500 hover:bg-cyan-400 text-black font-black px-4 py-3 text-xs md:text-sm uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 shadow-[0_0_20px_rgba(0,242,254,0.35)] shrink-0 cursor-pointer"
         >
           <Plus className="h-5 w-5" />
-          Añadir Equipo
+          REGISTER TEAM
         </button>
       )}
 

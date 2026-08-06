@@ -7,6 +7,7 @@ import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { getTeamsDashboard } from '@/lib/team-data'
 import { invalidateCache } from '@/lib/ttl-cache'
 import { cleanupDriverMarketDataOnTeamJoin } from '@/lib/market-cleanup'
+import { formatFirestoreValue, parseClassTags } from '@/lib/firestore-utils'
 import { guardSession, canManageTeam, cleanPilotName, parseSkinProfilesJson } from './team-parsers'
 
 export async function createTeam(formData: FormData) {
@@ -379,12 +380,14 @@ export async function updateTeam(formData: FormData) {
             for (const leagueId of leagueIds) {
               const leagueDoc = await db.collection('leagues').doc(leagueId).get()
               if (leagueDoc.exists) {
-                const leagueClassTags = leagueDoc.data()?.class_tags || leagueDoc.data()?.classTags || []
+                const leagueClassTags = parseClassTags(leagueDoc.data()?.class_tags || leagueDoc.data()?.classTags) || []
                 
                 // Filter updated cars matching this league's classTags
                 const matchingCars = teamCars.filter((car: any) => {
                   if (!car.category) return false
                   const c1 = car.category.toUpperCase()
+                  const carLeagueId = car.leagueId || car.league_id
+                  if (carLeagueId && carLeagueId !== leagueId) return false
                   return leagueClassTags.some((tag: any) => {
                     const c2 = tag.toUpperCase()
                     return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
@@ -435,10 +438,16 @@ export async function updateTeam(formData: FormData) {
 
                   let carDrivers: string[] = []
                   const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
-                  if (byLeague[leagueId] && Array.isArray(byLeague[leagueId])) {
+                  if (byLeague[leagueId] && Array.isArray(byLeague[leagueId]) && byLeague[leagueId].length > 0) {
                     carDrivers = byLeague[leagueId].filter(Boolean).map(String)
-                  } else if (Array.isArray(car.driverUserIds)) {
+                  } else if (Array.isArray(car.driverUserIds) && car.driverUserIds.length > 0) {
                     carDrivers = car.driverUserIds.filter(Boolean).map(String)
+                  } else if (Array.isArray(car.driver_user_ids) && car.driver_user_ids.length > 0) {
+                    carDrivers = car.driver_user_ids.filter(Boolean).map(String)
+                  }
+
+                  if (carDrivers.length === 0) {
+                    carDrivers = [session.userId]
                   }
 
                   for (const userId of carDrivers) {

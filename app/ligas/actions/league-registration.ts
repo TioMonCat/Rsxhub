@@ -5,6 +5,8 @@ import { cookies } from 'next/headers'
 import { getCurrentUser } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
 import { getRegistrations, getLeagueBySlug } from '@/lib/platform-data'
+import { parseClassTags } from '@/lib/firestore-utils'
+import { invalidateCache } from '@/lib/ttl-cache'
 
 function parseCarNumber(dorsal: any): number {
   if (dorsal == null) return 0
@@ -38,7 +40,7 @@ export async function registerTeamAction(formData: FormData) {
         const leagueDoc = await db.collection('leagues').doc(leagueId).get()
         if (leagueDoc.exists) {
           const lData = leagueDoc.data()
-          leagueClassTags = lData?.class_tags || lData?.classTags || []
+          leagueClassTags = parseClassTags(lData?.class_tags || lData?.classTags) || []
           if (!slug) slug = lData?.slug || leagueId
         }
       } catch (err) {
@@ -51,9 +53,6 @@ export async function registerTeamAction(formData: FormData) {
     try {
       const league = await getLeagueBySlug(slug)
       leagueClassTags = league?.classTags || []
-      if (league?.id && !leagueId) {
-        // ok
-      }
     } catch (err) {
       console.error('Failed to resolve league details by slug:', err)
     }
@@ -102,6 +101,8 @@ export async function registerTeamAction(formData: FormData) {
   const matchingCars = teamCars.filter((car: any) => {
     if (!car.category) return false
     const c1 = car.category.toUpperCase()
+    const carLeagueId = car.leagueId || car.league_id
+    if (carLeagueId && carLeagueId !== leagueId) return false
     return leagueClassTags.some((tag: any) => {
       const c2 = tag.toUpperCase()
       return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
@@ -123,10 +124,17 @@ export async function registerTeamAction(formData: FormData) {
       const carNum = parseCarNumber(car.dorsal)
       const carMod = String(car.model || '')
       
-      // Get the drivers assigned to this car in the workshop
-      let carDrivers = Array.isArray(car.driverUserIds) ? car.driverUserIds.filter(Boolean).map(String) : []
+      let carDrivers = Array.isArray(car.driverUserIds)
+        ? car.driverUserIds.filter(Boolean).map(String)
+        : Array.isArray(car.driver_user_ids)
+        ? car.driver_user_ids.filter(Boolean).map(String)
+        : []
+
+      const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
+      if (byLeague[leagueId] && Array.isArray(byLeague[leagueId]) && byLeague[leagueId].length > 0) {
+        carDrivers = byLeague[leagueId].filter(Boolean).map(String)
+      }
       
-      // Fallback to form's driverUserIds (all team members) if the car has no drivers configured
       if (carDrivers.length === 0) {
         carDrivers = driverUserIds.length > 0 ? driverUserIds : [session.userId]
       }
@@ -323,6 +331,7 @@ export async function registerTeamAction(formData: FormData) {
     }
   }
 
+  invalidateCache(['teams_dashboard', 'platform_leagues', 'leagues'])
   revalidatePath('/ligas')
   if (slug) revalidatePath(`/ligas/${slug}`)
   revalidatePath('/equipos')
