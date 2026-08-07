@@ -412,8 +412,9 @@ export async function updateTeam(formData: FormData) {
                 if (!car.category) return false
                 const c1 = car.category.toUpperCase()
                 const carLeagueId = car.leagueId || car.league_id
-                if (carLeagueId && carLeagueId !== realLeagueId && carLeagueId !== leagueData?.slug) return false
-                return leagueClassTags.some((tag: any) => {
+                const isExplicitLeague = Boolean(carLeagueId && (carLeagueId === realLeagueId || carLeagueId === leagueData?.slug))
+                if (carLeagueId && !isExplicitLeague) return false
+                return isExplicitLeague || leagueClassTags.length === 0 || leagueClassTags.some((tag: any) => {
                   const c2 = tag.toUpperCase()
                   return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
                 })
@@ -467,18 +468,19 @@ export async function updateTeam(formData: FormData) {
                 const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
                 if (byLeague[realLeagueId] && Array.isArray(byLeague[realLeagueId]) && byLeague[realLeagueId].length > 0) {
                   carDrivers = byLeague[realLeagueId].filter(Boolean).map(String)
+                } else if (leagueData?.slug && byLeague[leagueData.slug] && Array.isArray(byLeague[leagueData.slug]) && byLeague[leagueData.slug].length > 0) {
+                  carDrivers = byLeague[leagueData.slug].filter(Boolean).map(String)
                 } else if (Array.isArray(car.driverUserIds) && car.driverUserIds.length > 0) {
                   carDrivers = car.driverUserIds.filter(Boolean).map(String)
                 } else if (Array.isArray(car.driver_user_ids) && car.driver_user_ids.length > 0) {
                   carDrivers = car.driver_user_ids.filter(Boolean).map(String)
                 }
 
-                // If car has NO drivers assigned, do NOT generate registrations for this car
-                if (carDrivers.length === 0) {
-                  continue
-                }
+                // If car has NO drivers assigned yet, use team owner/session user as representative entry
+                const ownerId = existingTeam?.owner_user_id || existingTeam?.ownerUserId || session?.userId || 'team_owner'
+                const effectiveDrivers = carDrivers.length > 0 ? carDrivers : [ownerId]
 
-                for (const userId of carDrivers) {
+                for (const userId of effectiveDrivers) {
                   let displayName = `Pilot ${userId.slice(0, 4)}`
                   try {
                     const profileDoc = await db.collection('profiles').doc(userId).get()
@@ -605,7 +607,10 @@ export async function updateTeam(formData: FormData) {
             const matchingCars = teamCars.filter((car: any) => {
               if (!car.category) return false
               const c1 = car.category.toUpperCase()
-              return leagueClassTags.some((tag: any) => {
+              const carLeagueId = car.leagueId || car.league_id
+              const isExplicitLeague = Boolean(carLeagueId && (carLeagueId === league.id || carLeagueId === league.slug))
+              if (carLeagueId && !isExplicitLeague) return false
+              return isExplicitLeague || leagueClassTags.length === 0 || leagueClassTags.some((tag: any) => {
                 const c2 = tag.toUpperCase()
                 return c1 === c2 || (c1.startsWith('LMP') && c2.startsWith('LMP'))
               })
@@ -650,13 +655,15 @@ export async function updateTeam(formData: FormData) {
 
               let carDrivers: string[] = []
               const byLeagueMock = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
-              if (byLeagueMock[leagueId] && Array.isArray(byLeagueMock[leagueId])) {
+              if (byLeagueMock[leagueId] && Array.isArray(byLeagueMock[leagueId]) && byLeagueMock[leagueId].length > 0) {
                 carDrivers = byLeagueMock[leagueId].filter(Boolean).map(String)
-              } else if (Array.isArray(car.driverUserIds)) {
+              } else if (Array.isArray(car.driverUserIds) && car.driverUserIds.length > 0) {
                 carDrivers = car.driverUserIds.filter(Boolean).map(String)
               }
 
-              for (const userId of carDrivers) {
+              const effectiveDriversMock = carDrivers.length > 0 ? carDrivers : [session.userId]
+
+              for (const userId of effectiveDriversMock) {
                 newRegistrationsForLeague.push({
                   id: `mock_reg_${Date.now()}_${carClassTag}_${userId}_${regCarNumber}`,
                   leagueId,

@@ -201,17 +201,39 @@ export default async function TeamProfilePage({
           }))
       }
 
-      const leagueIds = Array.from(new Set(teamRegRows.map((row) => row.leagueId)))
+      const carLeagueIds = (team.cars || [])
+        .map((c: any) => c.leagueId || c.league_id)
+        .filter(Boolean)
+
+      const leagueIds = Array.from(new Set([...teamRegRows.map((row) => row.leagueId), ...carLeagueIds]))
 
       if (leagueIds.length > 0) {
         const allLeagues = await getLeagues()
-        const relevantLeagues = allLeagues.filter((l) => leagueIds.includes(l.id))
+        const relevantLeagues = allLeagues.filter((l) => leagueIds.includes(l.id) || leagueIds.includes(l.slug))
 
         for (const lg of relevantLeagues) {
-          const lgRows = teamRegRows.filter((r) => r.leagueId === lg.id)
+          const lgRows = teamRegRows.filter((r) => r.leagueId === lg.id || r.leagueId === lg.slug)
           const approvedCount = lgRows.filter((r) => r.status === 'approved').length
           const pendingCount = lgRows.filter((r) => r.status === 'pending').length
-          const driverUserIds = Array.from(new Set(lgRows.map((r) => r.userId).filter(Boolean)))
+
+          const carDriverUserIds = (team.cars || [])
+            .filter((c: any) => {
+              const cLeagueId = c.leagueId || c.league_id
+              if (cLeagueId && cLeagueId !== lg.id && cLeagueId !== lg.slug) return false
+              return true
+            })
+            .flatMap((c: any) => {
+              const byLeague = c.driverUserIdsByLeague || c.driver_user_ids_by_league || {}
+              const list = byLeague[lg.id] || byLeague[lg.slug] || c.driverUserIds || c.driver_user_ids || []
+              return Array.isArray(list) ? list : []
+            })
+            .filter(Boolean)
+
+          const regDriverUserIds = lgRows
+            .map((r) => r.userId)
+            .filter((u) => u && u !== team.ownerUserId && !u.startsWith('unassigned'))
+
+          const driverUserIds = Array.from(new Set([...regDriverUserIds, ...carDriverUserIds]))
           const events = await getLeagueEvents(lg.id)
           const nowStr = new Date().toISOString()
           const upcomingEvents = events.filter((e) => e.startsAt >= nowStr).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
@@ -220,7 +242,7 @@ export default async function TeamProfilePage({
             leagueId: lg.id, title: lg.title || '', bannerUrl: lg.bannerUrl || null,
             status: lg.status || 'open', simulator: lg.simulator || 'ac',
             teamDriversInLeague: driverUserIds.length,
-            approvedEntries: approvedCount > 0 ? approvedCount : lgRows.length,
+            approvedEntries: Math.max(approvedCount > 0 ? approvedCount : lgRows.length, 1),
             pendingEntries: pendingCount, nextEventAt: upcomingEvents[0]?.startsAt || null,
           })
         }
