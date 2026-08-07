@@ -24,7 +24,7 @@ interface LeagueScheduleProps {
   standings?: Record<string, TeamStanding[]>
   onOpenEventModal: (event?: LeagueEvent) => void
   onDeleteEvent: (eventId: string) => void
-  onFinishRound?: (event: LeagueEvent) => void
+  onFinishRound?: (event: LeagueEvent, initialSessionType?: 'qualifying' | 'race') => void
   onViewResults?: (event: LeagueEvent) => void
 }
 
@@ -126,17 +126,45 @@ export function LeagueSchedule({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* ADMIN & STEWARD: MANAGE ROUND BUTTON */}
-                    {(isAdmin || isSteward) && onFinishRound && (
-                      <button
-                        type="button"
-                        onClick={() => onFinishRound(ev)}
-                        className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
-                        Manage Round
-                      </button>
-                    )}
+                    {/* ADMIN & STEWARD: MANAGE ROUND BUTTONS */}
+                    {(isAdmin || isSteward) && onFinishRound && (() => {
+                      const hasQualy = Boolean(ev.hasQualy === true || String(ev.hasQualy) === 'true' || ev.qualyStartsAt)
+                      if (hasQualy) {
+                        return (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => onFinishRound(ev, 'qualifying')}
+                              className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                              title="Upload and manage Qualifying results"
+                            >
+                              <Clock className="h-3.5 w-3.5 text-cyan-400" />
+                              Manage Qualy
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => onFinishRound(ev, 'race')}
+                              className="border border-amber-500/40 bg-amber-950/40 hover:bg-amber-500/20 text-amber-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                              title="Upload and manage Race results and points"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
+                              Manage Race
+                            </button>
+                          </div>
+                        )
+                      }
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => onFinishRound(ev, 'race')}
+                          className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
+                          Manage Round
+                        </button>
+                      )
+                    })()}
 
                     {/* DRIVERS & NON-ADMINS/NON-STEWARDS: VIEW ROUND BUTTON */}
                     {(!isAdmin && !isSteward) && onViewResults && (
@@ -263,7 +291,33 @@ export function LeagueSchedule({
                             const tag = String(carObj.category).toUpperCase()
                             const dorsalDisplay = String(carObj.dorsal || '').trim()
                             const limit = (league as any).classLimits?.[tag] ?? 30
-                            const isConfirmed = localConfirmations.some(
+
+                            const carDriversList = (() => {
+                              const byLeague = carObj.driverUserIdsByLeague || carObj.driver_user_ids_by_league || {}
+                              let list: string[] = []
+                              if (byLeague[league.id] && Array.isArray(byLeague[league.id])) {
+                                list = byLeague[league.id].filter(Boolean)
+                              } else if (league.slug && byLeague[league.slug] && Array.isArray(byLeague[league.slug])) {
+                                list = byLeague[league.slug].filter(Boolean)
+                              } else if (Array.isArray(carObj.driverUserIds)) {
+                                list = carObj.driverUserIds.filter(Boolean)
+                              } else if (Array.isArray(carObj.driver_user_ids)) {
+                                list = carObj.driver_user_ids.filter(Boolean)
+                              }
+                              if (list.length > 0) return list
+
+                              const regDrivers = initialRegistrations.filter(
+                                (r) =>
+                                  r.teamId === team.id &&
+                                  String(r.classTag || '').toUpperCase() === tag &&
+                                  (String(r.assignedNumber ?? '').trim() === dorsalDisplay || !r.assignedNumber || !dorsalDisplay)
+                              )
+                              return regDrivers.map((r) => r.userId).filter(Boolean)
+                            })()
+
+                            const hasDrivers = carDriversList.length > 0
+
+                            const isConfirmed = hasDrivers && localConfirmations.some(
                               (c) =>
                                 c.eventId === ev.id &&
                                 c.teamId === team.id &&
@@ -279,77 +333,98 @@ export function LeagueSchedule({
                             return (
                               <div
                                 key={`${tag}_${dorsalDisplay}_${carIdx}`}
-                                className="flex items-center justify-between gap-2 bg-black/40 border border-shell-line/30 px-3 py-1.5"
+                                className={`flex items-center justify-between gap-2 border px-3 py-1.5 transition-colors ${
+                                  !hasDrivers
+                                    ? 'bg-black/20 border-slate-800/40 opacity-75'
+                                    : 'bg-black/40 border-shell-line/30'
+                                }`}
                               >
                                 <div className="flex items-center gap-2">
                                   <ClassBadge classTag={tag} className="text-[9px]" />
                                   <span className="font-mono text-xs font-bold text-slate-200">#{dorsalDisplay}</span>
+                                  {!hasDrivers && (
+                                    <span className="text-[10px] text-slate-400 font-mono italic font-medium">
+                                      (Sin pilotos)
+                                    </span>
+                                  )}
                                 </div>
 
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    const wasConfirmed = isConfirmed
-                                    if (wasConfirmed) {
-                                      setLocalConfirmations((prev) =>
-                                        prev.filter(
-                                          (c) =>
-                                            !(
-                                              c.eventId === ev.id &&
-                                              c.teamId === team.id &&
-                                              c.classTag === tag &&
-                                              String((c as any).dorsalDisplay || c.carNumber || '').trim() === dorsalDisplay
-                                            )
-                                        )
-                                      )
-                                    } else {
-                                      setLocalConfirmations((prev) => [
-                                        ...prev,
-                                        {
-                                          id: `${ev.id}_${team.id}_${tag}_${dorsalDisplay}`,
-                                          eventId: ev.id,
-                                          leagueId: league.id,
-                                          teamId: team.id,
-                                          classTag: tag,
-                                          carNumber: dorsalDisplay,
-                                          carModel: '',
-                                          status: 'confirmed',
-                                        },
-                                      ])
-                                    }
-
-                                    try {
-                                      const fd = new FormData()
-                                      fd.set('eventId', ev.id)
-                                      fd.set('leagueId', league.id)
-                                      fd.set('teamId', team.id)
-                                      fd.set('classTag', tag)
-                                      fd.set('carNumber', dorsalDisplay)
-                                      fd.set('carModel', '')
-                                      fd.set('slug', league.slug)
-
+                                {!hasDrivers ? (
+                                  <button
+                                    type="button"
+                                    disabled
+                                    title="No se puede confirmar: El vehículo no tiene pilotos asignados."
+                                    className="px-2.5 py-1 text-[10px] font-bold uppercase rounded-none border bg-slate-800/80 border-slate-700/60 text-slate-400/70 cursor-not-allowed flex items-center gap-1"
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                                    Sin pilotos
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      const wasConfirmed = isConfirmed
                                       if (wasConfirmed) {
-                                        await cancelAttendanceAction(fd)
+                                        setLocalConfirmations((prev) =>
+                                          prev.filter(
+                                            (c) =>
+                                              !(
+                                                c.eventId === ev.id &&
+                                                c.teamId === team.id &&
+                                                c.classTag === tag &&
+                                                String((c as any).dorsalDisplay || c.carNumber || '').trim() === dorsalDisplay
+                                              )
+                                          )
+                                        )
                                       } else {
-                                        await confirmAttendanceAction(fd)
+                                        setLocalConfirmations((prev) => [
+                                          ...prev,
+                                          {
+                                            id: `${ev.id}_${team.id}_${tag}_${dorsalDisplay}`,
+                                            eventId: ev.id,
+                                            leagueId: league.id,
+                                            teamId: team.id,
+                                            classTag: tag,
+                                            carNumber: dorsalDisplay,
+                                            carModel: '',
+                                            status: 'confirmed',
+                                          },
+                                        ])
                                       }
-                                      router.refresh()
-                                    } catch (err: any) {
-                                      setLocalConfirmations(confirmations)
-                                      alert(err.message || 'Error updating attendance.')
-                                    }
-                                  }}
-                                  disabled={isGridFull}
-                                  className={`px-2 py-1 text-[10px] font-bold uppercase transition-colors rounded-none border ${
-                                    isConfirmed
-                                      ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25'
-                                      : isGridFull
-                                      ? 'bg-rose-500/5 border-rose-500/20 text-rose-400/50 cursor-not-allowed'
-                                      : 'bg-cyan-500/5 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/15'
-                                  }`}
-                                >
-                                  {isConfirmed ? 'Confirmed' : isGridFull ? 'Grid Full' : 'Confirm'}
-                                </button>
+
+                                      try {
+                                        const fd = new FormData()
+                                        fd.set('eventId', ev.id)
+                                        fd.set('leagueId', league.id)
+                                        fd.set('teamId', team.id)
+                                        fd.set('classTag', tag)
+                                        fd.set('carNumber', dorsalDisplay)
+                                        fd.set('carModel', '')
+                                        fd.set('slug', league.slug)
+
+                                        if (wasConfirmed) {
+                                          await cancelAttendanceAction(fd)
+                                        } else {
+                                          await confirmAttendanceAction(fd)
+                                        }
+                                        router.refresh()
+                                      } catch (err: any) {
+                                        setLocalConfirmations(confirmations)
+                                        alert(err.message || 'Error updating attendance.')
+                                      }
+                                    }}
+                                    disabled={isGridFull}
+                                    className={`px-2 py-1 text-[10px] font-bold uppercase transition-colors rounded-none border ${
+                                      isConfirmed
+                                        ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/25'
+                                        : isGridFull
+                                        ? 'bg-rose-500/5 border-rose-500/20 text-rose-400/50 cursor-not-allowed'
+                                        : 'bg-cyan-500/5 border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/15'
+                                    }`}
+                                  >
+                                    {isConfirmed ? 'Confirmed' : isGridFull ? 'Grid Full' : 'Confirm'}
+                                  </button>
+                                )}
                               </div>
                             )
                           })}

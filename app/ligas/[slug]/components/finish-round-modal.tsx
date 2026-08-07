@@ -7,6 +7,7 @@ import type { LeagueEvent } from '../hooks/use-league-state'
 
 interface FinishRoundModalProps {
   event: LeagueEvent
+  initialSessionType?: 'qualifying' | 'race'
   leagueId: string
   classTags: string[]
   onClose: () => void
@@ -32,12 +33,16 @@ const DEFAULT_POINTS_SYSTEM = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
 
 export function FinishRoundModal({
   event,
+  initialSessionType,
   leagueId,
   classTags = ['GT3', 'LMP2'],
   onClose,
   onSuccess,
 }: FinishRoundModalProps) {
-  const [sessionType, setSessionType] = useState<'qualifying' | 'race'>('race')
+  const hasQualy = Boolean(event.hasQualy === true || String(event.hasQualy) === 'true' || event.qualyStartsAt)
+  const [sessionType, setSessionType] = useState<'qualifying' | 'race'>(
+    hasQualy ? (initialSessionType || 'qualifying') : 'race'
+  )
   const [activeTab, setActiveTab] = useState<'upload' | 'preview'>('upload')
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL')
   const [jsonText, setJsonText] = useState('')
@@ -273,33 +278,38 @@ export function FinishRoundModal({
           </p>
         </div>
 
-        {/* Top Session Type Selector (Qualifying vs Race) */}
-        <div className="grid grid-cols-2 gap-2 bg-black/60 p-1.5 border border-shell-line/60 rounded-none mb-4">
-          <button
-            type="button"
-            onClick={() => setSessionType('qualifying')}
-            className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              sessionType === 'qualifying'
-                ? 'bg-cyan-500 text-black shadow-md border border-cyan-400'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Timer className="h-4 w-4" />
-            QUALIFYING SESSION
-          </button>
-          <button
-            type="button"
-            onClick={() => setSessionType('race')}
-            className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              sessionType === 'race'
-                ? 'bg-amber-500 text-black shadow-md border border-amber-400'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Flag className="h-4 w-4" />
-            RACE SESSION
-          </button>
-        </div>
+        {/* Top Session Type Selector (Qualifying vs Race) - Only shown when round has Qualy */}
+        {hasQualy && (
+          <div className="grid grid-cols-2 gap-2 bg-black/60 p-1.5 border border-shell-line/60 rounded-none mb-4">
+            <button
+              type="button"
+              onClick={() => {
+                setSessionType('qualifying')
+                setParsedRows((prev) => prev.map((r) => ({ ...r, points: 0 })))
+              }}
+              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+                sessionType === 'qualifying'
+                  ? 'bg-cyan-500 text-black shadow-md border border-cyan-400'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Timer className="h-4 w-4" />
+              QUALIFYING SESSION
+            </button>
+            <button
+              type="button"
+              onClick={() => setSessionType('race')}
+              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+                sessionType === 'race'
+                  ? 'bg-amber-500 text-black shadow-md border border-amber-400'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Flag className="h-4 w-4" />
+              RACE SESSION
+            </button>
+          </div>
+        )}
 
         {/* Main Tab Selector */}
         <div className="flex items-center justify-between border-b border-white/10 mb-4 gap-2">
@@ -458,8 +468,10 @@ export function FinishRoundModal({
                             <th className="p-2.5 text-center w-16">Cat Pos</th>
                             <th className="p-2.5">Team</th>
                             <th className="p-2.5 text-center w-24">Overall Pos</th>
-                            {sessionType === 'race' && (
+                             {sessionType === 'race' ? (
                               <th className="p-2.5 text-right w-32">Round Points</th>
+                            ) : (
+                              <th className="p-2.5 text-right w-32 text-slate-400 font-mono">Grid Pos Only</th>
                             )}
                           </tr>
                         </thead>
@@ -497,8 +509,8 @@ export function FinishRoundModal({
                                 P{row.overallPos}
                               </td>
 
-                              {/* 4. Editable Points for Race session */}
-                              {sessionType === 'race' && (
+                              {/* 4. Points display depending on sessionType */}
+                              {sessionType === 'race' ? (
                                 <td className="p-2 text-right">
                                   <div className="flex items-center justify-end gap-1">
                                     <span className="text-cyan-400 font-bold text-xs">+</span>
@@ -512,6 +524,12 @@ export function FinishRoundModal({
                                     />
                                     <span className="text-slate-400 text-[10px] font-mono">pts</span>
                                   </div>
+                                </td>
+                              ) : (
+                                <td className="p-2.5 text-right font-mono text-xs">
+                                  <span className="bg-cyan-950/60 border border-cyan-800/40 text-cyan-400 px-2 py-0.5 text-[10px] font-bold uppercase">
+                                    0 pts (Parrilla)
+                                  </span>
                                 </td>
                               )}
                             </tr>

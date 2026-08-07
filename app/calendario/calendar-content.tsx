@@ -153,6 +153,7 @@ export default function CalendarContent({
   const [formServerLink, setFormServerLink] = useState('')
   const [formEventType, setFormEventType] = useState<'race' | 'qualifying' | 'time_attack'>('race')
   const [formCountryCode, setFormCountryCode] = useState('ESP')
+  const [formColor, setFormColor] = useState('#00f2fe')
 
   // Programme filter state
   const [programmeFilter, setProgrammeFilter] = useState<'all' | 'race' | 'qualifying' | 'time_attack'>('all')
@@ -266,6 +267,7 @@ export default function CalendarContent({
     setFormServerLink('')
     setFormEventType('race')
     setFormCountryCode('ESP')
+    setFormColor('#00f2fe')
   }
 
   const handleEditClick = (event: LeagueEvent) => {
@@ -275,6 +277,7 @@ export default function CalendarContent({
     setFormCircuit(event.circuitName)
     setFormEventType((event.eventType as 'race' | 'qualifying' | 'time_attack') || 'race')
     setFormCountryCode(event.countryCode || 'ESP')
+    setFormColor((event as any).color || '#00f2fe')
     
     // Parse time in local timezone
     const startsDate = new Date(event.startsAt)
@@ -297,6 +300,7 @@ export default function CalendarContent({
     setFormServerLink('')
     setFormEventType('race')
     setFormCountryCode('ESP')
+    setFormColor('#00f2fe')
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -343,6 +347,7 @@ export default function CalendarContent({
     formData.set('serverLink', serverLinkUrl)
     formData.set('eventType', formEventType)
     formData.set('countryCode', formCountryCode)
+    formData.set('color', formColor)
 
     try {
       const res = await saveCalendarEvent(formData)
@@ -671,6 +676,7 @@ export default function CalendarContent({
                             {dayEvents.slice(0, 2).map((event, idx) => {
                               const league = leagueById.get(event.leagueId)
                               const raceTitle = event.title?.trim() || event.circuitName
+                              const eventColor = (event as any).color || league?.accentColor || '#00f2fe'
                               const simLogo = league?.simulator === 'ac'
                                 ? '/branding/ACLogo.png'
                                 : league?.simulator === 'lmu'
@@ -683,75 +689,67 @@ export default function CalendarContent({
                                     e.stopPropagation()
                                     router.push(league ? `/ligas/${league.slug}` : '/ligas')
                                   }}
-                                  className={`absolute inset-x-0 block cursor-pointer ${
+                                  className={`absolute inset-x-0 block cursor-pointer bg-[#090d16] group/card overflow-hidden border border-shell-line/60 hover:border-cyan-400 transition-colors ${
                                     idx === 0 ? 'top-0 h-1/2 border-b border-shell-line' : 'bottom-0 h-1/2'
                                   }`}
+                                  style={{
+                                    borderLeftWidth: '3px',
+                                    borderLeftColor: eventColor,
+                                  }}
                                 >
-                                  <div
-                                    className="absolute inset-0 bg-cover bg-center"
-                                    style={{
-                                      backgroundImage: event.circuitImageUrl
-                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug, league?.accentColor, getEventType(event, league))}, url(${event.circuitImageUrl})`
-                                        : getLeagueGradient(league?.title, league?.slug, league?.accentColor, getEventType(event, league)),
-                                    }}
-                                  />
-                                  {idx === 0 ? (
-                                    <p className="absolute left-2 top-2 text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
-                                      <span>{date.getUTCDate()}</span>
-                                      <span className="text-[11px] text-slate-200 font-mono font-bold bg-black/60 px-1.5 py-0.5 border border-white/10 flex items-center gap-1">
-                                        <Clock className="h-3 w-3 text-cyan-400" />
+                                  {event.circuitImageUrl ? (
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
+                                      style={{
+                                        backgroundImage: `linear-gradient(to top, rgba(9, 13, 22, 0.95) 0%, rgba(9, 13, 22, 0.4) 50%, rgba(9, 13, 22, 0.85) 100%), url(${event.circuitImageUrl})`,
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#0c1220] via-[#080d16] to-[#04060c]" />
+                                  )}
+
+                                  {/* Top Bar: Time & Sim logo */}
+                                  <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-10 pointer-events-none">
+                                    <div className="flex items-center gap-1">
+                                      {idx === 0 && <span className="text-xs font-black text-white font-mono">{date.getUTCDate()}</span>}
+                                      <span className="text-[10px] font-mono font-bold bg-black/80 px-1 py-0.5 border border-white/10 text-cyan-300 flex items-center gap-1">
+                                        <Clock className="h-2.5 w-2.5 text-cyan-400" />
                                         {formatTime(event.startsAt)}
                                       </span>
-                                    </p>
-                                  ) : (
-                                    <p className="absolute left-2 top-2 text-[11px] text-slate-200 font-mono font-bold bg-black/60 px-1.5 py-0.5 border border-white/10 flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-cyan-400" />
-                                      {formatTime(event.startsAt)}
-                                    </p>
-                                  )}
-                                  {simLogo && (
-                                    <div className="absolute right-2 top-2 z-10 pointer-events-none bg-white p-0.5 rounded-none shadow-sm">
-                                      <img
-                                        src={simLogo}
-                                        alt={league?.simulator}
-                                        className="h-4 w-auto object-contain"
-                                      />
                                     </div>
-                                  )}
-                                  <div className="absolute inset-x-2 bottom-1.5">
-                                    <p className="text-[9px] font-black uppercase italic tracking-wider text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] leading-none mb-0.5">
-                                      {getEventType(event, league)}
-                                    </p>
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                      {event.serverLink && (
-                                        <a
-                                          href={event.serverLink}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                          }}
-                                          className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-wider italic border border-emerald-400/30 shadow-[0_0_8px_rgba(16,185,129,0.35)] transition-colors rounded-none"
-                                        >
-                                          <Play className="h-2 w-2 fill-current" />
-                                          Join
-                                        </a>
-                                      )}
-                                      <p className="line-clamp-1 text-[13px] font-black uppercase italic leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                                        {raceTitle}
-                                      </p>
+                                    {simLogo && (
+                                      <div className="bg-white/90 p-0.5 shadow-sm">
+                                        <img src={simLogo} alt={league?.simulator} className="h-3 w-auto object-contain" />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Bottom Details */}
+                                  <div className="absolute inset-x-1.5 bottom-1 z-10 space-y-0.5">
+                                    <div className="flex items-center gap-1">
+                                      <span
+                                        className="px-1 py-0.2 text-[8px] font-mono font-bold uppercase border shadow-sm shrink-0"
+                                        style={{
+                                          backgroundColor: `${eventColor}25`,
+                                          borderColor: `${eventColor}80`,
+                                          color: eventColor,
+                                        }}
+                                      >
+                                        {getEventType(event, league)}
+                                      </span>
+                                      <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                                        {event.circuitName}
+                                      </span>
                                     </div>
-                                    {league ? (
-                                      <p className="mt-1 text-xs font-semibold text-slate-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
-                                        {league.title}
-                                      </p>
-                                    ) : null}
+                                    <p className="line-clamp-1 text-xs font-black uppercase italic leading-tight text-white drop-shadow-md">
+                                      {raceTitle}
+                                    </p>
                                   </div>
                                 </div>
                               )
                             })}
                             {dayEvents.length > 2 ? (
-                              <div className="absolute right-2 top-2 z-20 border border-white/25 bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white rounded-none">
+                              <div className="absolute right-2 top-2 z-20 border border-white/25 bg-black/80 px-1.5 py-0.5 text-[10px] font-bold text-cyan-400 rounded-none shadow-md">
                                 +{dayEvents.length - 2}
                               </div>
                             ) : null}
@@ -761,6 +759,7 @@ export default function CalendarContent({
                             {(() => {
                               const league = leagueById.get(primaryEvent.leagueId)
                               const raceTitle = primaryEvent.title?.trim() || primaryEvent.circuitName
+                              const eventColor = (primaryEvent as any).color || league?.accentColor || '#00f2fe'
                               const simLogo = league?.simulator === 'ac'
                                 ? '/branding/ACLogo.png'
                                 : league?.simulator === 'lmu'
@@ -772,61 +771,80 @@ export default function CalendarContent({
                                     e.stopPropagation()
                                     router.push(league ? `/ligas/${league.slug}` : '/ligas')
                                   }}
-                                  className="absolute inset-0 block cursor-pointer"
+                                  className="absolute inset-0 block cursor-pointer bg-[#090d16] group/card overflow-hidden border border-shell-line/60 hover:border-cyan-400 transition-colors"
+                                  style={{
+                                    borderLeftWidth: '4px',
+                                    borderLeftColor: eventColor,
+                                  }}
                                 >
-                                  <div
-                                    className="absolute inset-0 bg-cover bg-center"
-                                    style={{
-                                      backgroundImage: primaryEvent.circuitImageUrl
-                                        ? `linear-gradient(to top, rgba(10, 15, 26, 0.85) 0%, rgba(10, 15, 26, 0.2) 60%, transparent 100%), ${getLeagueGradient(league?.title, league?.slug, league?.accentColor, getEventType(primaryEvent, league))}, url(${primaryEvent.circuitImageUrl})`
-                                        : getLeagueGradient(league?.title, league?.slug, league?.accentColor, getEventType(primaryEvent, league)),
-                                    }}
-                                  />
-                                  <p className="absolute left-2 top-2 text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] flex items-center gap-1.5">
-                                    <span>{date.getUTCDate()}</span>
-                                    <span className="text-[12px] text-slate-200 font-mono font-bold bg-black/60 px-1.5 py-0.5 border border-white/10 flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-cyan-400" />
-                                      {formatTime(primaryEvent.startsAt)}
-                                    </span>
-                                  </p>
-                                  {simLogo && (
-                                    <div className="absolute right-2 top-2 z-10 pointer-events-none bg-white p-1 rounded-none shadow-sm">
-                                      <img
-                                        src={simLogo}
-                                        alt={league?.simulator}
-                                        className="h-5 w-auto object-contain"
-                                      />
-                                    </div>
+                                  {primaryEvent.circuitImageUrl ? (
+                                    <div
+                                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
+                                      style={{
+                                        backgroundImage: `linear-gradient(to top, rgba(9, 13, 22, 0.95) 0%, rgba(9, 13, 22, 0.4) 50%, rgba(9, 13, 22, 0.85) 100%), url(${primaryEvent.circuitImageUrl})`,
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#0c1220] via-[#080d16] to-[#04060c]" />
                                   )}
-                                  <div className="absolute inset-x-2 bottom-2">
-                                    {/* Event Format Tag (QUALIFYING, RACE, TIME ATTACK) */}
-                                    <p className="text-[11px] font-black uppercase italic tracking-wider text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] mb-0.5">
-                                      {getEventType(primaryEvent, league)}
-                                    </p>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      {primaryEvent.serverLink && (
-                                        <a
-                                          href={primaryEvent.serverLink}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          onClick={(e) => {
-                                            e.stopPropagation()
-                                          }}
-                                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 text-[10px] font-black uppercase tracking-wider italic border border-emerald-400/40 shadow-[0_0_10px_rgba(16,185,129,0.45)] transition-colors rounded-none mb-1"
-                                        >
-                                          <Play className="h-2.5 w-2.5 fill-current" />
-                                          Join Server
-                                        </a>
-                                      )}
-                                      <p className="line-clamp-2 text-[18px] font-black uppercase italic leading-tight text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.95)]">
-                                        {raceTitle}
-                                      </p>
+
+                                  {/* Top Bar: Date + Time + Sim Logo */}
+                                  <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-black text-white font-mono">{date.getUTCDate()}</span>
+                                      <span className="text-[10px] font-mono font-bold bg-black/80 px-1.5 py-0.5 border border-white/10 text-cyan-300 flex items-center gap-1">
+                                        <Clock className="h-3 w-3 text-cyan-400" />
+                                        {formatTime(primaryEvent.startsAt)}
+                                      </span>
                                     </div>
-                                    {league ? (
-                                      <p className="mt-1 text-xs font-semibold text-slate-200 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+
+                                    {simLogo && (
+                                      <div className="bg-white/90 p-0.5 shadow-sm">
+                                        <img src={simLogo} alt={league?.simulator} className="h-3.5 w-auto object-contain" />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Bottom Details */}
+                                  <div className="absolute inset-x-2.5 bottom-2 space-y-1 z-10">
+                                    <div className="flex items-center gap-1.5">
+                                      <span
+                                        className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase border shadow-md shrink-0"
+                                        style={{
+                                          backgroundColor: `${eventColor}25`,
+                                          borderColor: `${eventColor}80`,
+                                          color: eventColor,
+                                        }}
+                                      >
+                                        {getEventType(primaryEvent, league)}
+                                      </span>
+                                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                                        {primaryEvent.circuitName}
+                                      </span>
+                                    </div>
+
+                                    <h4 className="text-sm font-extrabold text-white uppercase italic tracking-tight drop-shadow-md line-clamp-1">
+                                      {raceTitle}
+                                    </h4>
+
+                                    {league && (
+                                      <p className="text-[10px] font-semibold text-slate-400 truncate">
                                         {league.title}
                                       </p>
-                                    ) : null}
+                                    )}
+
+                                    {primaryEvent.serverLink && (
+                                      <a
+                                        href={primaryEvent.serverLink}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="inline-flex items-center gap-1 bg-emerald-950/80 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-300 hover:text-white px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider transition-colors rounded-none mt-0.5"
+                                      >
+                                        <Play className="h-2.5 w-2.5 fill-current text-emerald-400" />
+                                        JOIN SERVER
+                                      </a>
+                                    )}
                                   </div>
                                 </div>
                               )
@@ -954,6 +972,47 @@ export default function CalendarContent({
                     <option value="qualifying">⚡ Qualifying (Clasificación)</option>
                     <option value="time_attack">⏱️ Time Attack (Hotlap)</option>
                   </select>
+                </div>
+
+                {/* Round Visual Color Palette Selection */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Round Visual Color (Color Palette)</label>
+                  <div className="space-y-2 bg-black/40 p-2.5 border border-shell-line">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {[
+                        { name: 'Neon Cyan', hex: '#00f2fe' },
+                        { name: 'Racing Red', hex: '#ff3b30' },
+                        { name: 'Electric Blue', hex: '#1274de' },
+                        { name: 'Emerald Green', hex: '#10b981' },
+                        { name: 'Hyper Orange', hex: '#ff6b00' },
+                        { name: 'Neon Purple', hex: '#a855f7' },
+                        { name: 'Gold Amber', hex: '#f59e0b' },
+                      ].map((color) => (
+                        <button
+                          key={color.hex}
+                          type="button"
+                          onClick={() => setFormColor(color.hex)}
+                          title={color.name}
+                          className={`h-6 w-6 rounded-none transition-transform border cursor-pointer ${
+                            formColor.toLowerCase() === color.hex.toLowerCase()
+                              ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
+                              : 'border-white/20 hover:scale-110'
+                          }`}
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 font-mono">Custom:</span>
+                      <input
+                        type="text"
+                        name="color"
+                        value={formColor}
+                        onChange={(e) => setFormColor(e.target.value)}
+                        className="w-28 border border-shell-line bg-black/60 px-2 py-0.5 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Time range */}

@@ -98,33 +98,35 @@ export function ViewResultsModal({
           </p>
         </div>
 
-        {/* Top Session Filter Tabs (Qualifying vs Race) */}
-        <div className="grid grid-cols-2 gap-2 bg-black/60 p-1.5 border border-shell-line/60 rounded-none mb-4">
-          <button
-            type="button"
-            onClick={() => setSessionFilter('qualifying')}
-            className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              sessionFilter === 'qualifying'
-                ? 'bg-cyan-500 text-black shadow-md border border-cyan-400'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Timer className="h-4 w-4" />
-            QUALIFYING SESSION
-          </button>
-          <button
-            type="button"
-            onClick={() => setSessionFilter('race')}
-            className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-              sessionFilter === 'race'
-                ? 'bg-amber-500 text-black shadow-md border border-amber-400'
-                : 'text-slate-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Flag className="h-4 w-4" />
-            RACE SESSION
-          </button>
-        </div>
+        {/* Top Session Filter Tabs (Qualifying vs Race) - Only shown when event has Qualy */}
+        {Boolean(event.hasQualy === true || String(event.hasQualy) === 'true' || event.qualyStartsAt) && (
+          <div className="grid grid-cols-2 gap-2 bg-black/60 p-1.5 border border-shell-line/60 rounded-none mb-4">
+            <button
+              type="button"
+              onClick={() => setSessionFilter('qualifying')}
+              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+                sessionFilter === 'qualifying'
+                  ? 'bg-cyan-500 text-black shadow-md border border-cyan-400'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Timer className="h-4 w-4" />
+              QUALIFYING SESSION
+            </button>
+            <button
+              type="button"
+              onClick={() => setSessionFilter('race')}
+              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
+                sessionFilter === 'race'
+                  ? 'bg-amber-500 text-black shadow-md border border-amber-400'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Flag className="h-4 w-4" />
+              RACE SESSION
+            </button>
+          </div>
+        )}
 
         {/* Category Filters */}
         <div className="flex items-center gap-2 mb-4 border-b border-white/10 pb-3 overflow-x-auto">

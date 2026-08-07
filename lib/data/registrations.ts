@@ -274,7 +274,10 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
               : Array.isArray(carObj.driver_user_ids)
               ? carObj.driver_user_ids.filter(Boolean)
               : []
-            return sameClass && sameDorsal
+            const byLeague = carObj.driverUserIdsByLeague || carObj.driver_user_ids_by_league || {}
+            const leagueDrivers = (byLeague[leagueId] || []).filter(Boolean)
+            const hasDrivers = drivers.length > 0 || leagueDrivers.length > 0
+            return sameClass && sameDorsal && hasDrivers
           })
           return Boolean(car)
         })
@@ -305,7 +308,15 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
         const car = (team.cars || []).find((carObj: any) => {
           const sameClass = String(carObj.category || '').toUpperCase() === String(c.classTag || '').toUpperCase()
           const sameDorsal = String(carObj.dorsal ?? '').trim() === String(c.carNumber ?? '').trim() || Number(carObj.dorsal) === Number(c.carNumber)
-          return sameClass && sameDorsal
+          const drivers = Array.isArray(carObj.driverUserIds)
+            ? carObj.driverUserIds.filter(Boolean)
+            : Array.isArray(carObj.driver_user_ids)
+            ? carObj.driver_user_ids.filter(Boolean)
+            : []
+          const byLeague = carObj.driverUserIdsByLeague || carObj.driver_user_ids_by_league || {}
+          const leagueDrivers = (byLeague[leagueId] || []).filter(Boolean)
+          const hasDrivers = drivers.length > 0 || leagueDrivers.length > 0
+          return sameClass && sameDorsal && hasDrivers
         })
         return Boolean(car)
       })

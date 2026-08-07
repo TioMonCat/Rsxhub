@@ -187,18 +187,18 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
             </div>
           </div>
 
-          {/* SECTION 3: Categories & Color Palette */}
+          {/* SECTION 3: Categories, Max Slots & Dates */}
           <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-              3. Categories, Visual Color &amp; Dates
+              3. Categories, Max Slots &amp; Dates
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Category Selection & Max Slots */}
-              <div>
-                <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categories &amp; Max Slots per Category</label>
+              <div className="space-y-3">
+                <label className="block text-xs text-slate-300 uppercase font-semibold">Categories &amp; Max Slots per Category</label>
                 <div className="grid grid-cols-1 gap-2.5 bg-black/60 p-3 border border-shell-line/50">
-                  {['GT3', 'Hypercar', 'LMP2'].map((cat) => {
+                  {['GT3', 'HYPERCAR', 'LMP2'].map((cat) => {
                     const currentCats = formClassTags
                       .split(',')
                       .map((s: string) => s.trim().toUpperCase())
@@ -253,7 +253,7 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                 </div>
 
                 {/* Max Drivers Per Car Input */}
-                <div className="mt-3 bg-black/60 p-3 border border-shell-line/50 space-y-1">
+                <div className="bg-black/60 p-3 border border-shell-line/50 space-y-1">
                   <label className="block text-xs text-slate-300 uppercase font-semibold flex items-center justify-between">
                     <span>Max Drivers per Car / Number</span>
                     <span className="text-[10px] text-cyan-400 font-mono font-bold">{formMaxDriversPerCar} DRIVERS PER NUMBER</span>
@@ -275,82 +275,59 @@ export function LeagueEditModal({ league, isOpen, onClose }: LeagueEditModalProp
                 </div>
               </div>
 
-              {/* Predefined Color Palette */}
-              <div>
-                <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">League Visual Color (Color Palette)</label>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 flex-wrap bg-black/60 p-2.5 border border-shell-line/50">
-                    {[
-                      { name: 'Neon Cyan', hex: '#00f2fe' },
-                      { name: 'Racing Red', hex: '#ff3b30' },
-                      { name: 'Electric Blue', hex: '#1274de' },
-                      { name: 'Emerald Green', hex: '#10b981' },
-                      { name: 'Hyper Orange', hex: '#ff6b00' },
-                      { name: 'Neon Purple', hex: '#a855f7' },
-                    ].map((color) => (
-                      <button
-                        key={color.hex}
-                        type="button"
-                        onClick={() => setFormAccentColor(color.hex)}
-                        title={color.name}
-                        className={`h-7 w-7 rounded-none transition-transform border cursor-pointer ${
-                          formAccentColor.toLowerCase() === color.hex.toLowerCase()
-                            ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
-                            : 'border-white/20 hover:scale-110'
-                        }`}
-                        style={{ backgroundColor: color.hex }}
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] text-slate-400 font-mono">Custom:</span>
+              {/* Championship Dates */}
+              <div className="space-y-3">
+                <label className="block text-xs text-slate-300 uppercase font-semibold">Championship Dates</label>
+                <div className="bg-black/60 p-3 border border-shell-line/50 space-y-4">
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Start Date *</label>
                     <input
-                      type="text"
-                      value={formAccentColor}
-                      onChange={(e) => setFormAccentColor(e.target.value)}
-                      className="w-28 border border-shell-line bg-black/60 px-2.5 py-1 text-xs text-white font-mono outline-none rounded-none"
+                      name="startsAt"
+                      type="date"
+                      value={formStartsAt}
+                      onChange={(e) => setFormStartsAt(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">End Date *</label>
+                    <input
+                      name="endsAt"
+                      type="date"
+                      value={formEndsAt}
+                      onChange={(e) => setFormEndsAt(e.target.value)}
+                      required
+                      className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
                     />
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-              <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Start Date</label>
-                <input
-                  type="date"
-                  value={formStartsAt}
-                  onChange={(e) => setFormStartsAt(e.target.value)}
-                  required
-                  className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">End Date</label>
-                <input
-                  type="date"
-                  value={formEndsAt}
-                  onChange={(e) => setFormEndsAt(e.target.value)}
-                  required
-                  className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
-                />
-              </div>
-            </div>
           </div>
 
-          {/* SECTION 4: Media & Banner */}
+          {/* SECTION 4: Media & Banner Images */}
           <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-              4. League Cover Image
+              4. League Media &amp; Cover Images
             </h3>
-            <div>
-              <ImagePicker
-                name="bannerUrl"
-                defaultValue={formBannerUrl}
-                onChange={setFormBannerUrl}
-                label="League Banner Image (Main Header)"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <ImagePicker
+                  name="bannerUrl"
+                  defaultValue={formBannerUrl}
+                  onChange={setFormBannerUrl}
+                  label="Banner Interno (Cabecera Principal) (Óptimo: 1920 × 500 px)"
+                />
+              </div>
+              <div>
+                <ImagePicker
+                  name="logoUrl"
+                  defaultValue={formLogoUrl}
+                  onChange={setFormLogoUrl}
+                  label="Foto Externa (Tarjeta en Listado de Ligas) (Óptimo: 800 × 450 px)"
+                />
+              </div>
             </div>
           </div>
 

@@ -41,6 +41,7 @@ export interface LeagueEvent {
   status: 'scheduled' | 'completed' | 'cancelled'
   eventType?: 'race' | 'qualifying' | 'time_attack'
   countryCode?: string | null
+  color?: string | null
 }
 
 export interface League {

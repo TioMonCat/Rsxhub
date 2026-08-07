@@ -95,7 +95,7 @@ export default function LeagueDetailPageContent({
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
   const [isResultsOpen, setIsResultsOpen] = useState(false)
   const [isRegisterOpen, setIsRegisterOpen] = useState(false)
-  const [finishingEvent, setFinishingEvent] = useState<LeagueEvent | null>(null)
+  const [finishingEventData, setFinishingEventData] = useState<{ event: LeagueEvent; initialSessionType?: 'qualifying' | 'race' } | null>(null)
   const [viewingResultsEvent, setViewingResultsEvent] = useState<LeagueEvent | null>(null)
 
   // Edit League Form States
@@ -122,6 +122,7 @@ export default function LeagueDetailPageContent({
   const [formEventTitle, setFormEventTitle] = useState('')
   const [formEventCircuit, setFormEventCircuit] = useState('')
   const [formEventCountryCode, setFormEventCountryCode] = useState('ESP')
+  const [formEventColor, setFormEventColor] = useState('#00f2fe')
   const [formEventType, setFormEventType] = useState<'race' | 'qualifying' | 'time_attack'>('race')
   const [formHasQualy, setFormHasQualy] = useState(true)
   const [formQualyDate, setFormQualyDate] = useState('')
@@ -153,14 +154,14 @@ export default function LeagueDetailPageContent({
 
   // Lock body scrolling when any modal is open to prevent double scrollbars
   useEffect(() => {
-    const isAnyModalOpen = isEditLeagueOpen || isEventModalOpen || isRegisterOpen || isResultsOpen || Boolean(finishingEvent) || Boolean(viewingResultsEvent)
+    const isAnyModalOpen = isEditLeagueOpen || isEventModalOpen || isRegisterOpen || isResultsOpen || Boolean(finishingEventData) || Boolean(viewingResultsEvent)
     if (!isAnyModalOpen) return
     const original = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = original
     }
-  }, [isEditLeagueOpen, isEventModalOpen, isRegisterOpen, isResultsOpen, finishingEvent, viewingResultsEvent])
+  }, [isEditLeagueOpen, isEventModalOpen, isRegisterOpen, isResultsOpen, finishingEventData, viewingResultsEvent])
 
   // Handlers
   const handleLeagueDelete = async () => {
@@ -236,6 +237,7 @@ export default function LeagueDetailPageContent({
       setFormEventTitle(event.title || '')
       setFormEventCircuit(event.circuitName || '')
       setFormEventCountryCode((event as any).countryCode || 'FRA')
+      setFormEventColor((event as any).color || '#00f2fe')
       setFormEventType((event as any).eventType || 'race')
       setFormHasQualy(event.hasQualy ?? true)
       setFormQualyDate(formatLocalDateInput(event.qualyStartsAt || event.startsAt))
@@ -253,6 +255,7 @@ export default function LeagueDetailPageContent({
       setFormEventTitle('')
       setFormEventCircuit('Circuit de la Sarthe, Le Mans')
       setFormEventCountryCode('FRA')
+      setFormEventColor('#00f2fe')
       setFormEventType('race')
       setFormHasQualy(true)
       setFormQualyDate(todayStr)
@@ -284,6 +287,7 @@ export default function LeagueDetailPageContent({
       formData.set('circuitName', formEventCircuit || 'Circuit')
       formData.set('title', formEventTitle)
       formData.set('countryCode', formEventCountryCode)
+      formData.set('color', formEventColor)
       formData.set('eventType', formEventType)
       formData.set('date', formEventDate)
       formData.set('hasQualy', formHasQualy ? 'true' : 'false')
@@ -403,7 +407,7 @@ export default function LeagueDetailPageContent({
           standings={standings}
           onOpenEventModal={handleOpenEventModal}
           onDeleteEvent={handleEventDelete}
-          onFinishRound={(ev) => setFinishingEvent(ev)}
+          onFinishRound={(ev, initialSessionType) => setFinishingEventData({ event: ev, initialSessionType })}
           onViewResults={(ev) => setViewingResultsEvent(ev)}
         />
 
@@ -440,14 +444,15 @@ export default function LeagueDetailPageContent({
       )}
 
       {/* Finish Round Modal (Admin Only) */}
-      {finishingEvent && (
+      {finishingEventData && (
         <FinishRoundModal
-          event={finishingEvent}
+          event={finishingEventData.event}
+          initialSessionType={finishingEventData.initialSessionType}
           leagueId={league.id}
           classTags={classTags}
-          onClose={() => setFinishingEvent(null)}
+          onClose={() => setFinishingEventData(null)}
           onSuccess={() => {
-            setFinishingEvent(null)
+            setFinishingEventData(null)
             router.refresh()
           }}
         />
@@ -533,6 +538,47 @@ export default function LeagueDetailPageContent({
                     <option value="ARG">🇦🇷 Argentina (ARG)</option>
                     <option value="MEX">🇲🇽 Mexico (MEX)</option>
                   </select>
+                </div>
+
+                {/* Round Visual Color Palette Selection */}
+                <div>
+                  <label className="mb-1 block text-xs text-slate-300 uppercase tracking-wider font-semibold">Round Visual Color (Color Palette)</label>
+                  <div className="space-y-2 bg-black/40 p-2.5 border border-shell-line">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {[
+                        { name: 'Neon Cyan', hex: '#00f2fe' },
+                        { name: 'Racing Red', hex: '#ff3b30' },
+                        { name: 'Electric Blue', hex: '#1274de' },
+                        { name: 'Emerald Green', hex: '#10b981' },
+                        { name: 'Hyper Orange', hex: '#ff6b00' },
+                        { name: 'Neon Purple', hex: '#a855f7' },
+                        { name: 'Gold Amber', hex: '#f59e0b' },
+                      ].map((color) => (
+                        <button
+                          key={color.hex}
+                          type="button"
+                          onClick={() => setFormEventColor(color.hex)}
+                          title={color.name}
+                          className={`h-6 w-6 rounded-none transition-transform border cursor-pointer ${
+                            formEventColor.toLowerCase() === color.hex.toLowerCase()
+                              ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
+                              : 'border-white/20 hover:scale-110'
+                          }`}
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-slate-400 font-mono">Custom:</span>
+                      <input
+                        type="text"
+                        name="color"
+                        value={formEventColor}
+                        onChange={(e) => setFormEventColor(e.target.value)}
+                        className="w-28 border border-shell-line bg-black/60 px-2 py-0.5 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Sessions Schedule Section */}

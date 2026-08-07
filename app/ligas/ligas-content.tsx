@@ -206,9 +206,9 @@ export default function LigasPageContent({
       {isCreateOpen && mounted && typeof document !== 'undefined'
         ? createPortal(
             <div className="fixed inset-0 z-[150] overflow-y-auto bg-black/85 backdrop-blur-sm p-4 flex justify-center items-start md:items-center">
-              <div className="w-full max-w-2xl bg-[#090d16] border border-shell-line shadow-2xl my-auto relative">
+              <div className="w-full max-w-4xl bg-[#090d16] border border-shell-line shadow-2xl my-auto relative p-2 md:p-4">
                 {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-shell-line p-5">
+                <div className="flex items-center justify-between border-b border-shell-line p-4 md:p-5">
                   <h2 className="text-lg font-black uppercase italic tracking-wider text-white">
                     Create New League
                   </h2>
@@ -222,7 +222,7 @@ export default function LigasPageContent({
                 </div>
 
                 {/* Modal Form */}
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="p-4 md:p-6 space-y-6">
                   {errorMessage && (
                     <div className="border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-semibold text-rose-300 rounded-none">
                       {errorMessage}
@@ -232,7 +232,7 @@ export default function LigasPageContent({
                   {/* SECTION 1: General Info */}
                   <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                      1. General Info & Titles
+                      1. General Info &amp; Titles
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -260,7 +260,7 @@ export default function LigasPageContent({
                   {/* SECTION 2: Rules, Simulator & Format */}
                   <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                      2. Simulator, Format & League Status
+                      2. Simulator, Format &amp; League Status
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
@@ -315,16 +315,16 @@ export default function LigasPageContent({
                     </div>
                   </div>
 
-                  {/* SECTION 3: Categories, Max Slots & Color Palette */}
+                  {/* SECTION 3: Categories, Max Slots & Dates */}
                   <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                      3. Categories, Max Slots, Visual Color & Dates
+                      3. Categories, Max Slots &amp; Dates
                     </h3>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Category Selection & Max Slots */}
-                      <div>
-                        <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">Categories & Max Slots per Category</label>
+                      <div className="space-y-3">
+                        <label className="block text-xs text-slate-300 uppercase font-semibold">Categories &amp; Max Slots per Category</label>
                         <div className="grid grid-cols-1 gap-2.5 bg-black/60 p-3 border border-shell-line/50">
                           {['GT3', 'HYPERCAR', 'LMP2'].map((cat) => {
                             const isChecked = selectedTags.includes(cat)
@@ -366,82 +366,76 @@ export default function LigasPageContent({
                           })}
                         </div>
                         <input type="hidden" name="classTags" value={selectedTags.join(', ')} />
+
+                        {/* Max Drivers Per Car Input */}
+                        <div className="bg-black/60 p-3 border border-shell-line/50 space-y-1">
+                          <label className="block text-xs text-slate-300 uppercase font-semibold flex items-center justify-between">
+                            <span>Max Drivers per Car / Number</span>
+                            <span className="text-[10px] text-cyan-400 font-mono font-bold">MAX PER CAR</span>
+                          </label>
+                          <input
+                            type="number"
+                            name="maxDriversPerCar"
+                            min={1}
+                            max={6}
+                            defaultValue={4}
+                            required
+                            className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-cyan-300 outline-none rounded-none focus:border-cyan-400 font-mono font-bold"
+                            placeholder="e.g: 4"
+                          />
+                          <p className="text-[10px] text-slate-400">
+                            Define the maximum number of drivers assignable per vehicle/number in this league.
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Predefined Color Palette */}
-                      <div>
-                        <label className="mb-1.5 block text-xs text-slate-300 uppercase font-semibold">League Visual Color (Color Palette)</label>
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap bg-black/60 p-2.5 border border-shell-line/50">
-                            {[
-                              { name: 'Neon Cyan', hex: '#00f2fe' },
-                              { name: 'Racing Red', hex: '#ff3b30' },
-                              { name: 'Electric Blue', hex: '#1274de' },
-                              { name: 'Emerald Green', hex: '#10b981' },
-                              { name: 'Hyper Orange', hex: '#ff6b00' },
-                              { name: 'Neon Purple', hex: '#a855f7' },
-                            ].map((color) => (
-                              <button
-                                key={color.hex}
-                                type="button"
-                                onClick={() => setSelectedAccent(color.hex)}
-                                title={color.name}
-                                className={`h-7 w-7 rounded-none transition-transform border ${
-                                  selectedAccent.toLowerCase() === color.hex.toLowerCase()
-                                    ? 'scale-125 border-white ring-2 ring-cyan-400 shadow-[0_0_10px_rgba(0,242,254,0.6)] z-10'
-                                    : 'border-white/20 hover:scale-110'
-                                }`}
-                                style={{ backgroundColor: color.hex }}
-                              />
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-slate-400 font-mono">Custom:</span>
+                      {/* Championship Dates */}
+                      <div className="space-y-3">
+                        <label className="block text-xs text-slate-300 uppercase font-semibold">Championship Dates</label>
+                        <div className="bg-black/60 p-3 border border-shell-line/50 space-y-4">
+                          <div>
+                            <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Start Date *</label>
                             <input
-                              type="text"
-                              name="accentColor"
-                              value={selectedAccent}
-                              onChange={(e) => setSelectedAccent(e.target.value)}
-                              className="w-28 border border-shell-line bg-black/60 px-2.5 py-1 text-xs text-white font-mono outline-none rounded-none"
+                              name="startsAt"
+                              type="date"
+                              required
+                              className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">End Date *</label>
+                            <input
+                              name="endsAt"
+                              type="date"
+                              required
+                              className="w-full border border-shell-line bg-black/80 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
                             />
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div>
-                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">Start Date *</label>
-                        <input
-                          name="startsAt"
-                          type="date"
-                          required
-                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-slate-300 uppercase font-semibold">End Date *</label>
-                        <input
-                          name="endsAt"
-                          type="date"
-                          required
-                          className="w-full border border-shell-line bg-black/60 px-3 py-2 text-xs text-white font-mono outline-none rounded-none focus:border-cyan-400"
-                        />
-                      </div>
-                    </div>
                   </div>
 
-                  {/* SECTION 4: Media & Banner */}
+                  {/* SECTION 4: Media & Banner Images */}
                   <div className="space-y-4 bg-black/30 p-4 border border-shell-line/40">
                     <h3 className="text-xs font-extrabold uppercase tracking-wider text-cyan-400 border-b border-cyan-500/20 pb-1.5">
-                      4. League Cover Image
+                      4. League Media &amp; Cover Images
                     </h3>
-                    <div>
-                      <ImagePicker
-                        name="bannerUrl"
-                        defaultValue=""
-                        label="League Banner Image (Main Header)"
-                      />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <ImagePicker
+                          name="bannerUrl"
+                          defaultValue=""
+                          label="Banner Interno (Cabecera Principal) (Óptimo: 1920 × 500 px)"
+                        />
+                      </div>
+                      <div>
+                        <ImagePicker
+                          name="logoUrl"
+                          defaultValue=""
+                          label="Foto Externa (Tarjeta en Listado de Ligas) (Óptimo: 800 × 450 px)"
+                        />
+                      </div>
                     </div>
                   </div>
 

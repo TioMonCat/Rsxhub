@@ -22,6 +22,7 @@ export async function saveCalendarEvent(formData: FormData) {
     const serverLink = String(formData.get('serverLink') || '').trim()
     const eventType = String(formData.get('eventType') || 'race').trim()
     const countryCode = String(formData.get('countryCode') || '').trim()
+    const color = String(formData.get('color') || '#00f2fe').trim()
 
     if (!leagueId || !circuitName || !dateStr) {
       return { success: false, error: 'League, Circuit and Date are required.' }
@@ -76,6 +77,7 @@ export async function saveCalendarEvent(formData: FormData) {
       server_link: serverLink || null,
       event_type: eventType,
       country_code: countryCode || null,
+      color: color || null,
       has_qualy: hasQualy,
       qualy_starts_at: qualyStartsAt,
       qualy_ends_at: qualyEndsAt,
@@ -136,6 +138,7 @@ export async function saveCalendarEvent(formData: FormData) {
               serverLink: serverLink || null,
               eventType,
               countryCode: countryCode || null,
+              color: color || null,
               hasQualy,
               qualyStartsAt,
               qualyEndsAt,
@@ -156,6 +159,7 @@ export async function saveCalendarEvent(formData: FormData) {
           serverLink: serverLink || null,
           eventType,
           countryCode: countryCode || null,
+          color: color || null,
           hasQualy,
           qualyStartsAt,
           qualyEndsAt,

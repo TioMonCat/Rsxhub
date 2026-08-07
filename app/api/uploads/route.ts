@@ -194,20 +194,57 @@ async function addGalleryUpload(url: string) {
   } catch (err) {}
 }
 
-export async function GET() {
+async function removeGalleryUpload(url: string) {
+  globalGalleryUploads.delete(url)
+
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      try {
+        const docRef = db.collection('settings').doc('gallery_uploads')
+        const doc = await docRef.get()
+        if (doc.exists) {
+          const data = doc.data()
+          if (data && Array.isArray(data.urls)) {
+            const urls = data.urls.filter((u: string) => u !== url)
+            await docRef.set({ urls, updated_at: new Date() }, { merge: true })
+          }
+        }
+        return
+      } catch (err) {
+        console.error('Failed to remove gallery upload from Firestore:', err)
+      }
+    }
+  }
+
   try {
+    const { cookies } = await import('next/headers')
+    const cookieStore = await cookies()
+    const cookieVal = cookieStore.get('gallery_uploads')?.value
+    if (cookieVal) {
+      const urls = JSON.parse(cookieVal).filter((u: string) => u !== url)
+      cookieStore.set('gallery_uploads', JSON.stringify(urls), {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+      })
+    }
+  } catch (err) {}
+}
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const mode = searchParams.get('mode')
+
     // Ensure uploads folder exists
     await fs.mkdir(UPLOADS_DIR, { recursive: true })
 
     const IMAGE_EXT = /\.(png|jpe?g|gif|svg|webp)$/i
 
-    // Read user uploads from disk
-    const uploadFiles = await fs.readdir(UPLOADS_DIR)
-    const uploadImages = uploadFiles
-      .filter((f) => IMAGE_EXT.test(f))
-      .map((f) => `/uploads/${f}`)
+    // Fetch explicit gallery uploads
+    const galleryUploads = await getGalleryUploads()
 
-    // Read branding assets (banners only — filter out small logos / sim icons)
+    // Read branding assets (banners / system assets)
     let brandingImages: string[] = []
     try {
       const brandingFiles = await fs.readdir(BRANDING_DIR)
@@ -216,8 +253,17 @@ export async function GET() {
         .map((f) => `/branding/${f}`)
     } catch {}
 
-    const galleryUploads = await getGalleryUploads()
-    const images = Array.from(new Set([...galleryUploads, ...uploadImages, ...brandingImages]))
+    let images: string[] = []
+    if (mode === 'all') {
+      const uploadFiles = await fs.readdir(UPLOADS_DIR)
+      const uploadImages = uploadFiles
+        .filter((f) => IMAGE_EXT.test(f))
+        .map((f) => `/uploads/${f}`)
+      images = Array.from(new Set([...galleryUploads, ...uploadImages, ...brandingImages]))
+    } else {
+      // ONLY explicit gallery uploads + branding system assets
+      images = Array.from(new Set([...galleryUploads, ...brandingImages]))
+    }
 
     // Filter out any assets that have been soft-deleted
     const deletedList = await getDeletedAssets()
@@ -242,6 +288,8 @@ export async function POST(req: Request) {
     const formData = await req.formData()
     const file = formData.get('file') as File | null
     const type = formData.get('type') as string | null
+
+    const isGallery = formData.get('isGallery') === 'true' || type === 'gallery'
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
@@ -382,13 +430,17 @@ export async function POST(req: Request) {
           await fs.writeFile(targetPath, compressed)
           const finalUrl = `/uploads/${safeName}`
           await removeDeletedAsset(finalUrl)
-          await addGalleryUpload(finalUrl)
+          if (isGallery) {
+            await addGalleryUpload(finalUrl)
+          }
           return NextResponse.json({ url: finalUrl })
         } catch (fsErr) {
           console.warn('Writing file to disk failed (expected on Vercel/serverless environments). Falling back to Base64:', fsErr)
           const base64 = compressed.toString('base64')
           const finalUrl = `data:image/webp;base64,${base64}`
-          await addGalleryUpload(finalUrl)
+          if (isGallery) {
+            await addGalleryUpload(finalUrl)
+          }
           return NextResponse.json({ url: finalUrl })
         }
       } catch (sharpErr) {
@@ -405,14 +457,18 @@ export async function POST(req: Request) {
       await fs.writeFile(targetPath, inputBuffer)
       const finalUrl = `/uploads/${safeName}`
       await removeDeletedAsset(finalUrl)
-      await addGalleryUpload(finalUrl)
+      if (isGallery) {
+        await addGalleryUpload(finalUrl)
+      }
       return NextResponse.json({ url: finalUrl })
     } catch (fsErr) {
       console.warn('Writing original file to disk failed, falling back to base64:', fsErr)
       const mimeType = file.type || 'image/png'
       const base64 = inputBuffer.toString('base64')
       const finalUrl = `data:${mimeType};base64,${base64}`
-      await addGalleryUpload(finalUrl)
+      if (isGallery) {
+        await addGalleryUpload(finalUrl)
+      }
       return NextResponse.json({ url: finalUrl })
     }
   } catch (err: any) {
@@ -456,7 +512,8 @@ export async function DELETE(req: Request) {
       // we still proceed with soft-deleting it from the list!
     }
 
-    // Register in the soft-delete system
+    // Register in the soft-delete system and remove from gallery_uploads
+    await removeGalleryUpload(url)
     await addDeletedAsset(url)
 
     return NextResponse.json({ success: true, softDeleted: true })

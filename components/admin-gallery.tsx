@@ -48,6 +48,7 @@ export function AdminGallery() {
     setUploading(true)
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('isGallery', 'true')
 
     try {
       const res = await fetch('/api/uploads', {

@@ -21,6 +21,34 @@ export async function confirmAttendanceAction(formData: FormData) {
     throw new Error('All fields are required.')
   }
 
+  // 0. Verify car has assigned drivers
+  if (hasFirebase) {
+    const db = getFirestoreDb()
+    if (db) {
+      const teamDoc = await db.collection('teams').doc(teamId).get()
+      if (teamDoc.exists) {
+        const teamData = teamDoc.data()
+        const car = (teamData?.cars || []).find((c: any) => {
+          const sameClass = String(c.category || '').toUpperCase() === classTag
+          const sameDorsal = String(c.dorsal ?? '').trim() === String(carNumber).trim() || Number(c.dorsal) === Number(carNumber)
+          return sameClass && sameDorsal
+        })
+        if (car) {
+          const byLeague = car.driverUserIdsByLeague || car.driver_user_ids_by_league || {}
+          const leagueDrivers = (byLeague[leagueId] || byLeague[slug] || []).filter(Boolean)
+          const carDrivers = Array.isArray(car.driverUserIds)
+            ? car.driverUserIds.filter(Boolean)
+            : Array.isArray(car.driver_user_ids)
+            ? car.driver_user_ids.filter(Boolean)
+            : []
+          if (leagueDrivers.length === 0 && carDrivers.length === 0) {
+            throw new Error('No se puede confirmar asistencia: El vehículo no tiene pilotos asignados.')
+          }
+        }
+      }
+    }
+  }
+
   // 1. Get the league's category limit
   let categoryLimit = 30
   try {

@@ -476,36 +476,50 @@ export async function updateTeam(formData: FormData) {
                   carDrivers = car.driver_user_ids.filter(Boolean).map(String)
                 }
 
-                // If car has NO drivers assigned yet, use team owner/session user as representative entry
-                const ownerId = existingTeam?.owner_user_id || existingTeam?.ownerUserId || session?.userId || 'team_owner'
-                const effectiveDrivers = carDrivers.length > 0 ? carDrivers : [ownerId]
-
-                for (const userId of effectiveDrivers) {
-                  let displayName = `Pilot ${userId.slice(0, 4)}`
+                if (carDrivers.length === 0) {
+                  // If car has NO drivers assigned, delete any race attendance confirmations for this car
                   try {
-                    const profileDoc = await db.collection('profiles').doc(userId).get()
-                    if (profileDoc.exists) {
-                      displayName = profileDoc.data()?.display_name || displayName
-                    } else {
-                      const steamDoc = await db.collection('steam_accounts').doc(userId).get()
-                      if (steamDoc.exists) {
-                        displayName = steamDoc.data()?.steam_display_name || displayName
+                    const confSnap = await db.collection('league_event_confirmations')
+                      .where('team_id', '==', teamId)
+                      .where('class_tag', '==', carClassTag)
+                      .get()
+                    confSnap.docs.forEach((cDoc: any) => {
+                      const d = cDoc.data()
+                      if (String(d.car_number ?? '').trim() === String(regCarNumber ?? '').trim() || String(d.car_number ?? '').trim() === String(carDorsal ?? '').trim()) {
+                        batch.delete(cDoc.ref)
                       }
-                    }
+                    })
                   } catch (e) {
-                    console.error('Failed to resolve display name:', e)
+                    console.error('Failed deleting event confirmations for car with 0 drivers:', e)
                   }
+                } else {
+                  for (const userId of carDrivers) {
+                    let displayName = `Pilot ${userId.slice(0, 4)}`
+                    try {
+                      const profileDoc = await db.collection('profiles').doc(userId).get()
+                      if (profileDoc.exists) {
+                        displayName = profileDoc.data()?.display_name || displayName
+                      } else {
+                        const steamDoc = await db.collection('steam_accounts').doc(userId).get()
+                        if (steamDoc.exists) {
+                          displayName = steamDoc.data()?.steam_display_name || displayName
+                        }
+                      }
+                    } catch (e) {
+                      console.error('Failed to resolve display name:', e)
+                    }
 
-                  registrationsInThisLeague.push({
-                    league_id: realLeagueId,
-                    user_id: userId,
-                    team_id: teamId,
-                    display_name: displayName,
-                    status: 'approved',
-                    class_tag: carClassTag,
-                    assigned_number: regCarNumber,
-                    created_at: new Date().toISOString()
-                  })
+                    registrationsInThisLeague.push({
+                      league_id: realLeagueId,
+                      user_id: userId,
+                      team_id: teamId,
+                      display_name: displayName,
+                      status: 'approved',
+                      class_tag: carClassTag,
+                      assigned_number: regCarNumber,
+                      created_at: new Date().toISOString()
+                    })
+                  }
                 }
               }
 
@@ -661,21 +675,34 @@ export async function updateTeam(formData: FormData) {
                 carDrivers = car.driverUserIds.filter(Boolean).map(String)
               }
 
-              const effectiveDriversMock = carDrivers.length > 0 ? carDrivers : [session.userId]
-
-              for (const userId of effectiveDriversMock) {
-                newRegistrationsForLeague.push({
-                  id: `mock_reg_${Date.now()}_${carClassTag}_${userId}_${regCarNumber}`,
-                  leagueId,
-                  userId,
-                  teamId,
-                  displayName: userId === session.userId ? (session.steamDisplayName || 'Team Leader') : `Driver ${userId.slice(0, 4)}`,
-                  steamId: `steam_${userId}`,
-                  classTag: carClassTag,
-                  assignedNumber: regCarNumber,
-                  createdAt: new Date().toISOString(),
-                  status: 'approved',
-                })
+              if (carDrivers.length > 0) {
+                for (const userId of carDrivers) {
+                  newRegistrationsForLeague.push({
+                    id: `mock_reg_${Date.now()}_${carClassTag}_${userId}_${regCarNumber}`,
+                    leagueId,
+                    userId,
+                    teamId,
+                    displayName: userId === session.userId ? (session.steamDisplayName || 'Team Leader') : `Driver ${userId.slice(0, 4)}`,
+                    steamId: `steam_${userId}`,
+                    classTag: carClassTag,
+                    assignedNumber: regCarNumber,
+                    createdAt: new Date().toISOString(),
+                    status: 'approved',
+                  })
+                }
+              } else {
+                // Unconfirm / clear mock confirmations for cars with 0 drivers
+                try {
+                  const mockConfCookie = cookieStore.get('mock_event_confirmations')?.value
+                  if (mockConfCookie) {
+                    let mockConfs = JSON.parse(mockConfCookie)
+                    mockConfs = mockConfs.filter(
+                      (c: any) =>
+                        !(c.teamId === teamId && String(c.classTag || '').toUpperCase() === carClassTag && (String(c.carNumber || '').trim() === regCarNumber || String(c.carNumber || '').trim() === carDorsal))
+                    )
+                    cookieStore.set('mock_event_confirmations', JSON.stringify(mockConfs), { path: '/', maxAge: 60 * 60 * 24 * 30 })
+                  }
+                } catch (e) {}
               }
             }
 
