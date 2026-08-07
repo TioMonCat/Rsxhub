@@ -15,17 +15,18 @@ import type { LeagueMember, LeagueRegistration } from '@/types'
 import { getLeagues } from './leagues'
 
 export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueRegistration[]> => {
-  if (hasFirebase) {
-    const db = getFirestoreDb()
-    if (db) {
-      try {
-        let query = db.collection('league_registrations')
-        let snapshot
-        if (leagueId) {
-          snapshot = await query.where('league_id', '==', leagueId).get()
-        } else {
-          snapshot = await query.get()
-        }
+  return fetchWithTTLCache(`registrations_${leagueId || 'all'}`, async () => {
+    if (hasFirebase) {
+      const db = getFirestoreDb()
+      if (db) {
+        try {
+          let query = db.collection('league_registrations')
+          let snapshot
+          if (leagueId) {
+            snapshot = await query.where('league_id', '==', leagueId).get()
+          } else {
+            snapshot = await query.get()
+          }
 
         if (snapshot.empty) return []
 
@@ -174,6 +175,7 @@ export const getRegistrations = cache(async (leagueId?: string): Promise<LeagueR
   } catch {
     return filteredList
   }
+  }, 60)
 })
 
 export const getLeagueMembers = cache(async (leagueId: string): Promise<LeagueMember[]> => {
@@ -235,14 +237,15 @@ export const getLeagueMembers = cache(async (leagueId: string): Promise<LeagueMe
 })
 
 export const getEventConfirmations = cache(async (leagueId: string): Promise<any[]> => {
-  if (hasFirebase) {
-    const db = getFirestoreDb()
-    if (db) {
-      try {
-        const snapshot = await db
-          .collection('league_event_confirmations')
-          .where('league_id', '==', leagueId)
-          .get()
+  return fetchWithTTLCache(`event_confirmations_${leagueId}`, async () => {
+    if (hasFirebase) {
+      const db = getFirestoreDb()
+      if (db) {
+        try {
+          const snapshot = await db
+            .collection('league_event_confirmations')
+            .where('league_id', '==', leagueId)
+            .get()
         if (snapshot.empty) return []
         const rawConfirmations = snapshot.docs.map((doc: any) => {
           const data = doc.data()
@@ -325,6 +328,7 @@ export const getEventConfirmations = cache(async (leagueId: string): Promise<any
     console.error('Failed to get mock event confirmations:', e)
   }
   return []
+  }, 60)
 })
 
 export type PlatformDriverUser = {

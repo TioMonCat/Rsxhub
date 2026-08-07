@@ -386,11 +386,8 @@ export async function updateTeam(formData: FormData) {
 
           const teamLeagueId = existingTeam?.league_id || existingTeam?.leagueId
 
-          const allLeaguesSnap = await db.collection('leagues').get()
-          const allLeagueIds = allLeaguesSnap.docs.map((doc: any) => doc.id)
-
           const targetLeagueIds = Array.from(
-            new Set([...regLeagueIds, ...carLeagueIds, teamLeagueId, ...allLeagueIds].filter(Boolean))
+            new Set([...regLeagueIds, ...carLeagueIds, teamLeagueId].filter(Boolean))
           ) as string[]
 
           for (const leagueId of targetLeagueIds) {
@@ -483,30 +480,25 @@ export async function updateTeam(formData: FormData) {
                       .where('team_id', '==', teamId)
                       .where('class_tag', '==', carClassTag)
                       .get()
+                    const batch = db.batch()
                     confSnap.docs.forEach((cDoc: any) => {
                       const d = cDoc.data()
                       if (String(d.car_number ?? '').trim() === String(regCarNumber ?? '').trim() || String(d.car_number ?? '').trim() === String(carDorsal ?? '').trim()) {
                         batch.delete(cDoc.ref)
                       }
                     })
+                    await batch.commit()
                   } catch (e) {
                     console.error('Failed deleting event confirmations for car with 0 drivers:', e)
                   }
                 } else {
                   for (const userId of carDrivers) {
                     let displayName = `Pilot ${userId.slice(0, 4)}`
-                    try {
-                      const profileDoc = await db.collection('profiles').doc(userId).get()
-                      if (profileDoc.exists) {
-                        displayName = profileDoc.data()?.display_name || displayName
-                      } else {
-                        const steamDoc = await db.collection('steam_accounts').doc(userId).get()
-                        if (steamDoc.exists) {
-                          displayName = steamDoc.data()?.steam_display_name || displayName
-                        }
-                      }
-                    } catch (e) {
-                      console.error('Failed to resolve display name:', e)
+                    const existingMember = (existingTeam?.members || []).find(
+                      (m: any) => m.userId === userId || m.user_id === userId
+                    )
+                    if (existingMember?.name || existingMember?.displayName || existingMember?.display_name) {
+                      displayName = existingMember.name || existingMember.displayName || existingMember.display_name
                     }
 
                     registrationsInThisLeague.push({

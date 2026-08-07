@@ -36,8 +36,6 @@ export function NotificationsNav({
 
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 10000)
-    return () => clearInterval(interval)
   }, [fetchNotifications])
 
   useEffect(() => {

@@ -722,14 +722,14 @@ export default function CalendarContent({
                                   <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-10 pointer-events-none">
                                     <div className="flex items-center gap-1">
                                       {idx === 0 && <span className="text-xs font-black text-white font-mono">{date.getUTCDate()}</span>}
-                                      <span className="text-[10px] font-mono font-bold bg-black/80 px-1 py-0.5 border border-white/10 text-cyan-300 flex items-center gap-1">
-                                        <Clock className="h-2.5 w-2.5 text-cyan-400" />
+                                      <span className="text-[10px] font-mono font-bold bg-black/90 px-1 py-0.5 border border-white/20 text-white flex items-center gap-1">
+                                        <Clock className="h-2.5 w-2.5 text-cyan-300" />
                                         {formatTime(event.startsAt)}
                                       </span>
                                     </div>
                                     {simLogo && (
-                                      <div className="bg-white/90 p-0.5 shadow-sm">
-                                        <img src={simLogo} alt={league?.simulator} className="h-3 w-auto object-contain" />
+                                      <div className="bg-white p-0.5 shadow-md border border-black/40 rounded-none shrink-0">
+                                        <img src={simLogo} alt={league?.simulator} className="h-4.5 w-auto object-contain max-w-[40px]" />
                                       </div>
                                     )}
                                   </div>
@@ -737,17 +737,10 @@ export default function CalendarContent({
                                   {/* Bottom Details */}
                                   <div className="absolute inset-x-1.5 bottom-1 z-10 space-y-0.5">
                                     <div className="flex items-center gap-1">
-                                      <span
-                                        className="px-1 py-0.2 text-[8px] font-mono font-bold uppercase border shadow-sm shrink-0"
-                                        style={{
-                                          backgroundColor: `${eventColor}25`,
-                                          borderColor: `${eventColor}80`,
-                                          color: eventColor,
-                                        }}
-                                      >
+                                      <span className="px-1 py-0.2 text-[8px] font-mono font-black uppercase bg-black/95 text-white border border-white/40 shadow-sm shrink-0">
                                         {getEventType(event, league)}
                                       </span>
-                                      <span className="text-[9px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                                      <span className="text-[9px] font-black text-white uppercase tracking-wider truncate drop-shadow">
                                         {event.circuitName}
                                       </span>
                                     </div>
@@ -799,15 +792,15 @@ export default function CalendarContent({
                                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
                                     <div className="flex items-center gap-1.5">
                                       <span className="text-xs font-black text-white font-mono">{date.getUTCDate()}</span>
-                                      <span className="text-[10px] font-mono font-bold bg-black/80 px-1.5 py-0.5 border border-white/10 text-cyan-300 flex items-center gap-1">
-                                        <Clock className="h-3 w-3 text-cyan-400" />
+                                      <span className="text-[10px] font-mono font-bold bg-black/90 px-1.5 py-0.5 border border-white/20 text-white flex items-center gap-1">
+                                        <Clock className="h-3 w-3 text-cyan-300" />
                                         {formatTime(primaryEvent.startsAt)}
                                       </span>
                                     </div>
 
                                     {simLogo && (
-                                      <div className="bg-white/90 p-0.5 shadow-sm">
-                                        <img src={simLogo} alt={league?.simulator} className="h-3.5 w-auto object-contain" />
+                                      <div className="bg-white p-1 shadow-md border border-black/40 rounded-none shrink-0">
+                                        <img src={simLogo} alt={league?.simulator} className="h-5 w-auto object-contain max-w-[48px]" />
                                       </div>
                                     )}
                                   </div>
@@ -815,17 +808,10 @@ export default function CalendarContent({
                                   {/* Bottom Details */}
                                   <div className="absolute inset-x-2.5 bottom-2 space-y-1 z-10">
                                     <div className="flex items-center gap-1.5">
-                                      <span
-                                        className="px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase border shadow-md shrink-0"
-                                        style={{
-                                          backgroundColor: `${eventColor}25`,
-                                          borderColor: `${eventColor}80`,
-                                          color: eventColor,
-                                        }}
-                                      >
+                                      <span className="px-1.5 py-0.5 text-[9px] font-mono font-black uppercase bg-black/95 text-white border border-white/40 shadow-md shrink-0">
                                         {getEventType(primaryEvent, league)}
                                       </span>
-                                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider truncate">
+                                      <span className="text-[10px] font-black text-white uppercase tracking-wider truncate drop-shadow">
                                         {primaryEvent.circuitName}
                                       </span>
                                     </div>
@@ -835,7 +821,7 @@ export default function CalendarContent({
                                     </h4>
 
                                     {league && (
-                                      <p className="text-[10px] font-semibold text-slate-400 truncate">
+                                      <p className="text-[10px] font-bold text-white/90 truncate drop-shadow">
                                         {league.title}
                                       </p>
                                     )}
@@ -846,7 +832,7 @@ export default function CalendarContent({
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         onClick={(e) => e.stopPropagation()}
-                                        className="inline-flex items-center gap-1 bg-emerald-950/80 hover:bg-emerald-600 border border-emerald-500/50 text-emerald-300 hover:text-white px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider transition-colors rounded-none mt-0.5"
+                                        className="inline-flex items-center gap-1 bg-emerald-950/90 hover:bg-emerald-600 border border-emerald-400/60 text-white hover:text-white px-2 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider transition-colors rounded-none mt-0.5 shadow-md"
                                       >
                                         <Play className="h-2.5 w-2.5 fill-current text-emerald-400" />
                                         JOIN SERVER

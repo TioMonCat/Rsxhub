@@ -116,14 +116,32 @@ export function EventEntryListModal({
     return null
   }
 
-  const getSteam64Id = (rSteam?: string, rUser?: string, memberSteam?: string) => {
-    const candidates = [rSteam, memberSteam, rUser]
+  const getSteam64Id = (...candidates: any[]) => {
     for (const cand of candidates) {
       if (!cand) continue
-      const cleaned = String(cand).trim().replace(/^steam_/, '')
-      if (/^\d{15,18}$/.test(cleaned)) {
-        return cleaned
+      if (typeof cand === 'object') {
+        const keys = [
+          cand.steamId,
+          cand.steam_id,
+          cand.steamId64,
+          cand.steam_id64,
+          cand.id64,
+          cand.steam_account?.steam_id,
+          cand.steamAccount?.steamId,
+          cand.userId,
+          cand.user_id,
+          cand.id,
+        ]
+        for (const k of keys) {
+          if (!k) continue
+          const cleaned = String(k).trim().replace(/^steam_/, '')
+          if (/^\d{15,18}$/.test(cleaned)) return cleaned
+        }
+        continue
       }
+
+      const cleaned = String(cand).trim().replace(/^steam_/, '')
+      if (/^\d{15,18}$/.test(cleaned)) return cleaned
     }
     return ''
   }
@@ -146,15 +164,25 @@ export function EventEntryListModal({
           String(c.dorsal ?? '').trim() === targetDorsal
       ) || teamCars.find((c: any) => String(c.dorsal ?? '').trim() === targetDorsal)
 
-    const driverUserIds: string[] = car?.driverUserIds || car?.driver_user_ids || []
+    const byLeague = car?.driverUserIdsByLeague || car?.driver_user_ids_by_league || {}
+    let driverUserIds: string[] = []
+    if (event.leagueId && byLeague[event.leagueId] && Array.isArray(byLeague[event.leagueId]) && byLeague[event.leagueId].length > 0) {
+      driverUserIds = byLeague[event.leagueId].filter(Boolean).map(String)
+    } else if (Array.isArray(car?.driverUserIds) && car.driverUserIds.length > 0) {
+      driverUserIds = car.driverUserIds.filter(Boolean).map(String)
+    } else if (Array.isArray(car?.driver_user_ids) && car.driver_user_ids.length > 0) {
+      driverUserIds = car.driver_user_ids.filter(Boolean).map(String)
+    }
 
     if (driverUserIds.length > 0) {
       const resolved = driverUserIds
         .map((dId) => {
-          const member = teamMembers.find((m: any) => m.userId === dId || m.id === dId)
+          const member = teamMembers.find(
+            (m: any) => m.userId === dId || m.user_id === dId || m.id === dId || m.steamId === dId
+          )
           const reg = registrations.find((r) => r.userId === dId && r.teamId === teamId)
-          const name = member?.displayName || member?.name || reg?.displayName || 'Driver'
-          const steamId = getSteam64Id(member?.steamId, (reg as any)?.steamId, dId)
+          const name = member?.displayName || member?.name || member?.steamDisplayName || reg?.displayName || `Driver (${dId.slice(0, 4)})`
+          const steamId = getSteam64Id(member, reg, dId)
           return { name, steamId }
         })
         .filter((d) => d.name)
@@ -167,23 +195,23 @@ export function EventEntryListModal({
       (r) =>
         r.teamId === teamId &&
         String(r.classTag || '').toUpperCase() === targetTag &&
-        String(r.assignedNumber ?? '').trim() === targetDorsal
+        (String(r.assignedNumber ?? '').trim() === targetDorsal || !targetDorsal)
     )
 
     if (matchedRegs.length > 0) {
       return matchedRegs.map((r) => {
-        const member = teamMembers.find((m: any) => m.userId === r.userId)
+        const member = teamMembers.find((m: any) => m.userId === r.userId || m.user_id === r.userId)
         return {
-          name: r.displayName || member?.displayName || 'Driver',
-          steamId: getSteam64Id((r as any).steamId, member?.steamId, r.userId),
+          name: r.displayName || member?.displayName || member?.name || 'Driver',
+          steamId: getSteam64Id(member, r, r.userId),
         }
       })
     }
 
     if (teamMembers.length > 0) {
       return teamMembers.map((m: any) => ({
-        name: m.displayName || m.name || 'Driver',
-        steamId: getSteam64Id(m.steamId, m.userId),
+        name: m.displayName || m.name || m.steamDisplayName || 'Driver',
+        steamId: getSteam64Id(m, m.userId),
       }))
     }
 

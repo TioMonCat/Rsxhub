@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { getFirestoreDb, hasFirebase } from '@/lib/firebase'
+import { fetchWithTTLCache } from '@/lib/ttl-cache'
 
 export interface UserNotification {
   id: string
@@ -14,16 +15,17 @@ export interface UserNotification {
 export const getUserNotifications = cache(async (userId: string): Promise<UserNotification[]> => {
   if (!userId) return []
 
-  let rawList: UserNotification[] = []
+  return fetchWithTTLCache(`user_notifications_${userId}`, async () => {
+    let rawList: UserNotification[] = []
 
-  if (hasFirebase) {
-    const db = getFirestoreDb()
-    if (db) {
-      try {
-        const snap = await db
-          .collection('user_notifications')
-          .where('user_id', '==', userId)
-          .get()
+    if (hasFirebase) {
+      const db = getFirestoreDb()
+      if (db) {
+        try {
+          const snap = await db
+            .collection('user_notifications')
+            .where('user_id', '==', userId)
+            .get()
 
         if (!snap.empty) {
           rawList = snap.docs.map((doc: any) => {
@@ -81,7 +83,8 @@ export const getUserNotifications = cache(async (userId: string): Promise<UserNo
     }
   }
 
-  return uniqueList.slice(0, 30)
+    return uniqueList.slice(0, 30)
+  }, 30)
 })
 
 export async function createNotification({

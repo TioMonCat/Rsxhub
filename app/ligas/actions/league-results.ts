@@ -3,32 +3,35 @@
 import { revalidatePath } from 'next/cache'
 import { getCurrentUser, getAdminAccessContext, canStewardLeague } from '@/lib/auth'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
+import { fetchWithTTLCache } from '@/lib/ttl-cache'
+import { getTeamsDashboard } from '@/lib/team-data'
 
 export async function getEventResultsAction(leagueId: string, eventId: string, sessionType: 'qualifying' | 'race' = 'race') {
-  if (hasFirebase) {
-    const db = getFirestoreDb()
-    if (db) {
-      try {
-        const snap = await db.collection('league_results')
-          .where('event_id', '==', eventId)
-          .get()
+  return fetchWithTTLCache(`event_results_${eventId}_${sessionType}`, async () => {
+    if (hasFirebase) {
+      const db = getFirestoreDb()
+      if (db) {
+        try {
+          const snap = await db.collection('league_results')
+            .where('event_id', '==', eventId)
+            .get()
 
-        if (!snap.empty) {
-          const rawDocs = snap.docs
-            .map((d: any) => ({ id: d.id, ...d.data() }))
-            .filter((d: any) => {
-              const sType = d.session_type || d.sessionType || 'race'
-              return sType === sessionType
-            })
+          if (!snap.empty) {
+            const rawDocs = snap.docs
+              .map((d: any) => ({ id: d.id, ...d.data() }))
+              .filter((d: any) => {
+                const sType = d.session_type || d.sessionType || 'race'
+                return sType === sessionType
+              })
 
-          if (rawDocs.length > 0) {
-            const userIds = Array.from(new Set(rawDocs.map((r: any) => r.user_id).filter(Boolean)))
+            if (rawDocs.length > 0) {
+              const userIds = Array.from(new Set(rawDocs.map((r: any) => r.user_id).filter(Boolean)))
 
-            const [profilesSnap, steamSnap, teamsSnap] = await Promise.all([
-              userIds.length > 0 ? db.collection('profiles').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
-              userIds.length > 0 ? db.collection('steam_accounts').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
-              db.collection('teams').get()
-            ])
+              const [{ teams }, profilesSnap, steamSnap] = await Promise.all([
+                getTeamsDashboard(),
+                userIds.length > 0 ? db.collection('profiles').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
+                userIds.length > 0 ? db.collection('steam_accounts').where('user_id', 'in', userIds.slice(0, 10)).get() : null,
+              ])
 
             const profilesMap = new Map<string, string>(
               profilesSnap ? profilesSnap.docs.map((d: any) => [d.data().user_id, d.data().display_name]) : []
@@ -37,7 +40,7 @@ export async function getEventResultsAction(leagueId: string, eventId: string, s
               steamSnap ? steamSnap.docs.map((d: any) => [d.data().user_id, { steamId: d.data().steam_id, name: d.data().steam_display_name }]) : []
             )
 
-            const teamsList = teamsSnap ? teamsSnap.docs.map((d: any) => ({ id: d.id, ...d.data() })) : []
+            const teamsList = teams || []
 
             return rawDocs.map((row: any) => {
               const uid = row.user_id || ''
@@ -77,6 +80,7 @@ export async function getEventResultsAction(leagueId: string, eventId: string, s
   }
 
   return []
+  }, 60)
 }
 
 export async function updateTeamPointsAction(formData: FormData) {

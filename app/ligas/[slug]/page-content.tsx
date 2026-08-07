@@ -741,17 +741,10 @@ export default function LeagueDetailPageContent({
                     
                     <div className="relative z-10 space-y-1 mt-auto">
                       <div className="flex items-center gap-2">
-                        <span
-                          className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase border shadow-md"
-                          style={{
-                            backgroundColor: `${hexToRgba(formEventColor, 0.35)}`,
-                            borderColor: `${formEventColor}`,
-                            color: '#ffffff',
-                          }}
-                        >
+                        <span className="px-2 py-0.5 text-[10px] font-mono font-black uppercase bg-black/95 text-white border border-white/40 shadow-md shrink-0">
                           {formEventType.toUpperCase()}
                         </span>
-                        <span className="text-xs font-bold text-slate-200 uppercase tracking-wider drop-shadow">
+                        <span className="text-xs font-black text-white uppercase tracking-wider drop-shadow">
                           {formEventCircuit || 'Circuit Name'}
                         </span>
                       </div>
@@ -760,7 +753,7 @@ export default function LeagueDetailPageContent({
                         {formEventTitle || formEventCircuit || 'Round Session Title'}
                       </h4>
 
-                      <div className="flex items-center gap-2 text-xs text-slate-200 font-mono pt-0.5 drop-shadow">
+                      <div className="flex items-center gap-2 text-xs text-white font-mono font-bold pt-0.5 drop-shadow">
                         <Clock className="h-3.5 w-3.5 text-cyan-300" />
                         <span>{formEventDate} @ {formEventStartsTime}</span>
                       </div>
