@@ -126,7 +126,7 @@ export function LeagueStandings({
                           {isAdmin ? (
                             <label
                               title="Click to upload/change car photo"
-                              className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-1 cursor-pointer group transition-colors"
+                              className="h-12 w-32 md:w-40 bg-black/60 border border-slate-700 hover:border-cyan-400 flex items-center justify-center shrink-0 overflow-hidden relative p-1 cursor-pointer group transition-colors"
                             >
                               <input
                                 type="file"
@@ -147,7 +147,7 @@ export function LeagueStandings({
                               </div>
                             </label>
                           ) : (
-                            <div className="h-10 w-28 md:w-36 bg-black/60 border border-slate-700/60 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
+                            <div className="h-12 w-32 md:w-40 bg-black/60 border border-slate-700/60 flex items-center justify-center shrink-0 overflow-hidden relative p-1">
                               <img
                                 src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
                                 alt="Vehicle side profile"
