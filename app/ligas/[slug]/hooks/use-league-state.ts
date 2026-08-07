@@ -37,9 +37,11 @@ export type LeagueEvent = {
   qualyEndsAt?: string | null
   startsAt: string
   endsAt: string
-  status: string
   eventType?: string
   countryCode?: string | null
+  color?: string | null
+  qualyCompleted?: boolean
+  completedAt?: string | null
 }
 
 export type Registration = {

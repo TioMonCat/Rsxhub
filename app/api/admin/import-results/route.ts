@@ -261,7 +261,19 @@ export async function POST(req: Request) {
       await insertBatch.commit()
     }
 
-    await db.collection('league_events').doc(eventId).update({ status: 'completed' })
+    if (sessionType === 'qualifying') {
+      await db.collection('league_events').doc(eventId).update({
+        qualy_completed: true,
+        qualyCompleted: true,
+      })
+    } else {
+      const nowIso = new Date().toISOString()
+      await db.collection('league_events').doc(eventId).update({
+        status: 'completed',
+        completed_at: nowIso,
+        completedAt: nowIso,
+      })
+    }
 
     await db.collection('league_result_imports').add({
       league_id: leagueId,

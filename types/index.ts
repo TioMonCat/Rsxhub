@@ -42,6 +42,8 @@ export interface LeagueEvent {
   eventType?: 'race' | 'qualifying' | 'time_attack'
   countryCode?: string | null
   color?: string | null
+  qualyCompleted?: boolean
+  completedAt?: string | null
 }
 
 export interface League {

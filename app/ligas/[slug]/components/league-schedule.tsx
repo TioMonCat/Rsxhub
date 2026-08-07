@@ -48,9 +48,35 @@ export function LeagueSchedule({
   const [localConfirmations, setLocalConfirmations] = useState<EventConfirmation[]>(confirmations)
   const [viewingEntryListEvent, setViewingEntryListEvent] = useState<LeagueEvent | null>(null)
 
+  const [showExpiredRounds, setShowExpiredRounds] = useState(false)
+
   useEffect(() => {
     setLocalConfirmations(confirmations)
   }, [confirmations])
+
+  const { activeEvents, expiredCount } = useMemo(() => {
+    const now = Date.now()
+    const fortyEightHoursMs = 48 * 60 * 60 * 1000
+
+    let expired = 0
+    const active = events.filter((ev) => {
+      const isCompleted = (ev as any).status === 'completed'
+      if (!isCompleted) return true
+
+      const finishTime = (ev as any).completedAt
+        ? new Date((ev as any).completedAt).getTime()
+        : new Date(ev.endsAt || ev.startsAt).getTime()
+
+      const isExpired = (now - finishTime) > fortyEightHoursMs
+      if (isExpired) {
+        expired++
+        return showExpiredRounds
+      }
+      return true
+    })
+
+    return { activeEvents: active, expiredCount: expired }
+  }, [events, showExpiredRounds])
 
   return (
     <div className="shell-panel p-4 md:p-5 rounded-none space-y-4">
@@ -70,11 +96,11 @@ export function LeagueSchedule({
       <p className="text-xs text-slate-400">Timeline of rounds and race sessions.</p>
 
       <div className="space-y-4">
-        {events.length === 0 ? (
-          <p className="text-sm text-slate-300">No scheduled rounds yet.</p>
+        {activeEvents.length === 0 ? (
+          <p className="text-sm text-slate-300">No scheduled rounds in timeline.</p>
         ) : (
-          events.map((ev, index) => {
-            const isCompleted = ev.status === 'completed' || new Date(ev.startsAt) < new Date()
+          activeEvents.map((ev, index) => {
+            const isCompleted = (ev as any).status === 'completed' || new Date(ev.startsAt) < new Date()
 
             return (
               <div
@@ -126,45 +152,17 @@ export function LeagueSchedule({
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* ADMIN & STEWARD: MANAGE ROUND BUTTONS */}
-                    {(isAdmin || isSteward) && onFinishRound && (() => {
-                      const hasQualy = Boolean(ev.hasQualy === true || String(ev.hasQualy) === 'true' || ev.qualyStartsAt)
-                      if (hasQualy) {
-                        return (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => onFinishRound(ev, 'qualifying')}
-                              className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                              title="Upload and manage Qualifying results"
-                            >
-                              <Clock className="h-3.5 w-3.5 text-cyan-400" />
-                              Manage Qualy
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onFinishRound(ev, 'race')}
-                              className="border border-amber-500/40 bg-amber-950/40 hover:bg-amber-500/20 text-amber-300 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                              title="Upload and manage Race results and points"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 text-amber-400" />
-                              Manage Race
-                            </button>
-                          </div>
-                        )
-                      }
-
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => onFinishRound(ev, 'race')}
-                          className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
-                          Manage Round
-                        </button>
-                      )
-                    })()}
+                    {/* ADMIN & STEWARD: MANAGE ROUND BUTTON */}
+                    {(isAdmin || isSteward) && onFinishRound && (
+                      <button
+                        type="button"
+                        onClick={() => onFinishRound(ev)}
+                        className="border border-cyan-500/40 bg-cyan-950/40 hover:bg-cyan-500/20 text-cyan-300 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+                      >
+                        <CheckCircle2 className="h-3.5 w-3.5 text-cyan-400" />
+                        Manage Round
+                      </button>
+                    )}
 
                     {/* DRIVERS & NON-ADMINS/NON-STEWARDS: VIEW ROUND BUTTON */}
                     {(!isAdmin && !isSteward) && onViewResults && (
@@ -436,6 +434,20 @@ export function LeagueSchedule({
               </div>
             )
           })
+        )}
+
+        {expiredCount > 0 && (
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => setShowExpiredRounds((prev) => !prev)}
+              className="text-xs font-semibold text-slate-400 hover:text-cyan-400 underline underline-offset-4 cursor-pointer transition-colors"
+            >
+              {showExpiredRounds
+                ? `Hide ${expiredCount} completed round(s) (>48h ago)`
+                : `Show ${expiredCount} completed round(s) (>48h ago)`}
+            </button>
+          </div>
         )}
       </div>
 

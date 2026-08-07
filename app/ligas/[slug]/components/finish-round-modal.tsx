@@ -40,8 +40,10 @@ export function FinishRoundModal({
   onSuccess,
 }: FinishRoundModalProps) {
   const hasQualy = Boolean(event.hasQualy === true || String(event.hasQualy) === 'true' || event.qualyStartsAt)
+  const isQualyCompleted = Boolean((event as any).qualyCompleted || (event as any).qualy_completed)
+  
   const [sessionType, setSessionType] = useState<'qualifying' | 'race'>(
-    hasQualy ? (initialSessionType || 'qualifying') : 'race'
+    hasQualy ? (isQualyCompleted ? (initialSessionType || 'race') : 'qualifying') : 'race'
   )
   const [activeTab, setActiveTab] = useState<'upload' | 'preview'>('upload')
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('ALL')
@@ -294,19 +296,25 @@ export function FinishRoundModal({
               }`}
             >
               <Timer className="h-4 w-4" />
-              QUALIFYING SESSION
+              1. QUALIFYING SESSION {isQualyCompleted ? '✓' : '(PHASE 1)'}
             </button>
             <button
               type="button"
-              onClick={() => setSessionType('race')}
-              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 ${
-                sessionType === 'race'
-                  ? 'bg-amber-500 text-black shadow-md border border-amber-400'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5'
+              disabled={!isQualyCompleted}
+              onClick={() => {
+                if (isQualyCompleted) setSessionType('race')
+              }}
+              className={`py-2 text-xs font-black uppercase tracking-wider transition-colors flex items-center justify-center gap-2 ${
+                !isQualyCompleted
+                  ? 'text-slate-600 bg-black/40 border border-white/5 cursor-not-allowed'
+                  : sessionType === 'race'
+                  ? 'bg-amber-500 text-black shadow-md border border-amber-400 cursor-pointer'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5 cursor-pointer'
               }`}
+              title={!isQualyCompleted ? 'Finalize Qualifying first before managing Race session' : 'Manage Race Results & Points'}
             >
               <Flag className="h-4 w-4" />
-              RACE SESSION
+              2. RACE SESSION {!isQualyCompleted ? '🔒' : '(PHASE 2)'}
             </button>
           </div>
         )}
@@ -560,7 +568,11 @@ export function FinishRoundModal({
             className="bg-cyan-500 hover:bg-cyan-400 text-black disabled:opacity-40 px-5 py-2 text-xs font-bold uppercase tracking-wider rounded-none transition-colors flex items-center gap-2 cursor-pointer"
           >
             <CheckCircle2 className="h-4 w-4" />
-            {isSubmitting ? 'Saving...' : `Confirm & Save ${sessionType.toUpperCase()} Results`}
+            {isSubmitting
+              ? 'Saving...'
+              : sessionType === 'qualifying'
+              ? 'Finalize Qualy & Publish Grid'
+              : 'Finalize Race & Complete Round'}
           </button>
         </div>
       </div>
