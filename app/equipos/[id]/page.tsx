@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ClearStatusQuery } from '@/components/clear-status-query'
 import { getCurrentUser, getAdminAccessContext } from '@/lib/auth'
-import { getLeagues, getRegistrations, getLeagueEvents } from '@/lib/platform-data'
+import { getLeagues, getRegistrations, getLeagueEvents, getTeamPointsOverrides } from '@/lib/platform-data'
 import { getFirestoreDb, hasFirebase, runWithTimeout } from '@/lib/firebase'
 import { formatFirestoreValue } from '@/lib/firestore-utils'
 import { getTeamsDashboard } from '@/lib/team-data'
@@ -237,6 +237,40 @@ export default async function TeamProfilePage({
           const events = await getLeagueEvents(lg.id)
           const nowStr = new Date().toISOString()
           const upcomingEvents = events.filter((e) => e.startsAt >= nowStr).sort((a, b) => a.startsAt.localeCompare(b.startsAt))
+          const pointsMap = await getTeamPointsOverrides(lg.id)
+
+          const teamCarsInLeague = (team.cars || []).filter((c: any) => {
+            const cLeagueId = c.leagueId || c.league_id
+            if (cLeagueId && cLeagueId !== lg.id && cLeagueId !== lg.slug) return false
+            return true
+          })
+
+          const classTagsSet = new Set<string>([
+            ...lgRows.map((r) => String(r.classTag || '').toUpperCase()).filter(Boolean),
+            ...teamCarsInLeague.map((c: any) => String(c.category || '').toUpperCase()).filter(Boolean),
+          ])
+
+          const categories = Array.from(classTagsSet).map((tag) => {
+            const points = pointsMap[`${tag}_${team.id}`] ?? 0
+            const categoryCars = teamCarsInLeague.filter((c: any) => String(c.category || '').toUpperCase() === tag)
+            const categoryRegs = lgRows.filter((r) => String(r.classTag || '').toUpperCase() === tag)
+
+            const catDrivers = new Set<string>([
+              ...categoryRegs.map((r) => r.userId).filter((u) => u && u !== team.ownerUserId && !u.startsWith('unassigned')),
+              ...categoryCars.flatMap((c: any) => {
+                const byLeague = c.driverUserIdsByLeague || c.driver_user_ids_by_league || {}
+                const list = byLeague[lg.id] || byLeague[lg.slug] || c.driverUserIds || c.driver_user_ids || []
+                return Array.isArray(list) ? list : []
+              }).filter(Boolean),
+            ])
+
+            return {
+              classTag: tag,
+              points,
+              carsCount: Math.max(categoryCars.length, categoryRegs.length, 1),
+              driversCount: catDrivers.size,
+            }
+          })
 
           leagueParticipation.push({
             leagueId: lg.id, title: lg.title || '', bannerUrl: lg.bannerUrl || null,
@@ -244,6 +278,7 @@ export default async function TeamProfilePage({
             teamDriversInLeague: driverUserIds.length,
             approvedEntries: Math.max(approvedCount > 0 ? approvedCount : lgRows.length, 1),
             pendingEntries: pendingCount, nextEventAt: upcomingEvents[0]?.startsAt || null,
+            categories,
           })
         }
 

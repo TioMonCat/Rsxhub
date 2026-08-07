@@ -21,6 +21,13 @@ export type TeamPilot = {
   steamId?: string
 }
 
+export type CategoryStat = {
+  classTag: string
+  points: number
+  carsCount: number
+  driversCount: number
+}
+
 export type LeagueParticipation = {
   leagueId: string
   title: string
@@ -31,6 +38,7 @@ export type LeagueParticipation = {
   approvedEntries: number
   pendingEntries: number
   nextEventAt: string | null
+  categories?: CategoryStat[]
 }
 
 export type RecentResult = {

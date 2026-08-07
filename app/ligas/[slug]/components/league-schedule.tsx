@@ -227,28 +227,30 @@ export function LeagueSchedule({
                 {/* Team Confirmations */}
                 {(() => {
                   const myRegisteredTeams = myManagedTeams.filter((t) =>
-                    initialRegistrations.some((r) => r.teamId === t.id)
+                    initialRegistrations.some((r) => r.teamId === t.id) ||
+                    ((t as any).cars || []).some((c: any) => {
+                      const cLeagueId = c.leagueId || c.league_id
+                      return cLeagueId === league.id || cLeagueId === league.slug
+                    })
                   )
                   if (myRegisteredTeams.length === 0) return null
 
                   return myRegisteredTeams.map((team) => {
-                    const activeCarsWithDrivers = ((team as any).cars || []).filter((carObj: any) => {
-                      const drivers = Array.isArray(carObj.driverUserIds)
-                        ? carObj.driverUserIds.filter(Boolean)
-                        : Array.isArray((carObj as any).driver_user_ids)
-                        ? (carObj as any).driver_user_ids.filter(Boolean)
-                        : []
-                      if (drivers.length === 0) return false
+                    const activeCars = ((team as any).cars || []).filter((carObj: any) => {
+                      const carLeagueId = carObj.leagueId || carObj.league_id
+                      if (carLeagueId && carLeagueId !== league.id && carLeagueId !== league.slug) return false
 
-                      return initialRegistrations.some(
+                      const isReg = initialRegistrations.some(
                         (r) =>
                           r.teamId === team.id &&
                           String(r.classTag || '').toUpperCase() === String(carObj.category || '').toUpperCase() &&
-                          String(r.assignedNumber ?? '').trim() === String(carObj.dorsal ?? '').trim()
+                          (String(r.assignedNumber ?? '').trim() === String(carObj.dorsal ?? '').trim() || !r.assignedNumber || !carObj.dorsal)
                       )
+
+                      return isReg || Boolean(carLeagueId)
                     })
 
-                    if (activeCarsWithDrivers.length === 0) return null
+                    if (activeCars.length === 0) return null
 
                     return (
                       <div key={team.id} className="bg-slate-900/40 border border-cyan-500/10 p-3 z-10 space-y-2 mt-2">
@@ -257,7 +259,7 @@ export function LeagueSchedule({
                           Confirm Attendance: {team.name}
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {activeCarsWithDrivers.map((carObj: any, carIdx: number) => {
+                          {activeCars.map((carObj: any, carIdx: number) => {
                             const tag = String(carObj.category).toUpperCase()
                             const dorsalDisplay = String(carObj.dorsal || '').trim()
                             const limit = (league as any).classLimits?.[tag] ?? 30
