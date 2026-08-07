@@ -140,7 +140,7 @@ export function LeagueStandings({
                               <img
                                 src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
                                 alt="Vehicle side profile"
-                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] scale-125 group-hover:scale-135 transition-transform"
                               />
                               <div className="absolute inset-0 bg-black/80 text-[9px] font-black text-cyan-300 uppercase flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity gap-1">
                                 <Upload className="h-3.5 w-3.5" /> Change
@@ -151,7 +151,7 @@ export function LeagueStandings({
                               <img
                                 src={customCarImages[team.id] || team.carImageUrl || '/branding/lateral-car.png'}
                                 alt="Vehicle side profile"
-                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
+                                className="max-h-full max-w-full object-contain filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] scale-125 transition-transform"
                               />
                             </div>
                           )}
