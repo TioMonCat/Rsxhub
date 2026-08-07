@@ -18,6 +18,19 @@ import { ClassBadge } from '@/components/class-badge'
 import { ImagePicker } from '@/components/image-picker'
 import { TimeInput24 } from '@/components/time-input-24'
 
+function hexToRgba(hex: string, alpha: number) {
+  if (!hex || typeof hex !== 'string') return `rgba(18, 116, 222, ${alpha})`
+  let c = hex.trim().replace('#', '')
+  if (c.length === 3) {
+    c = c.split('').map((char) => char + char).join('')
+  }
+  if (c.length !== 6) return `rgba(18, 116, 222, ${alpha})`
+  const r = parseInt(c.substring(0, 2), 16)
+  const g = parseInt(c.substring(2, 4), 16)
+  const b = parseInt(c.substring(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 type Props = {
   league: League
   initialEvents: LeagueEvent[]
@@ -705,23 +718,40 @@ export default function LeagueDetailPageContent({
                   LIVE CARD PREVIEW
                 </h3>
 
-                <div className="border border-shell-line bg-black/50 overflow-hidden relative group">
-                  <div className="h-44 w-full relative bg-slate-900 overflow-hidden">
-                    {formEventImageUrl ? (
-                      <img src={formEventImageUrl} alt={formEventCircuit} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900/80 text-slate-500 text-xs font-bold">
-                        <span>No circuit banner selected</span>
+                <div
+                  className="border overflow-hidden relative group transition-all rounded-none shadow-lg"
+                  style={{ borderColor: `${formEventColor}60` }}
+                >
+                  <div
+                    className="h-44 w-full relative overflow-hidden transition-all duration-300 flex flex-col justify-between p-3"
+                    style={{
+                      borderLeft: `4px solid ${formEventColor}`,
+                      backgroundImage: formEventImageUrl
+                        ? `linear-gradient(to top, rgba(9, 13, 22, 0.95) 0%, ${hexToRgba(formEventColor, 0.45)} 50%, ${hexToRgba(formEventColor, 0.75)} 100%), url(${formEventImageUrl})`
+                        : `linear-gradient(135deg, ${hexToRgba(formEventColor, 0.85)} 0%, ${hexToRgba(formEventColor, 0.3)} 60%, #090d16 100%)`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                    }}
+                  >
+                    {!formEventImageUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20 text-white text-xs font-black uppercase tracking-widest italic">
+                        <span>{formEventCircuit || 'No Circuit Banner'}</span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                     
-                    <div className="absolute bottom-3 left-3 right-3 space-y-1">
+                    <div className="relative z-10 space-y-1 mt-auto">
                       <div className="flex items-center gap-2">
-                        <span className="bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-0.5 text-[10px] font-mono font-bold uppercase">
+                        <span
+                          className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase border shadow-md"
+                          style={{
+                            backgroundColor: `${hexToRgba(formEventColor, 0.35)}`,
+                            borderColor: `${formEventColor}`,
+                            color: '#ffffff',
+                          }}
+                        >
                           {formEventType.toUpperCase()}
                         </span>
-                        <span className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                        <span className="text-xs font-bold text-slate-200 uppercase tracking-wider drop-shadow">
                           {formEventCircuit || 'Circuit Name'}
                         </span>
                       </div>
@@ -730,15 +760,15 @@ export default function LeagueDetailPageContent({
                         {formEventTitle || formEventCircuit || 'Round Session Title'}
                       </h4>
 
-                      <div className="flex items-center gap-2 text-xs text-slate-300 font-mono pt-1">
-                        <Clock className="h-3.5 w-3.5 text-cyan-400" />
+                      <div className="flex items-center gap-2 text-xs text-slate-200 font-mono pt-0.5 drop-shadow">
+                        <Clock className="h-3.5 w-3.5 text-cyan-300" />
                         <span>{formEventDate} @ {formEventStartsTime}</span>
                       </div>
                     </div>
                   </div>
 
                   {formEventServerLink && (
-                    <div className="p-3 bg-black/80 border-t border-shell-line/40 flex items-center justify-between">
+                    <div className="p-3 bg-black/90 border-t border-shell-line/40 flex items-center justify-between">
                       <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold flex items-center gap-1">
                         <Play className="h-3 w-3 fill-current" /> Direct Server Link Ready
                       </span>

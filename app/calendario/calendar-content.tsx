@@ -8,6 +8,19 @@ import { saveCalendarEvent, deleteCalendarEvent } from './actions'
 import { ImagePicker } from '@/components/image-picker'
 import { getCountryFlag } from '@/lib/countries'
 
+function hexToRgba(hex: string, alpha: number) {
+  if (!hex || typeof hex !== 'string') return `rgba(18, 116, 222, ${alpha})`
+  let c = hex.trim().replace('#', '')
+  if (c.length === 3) {
+    c = c.split('').map((char) => char + char).join('')
+  }
+  if (c.length !== 6) return `rgba(18, 116, 222, ${alpha})`
+  const r = parseInt(c.substring(0, 2), 16)
+  const g = parseInt(c.substring(2, 4), 16)
+  const b = parseInt(c.substring(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 type LeagueEvent = {
   id: string
   leagueId: string
@@ -697,17 +710,14 @@ export default function CalendarContent({
                                     borderLeftColor: eventColor,
                                   }}
                                 >
-                                  {event.circuitImageUrl ? (
-                                    <div
-                                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
-                                      style={{
-                                        backgroundImage: `linear-gradient(to top, rgba(9, 13, 22, 0.95) 0%, rgba(9, 13, 22, 0.4) 50%, rgba(9, 13, 22, 0.85) 100%), url(${event.circuitImageUrl})`,
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#0c1220] via-[#080d16] to-[#04060c]" />
-                                  )}
-
+                                  <div
+                                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
+                                    style={{
+                                      backgroundImage: event.circuitImageUrl
+                                        ? `linear-gradient(to top, rgba(9, 13, 22, 0.92) 0%, ${hexToRgba(eventColor, 0.4)} 50%, ${hexToRgba(eventColor, 0.75)} 100%), url(${event.circuitImageUrl})`
+                                        : `linear-gradient(135deg, ${hexToRgba(eventColor, 0.85)} 0%, ${hexToRgba(eventColor, 0.35)} 60%, #090d16 100%)`,
+                                    }}
+                                  />
                                   {/* Top Bar: Time & Sim logo */}
                                   <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-10 pointer-events-none">
                                     <div className="flex items-center gap-1">
@@ -777,17 +787,14 @@ export default function CalendarContent({
                                     borderLeftColor: eventColor,
                                   }}
                                 >
-                                  {primaryEvent.circuitImageUrl ? (
-                                    <div
-                                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
-                                      style={{
-                                        backgroundImage: `linear-gradient(to top, rgba(9, 13, 22, 0.95) 0%, rgba(9, 13, 22, 0.4) 50%, rgba(9, 13, 22, 0.85) 100%), url(${primaryEvent.circuitImageUrl})`,
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#0c1220] via-[#080d16] to-[#04060c]" />
-                                  )}
-
+                                  <div
+                                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover/card:scale-105"
+                                    style={{
+                                      backgroundImage: primaryEvent.circuitImageUrl
+                                        ? `linear-gradient(to top, rgba(9, 13, 22, 0.92) 0%, ${hexToRgba(eventColor, 0.4)} 50%, ${hexToRgba(eventColor, 0.75)} 100%), url(${primaryEvent.circuitImageUrl})`
+                                        : `linear-gradient(135deg, ${hexToRgba(eventColor, 0.85)} 0%, ${hexToRgba(eventColor, 0.35)} 60%, #090d16 100%)`,
+                                    }}
+                                  />
                                   {/* Top Bar: Date + Time + Sim Logo */}
                                   <div className="absolute top-2 left-2 right-2 flex items-center justify-between z-10 pointer-events-none">
                                     <div className="flex items-center gap-1.5">
